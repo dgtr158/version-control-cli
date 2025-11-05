@@ -32,7 +32,7 @@ public class Index {
     }
 
     public void addEntry(Path path, String blobId) throws IOException {
-        FileStat stat = new FileStatImpl(path);
+        FileStat stat = new UnixFileStat(path);
         int flags = Math.min(path.toString().getBytes(StandardCharsets.UTF_8).length, MAX_PATH_SIZE);
         entries.add (
                 new IndexEntry(

@@ -10,27 +10,18 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
 
-public class FileStatImpl implements FileStat {
+public abstract class AbstractFileStat implements FileStat {
 
-    private static final Logger logger = LoggerFactory.getLogger(FileStatImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractFileStat.class);
 
     private final Path path;
     private final BasicFileAttributes attrs;
-    private final PosixFileAttributes posixAttrs; // For Unix file
+     // For Unix file
 
-    public FileStatImpl(Path path) throws IOException {
+    public AbstractFileStat(Path path) throws IOException {
         this.path = path;
         this.attrs = Files.readAttributes(path, BasicFileAttributes.class);
-        PosixFileAttributes posixAttrs = null;
-        try {
-            posixAttrs = Files.readAttributes(path, PosixFileAttributes.class);
-        } catch (UnsupportedOperationException ex) {
-            logger.warn("Cannot support posix attributes: {}", ex.getMessage());
-        }
-        this.posixAttrs = posixAttrs;
     }
-
-
 
     @Override
     public boolean isExecutable() {
@@ -58,25 +49,14 @@ public class FileStatImpl implements FileStat {
     }
 
     @Override
-    public int getDev() {
-        return this.path.hashCode();
-    }
+    public abstract int getDev();
 
     @Override
-    public int getIno() {
-        Object fileKey = attrs.fileKey();
-        return fileKey != null ? fileKey.hashCode() : 0;
-    }
+    public abstract int getIno();
 
     @Override
     public int getMode() {
-        if (posixAttrs != null) {
-            return PosixFilePermissions.toString(posixAttrs.permissions()).contains("x")
-                    ? Index.EXECUTABLE_MODE
-                    : Index.REGULAR_MODE;
-        } else {
-            return Files.isExecutable(path) ? Index.EXECUTABLE_MODE : Index.REGULAR_MODE;
-        }
+        return Files.isExecutable(path) ? Index.EXECUTABLE_MODE : Index.REGULAR_MODE;
     }
 
     @Override
@@ -86,9 +66,6 @@ public class FileStatImpl implements FileStat {
 
     @Override
     public int getGid() {
-        if (posixAttrs != null) {
-            return posixAttrs.group().getName().hashCode();
-        }
         return 0;
     }
 
@@ -96,4 +73,13 @@ public class FileStatImpl implements FileStat {
     public int getSize() {
         return (int) attrs.size();
     }
+
+    public BasicFileAttributes getAttrs() {
+        return attrs;
+    }
+
+    public Path getPath() {
+        return path;
+    }
+
 }
