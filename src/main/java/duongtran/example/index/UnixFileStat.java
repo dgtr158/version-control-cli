@@ -1,14 +1,12 @@
 package duongtran.example.index;
 
+import duongtran.example.utils.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Objects;
@@ -75,7 +73,6 @@ public class UnixFileStat extends AbstractFileStat {
     }
 
     private boolean getFromFileKey() {
-        BasicFileAttributes attrs = getAttrs();
         Object fileKey = attrs.fileKey();
         if (fileKey == null) {
             this.dev = DEFAULT_VALUE;
@@ -112,14 +109,14 @@ public class UnixFileStat extends AbstractFileStat {
 
     private boolean getFromUnixStatCommand() {
         // Try GNU coreutils: stat -c %d:%i
-        String[] cmdLinux = {"bash", "-lc", "stat -c %d:%i -- " + escapeShell(getPath().toString())};
-        String out = runAndReadStdout(cmdLinux);
+        String[] cmdLinux = {"bash", "-lc", "stat -c %d:%i -- " + escapeShell(path.toString())};
+        String out = FileUtil.runAndReadStdout(cmdLinux);
         boolean gnuRes = parseDevInoColon(out);
         if (gnuRes) return true;
 
         // Try BSD/macOS: stat -f %d:%i
-        String[] cmdBsd = {"bash", "-lc", "stat -f %d:%i -- " + escapeShell(getPath().toString())};
-        out = runAndReadStdout(cmdBsd);
+        String[] cmdBsd = {"bash", "-lc", "stat -f %d:%i -- " + escapeShell(path.toString())};
+        out = FileUtil.runAndReadStdout(cmdBsd);
         return parseDevInoColon(out);
     }
 
@@ -141,32 +138,6 @@ public class UnixFileStat extends AbstractFileStat {
     private String escapeShell(String p) {
         // Minimal robust escaping by single-quoting and escaping single quotes within
         return "'" + p.replace("'", "'\"'\"'") + "'";
-    }
-
-    private String runAndReadStdout(String[] cmd) {
-        Process proc = null;
-        try {
-            proc = new ProcessBuilder(cmd)
-                    .redirectErrorStream(true)
-                    .start();
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = r.readLine()) != null) {
-                    if (sb.length() > 0) sb.append('\n');
-                    sb.append(line);
-                }
-                int code = proc.waitFor();
-                if (code == 0) {
-                    return sb.toString();
-                }
-            }
-        } catch (IOException | InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            if (proc != null) proc.destroy();
-        }
-        return null;
     }
 
 }

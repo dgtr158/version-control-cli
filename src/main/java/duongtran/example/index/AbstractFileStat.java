@@ -14,8 +14,8 @@ public abstract class AbstractFileStat implements FileStat {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractFileStat.class);
 
-    private final Path path;
-    private final BasicFileAttributes attrs;
+    protected final Path path;
+    protected final BasicFileAttributes attrs;
      // For Unix file
 
     public AbstractFileStat(Path path) throws IOException {
@@ -72,14 +72,6 @@ public abstract class AbstractFileStat implements FileStat {
     @Override
     public int getSize() {
         return (int) attrs.size();
-    }
-
-    public BasicFileAttributes getAttrs() {
-        return attrs;
-    }
-
-    public Path getPath() {
-        return path;
     }
 
 }
