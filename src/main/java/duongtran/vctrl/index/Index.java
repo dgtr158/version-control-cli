@@ -1,18 +1,24 @@
 package duongtran.vctrl.index;
 
-import duongtran.vctrl.common.Buffer;
-import duongtran.vctrl.common.ByteBuffer;
-import duongtran.vctrl.concurrency.Lockfile;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+
+import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.utils.DirectoryNames;
 import duongtran.vctrl.utils.FileUtil;
+import duongtran.vctrl.utils.HexUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +43,18 @@ public class Index {
 
         this.version = version;
         this.entryMap = new HashMap<>();
-        sizeInBytes = IndexHeader.HEADER_SIZE;
+        sizeInBytes = IndexHeader.HEADER_SIZE + ObjectStorage.OID_SIZE;
+    }
+
+    /**
+     * Calculates the object ID using SHA-1 hash.
+     *
+     * @return SHA1 hash ID
+     * @throws NoSuchAlgorithmException If SHA-1 is not available
+     */
+    private String calculateOid(byte[] content) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(ObjectStorage.HASH_ALGORITHM);
+        return HexUtil.bytesToHex(digest.digest(content));
     }
 
     public void addEntry(Path path, String blobId) throws IOException {
@@ -60,7 +77,7 @@ public class Index {
                    2-bit stage (0-normal, 1-ours, 2-theirs, 3-base)
                    12-bit name length MIN(actual_path_length.countBytes(), 0xFFF)
          */
-        int flags = Math.min(path.toString().getBytes(StandardCharsets.UTF_8).length, MAX_PATH_SIZE);
+        short flags = (short) Math.min(path.toString().getBytes(StandardCharsets.UTF_8).length, MAX_PATH_SIZE);
         return new IndexEntry(
                 stat.getCtimeSeconds()
                 , stat.getCtimeNanos()
@@ -73,40 +90,54 @@ public class Index {
                 , stat.getGid()
                 , stat.getSize()
                 , blobId
-                ,flags
+                , flags
                 , path.toString()
         );
     }
 
+    // TODO: Add locking when implement write update method
     public void writeUpdate() {
-
-
-        try (Lockfile lockfile = new Lockfile(indexPath)) {
-            // hold index file for update
-            lockfile.acquire();
+        try {
 
             // Convert index file into bytes
             byte[] bytes = new byte[sizeInBytes];
-            Buffer buf = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
+            ByteBuffer buf = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
 
+            // Header
             IndexHeader header = new IndexHeader(version, entryMap.size());
             header.toBytes(buf);
 
-            // Convert the index object into byte
-//            lockfile.write(objectId + "\n");
+            // Index Entries
+            for (Map.Entry<Path, IndexEntry> mapEntry : entryMap.entrySet()) {
+                IndexEntry indexEntry = mapEntry.getValue();
+                indexEntry.toBytes(buf);
+            }
 
-            // Flush the bytes into the disk
+            // Calculate index's sha-1 hash
+            // TODO: hash header and entry byte content
+//            calculateOid()
 
-            // Commit the change
-//            lockfile.commit();
+            // Change buffer to write mode
+            buf.flip();
 
-        } catch (Exception e) {
+            // Flush byte[] to disk
+            try (FileChannel channel = FileChannel.open(
+                    indexPath
+                    , StandardOpenOption.CREATE
+                    , StandardOpenOption.WRITE
+                    , StandardOpenOption.TRUNCATE_EXISTING
+            )) {
+                while (buf.hasRemaining()) {
+                    channel.write(buf);
+                }
+                channel.force(true);
+            }
+
+
+        } catch (IOException e) {
             log.warn("Failed to acquire lock: {}\n Retry later", e.getMessage());
         }
 
-        // convert index object into byte
-
-        // flush the bytes into the disk
     }
 
 

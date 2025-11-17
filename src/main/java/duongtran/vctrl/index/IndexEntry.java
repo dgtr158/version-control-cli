@@ -1,6 +1,12 @@
 package duongtran.vctrl.index;
 
-import java.nio.file.Path;
+import duongtran.vctrl.utils.HexUtil;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 
 public class IndexEntry {
 
@@ -58,11 +64,83 @@ public class IndexEntry {
     public int getFlags() { return flags; }
     public String getPath() { return path; }
 
-    public byte[] toBytes() {
-        return null;
+
+
+
+    public void toBytes(ByteBuffer buf) throws IllegalArgumentException {
+        buf.putInt(this.ctimeSeconds);
+        buf.putInt(this.ctimeNanos);
+        buf.putInt(this.mtimeSeconds);
+        buf.putInt(this.mtimeNanos);
+        buf.putInt(this.dev);
+        buf.putInt(this.ino);
+        buf.putInt(this.mode);
+        buf.putInt(this.uid);
+        buf.putInt(this.gid);
+        buf.putInt(this.fileSize);
+
+        // Entry's ObjectID
+        byte[] oidBytes = HexUtil.hexStringToByteArray(this.oid);
+        if (oidBytes.length != 20) {
+            throw new IllegalArgumentException("Index entry's oid is not 20 bytes in size");
+        }
+        buf.put(oidBytes);
+
+        // Flags
+        buf.putShort((short) (this.flags & 0xFFFF));
+
+        // Path
+        byte[] pathBytes = this.path.getBytes(StandardCharsets.UTF_8);
+        buf.put(pathBytes);
+        buf.put((byte) 0); // NULL terminator
+
+        // Padding
+        int totalSize = FIXED_SIZE_IN_BYTE + pathBytes.length + 1;
+        int paddingSize = (8 - (totalSize % 8)) % 8;
+        for (int i = 0; i < paddingSize; i++) {
+            buf.put((byte) 0);
+        }
+
     }
 
-    public void toBytes(byte[] dst) {
+    public static IndexEntry fromBytes(ByteBuffer buf) {
+
+        int ctimeSec = buf.getInt();
+        int ctimeNanos = buf.getInt();
+        int mtimeSec = buf.getInt();
+        int mtimeNanos = buf.getInt();
+        int dev = buf.getInt();
+        int ino = buf.getInt();
+        int mode = buf.getInt();
+        int uid = buf.getInt();
+        int gid = buf.getInt();
+        int fileSize = buf.getInt();
+
+        // Object ID
+        byte[] oidBytes = new byte[20];
+        buf.get(oidBytes);
+        String oid = HexUtil.bytesToHex(oidBytes);
+
+        // Flags
+        int flags = buf.getShort() & 0xFFFF;
+
+        // Paths
+        int start = buf.position();
+        int end = start;
+        while (buf.get(end) != 0) {
+            end++;
+        }
+        byte[] pathBytes = new byte[end - start];
+        buf.get(pathBytes);
+        String path = new String(pathBytes, StandardCharsets.UTF_8);
+        buf.get(); // Consume the NUll terminator
+
+        return new IndexEntry(
+                ctimeSec, ctimeNanos
+                ,mtimeSec, mtimeNanos
+                ,dev, ino, mode, uid, gid, fileSize
+                ,oid, flags, path
+        );
 
     }
 
@@ -71,6 +149,30 @@ public class IndexEntry {
         int totalSize = FIXED_SIZE_IN_BYTE + pathSize;
         int paddingSize = (8 - (totalSize % 8)) % 8;
         return totalSize + paddingSize;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        IndexEntry that = (IndexEntry) o;
+        return ctimeSeconds == that.ctimeSeconds
+                && ctimeNanos == that.ctimeNanos
+                && mtimeSeconds == that.mtimeSeconds
+                && mtimeNanos == that.mtimeNanos
+                && dev == that.dev
+                && ino == that.ino
+                && mode == that.mode
+                && uid == that.uid
+                && gid == that.gid
+                && fileSize == that.fileSize
+                && flags == that.flags
+                && Objects.equals(oid, that.oid)
+                && Objects.equals(path, that.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ctimeSeconds, ctimeNanos, mtimeSeconds, mtimeNanos, dev, ino, mode, uid, gid, fileSize, oid, flags, path);
     }
 
 }

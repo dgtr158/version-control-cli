@@ -7,7 +7,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public abstract class ObjectStorage {
-    private static final String HASH_ALGORITHM = "SHA-1";
+    public static final String HASH_ALGORITHM = "SHA-1";
+    public static final int OID_SIZE = 20;
 
     private String oid; // object ID
 
