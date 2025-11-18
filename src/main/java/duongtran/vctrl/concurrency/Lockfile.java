@@ -2,6 +2,8 @@ package duongtran.vctrl.concurrency;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 
@@ -10,6 +12,7 @@ public class Lockfile implements AutoCloseable {
     private final Path targetFile;
     private final Path lockFile;
     private OutputStream lockStream;
+    private FileChannel fileChannel;
 
     public Lockfile(Path targetFile) {
         this.targetFile = targetFile;
@@ -40,19 +43,46 @@ public class Lockfile implements AutoCloseable {
         lockStream.write(content.getBytes(StandardCharsets.UTF_8));
     }
 
+    public int write(ByteBuffer buf) throws IOException {
+        int bytes = 0;
+        try {
+            fileChannel = FileChannel.open(
+                    lockFile
+                    , StandardOpenOption.CREATE
+                    , StandardOpenOption.WRITE
+                    , StandardOpenOption.TRUNCATE_EXISTING
+            );
+            while (buf.hasRemaining()) {
+                bytes += fileChannel.write(buf);
+            }
+            fileChannel.force(true);
+            commit();
+
+        } catch (FileAlreadyExistsException ex) {
+            rollback();
+            throw new IllegalStateException("Lock are already held by another process: " + lockFile);
+        } catch (NoSuchFileException ex) {
+            rollback();
+            throw new IOException("Directory does not exist: " + lockFile.getParent());
+        } catch (AccessDeniedException ex) {
+            rollback();
+            throw new IOException("Permission denied for: " + lockFile);
+        }
+
+        return bytes;
+    }
+
     public void commit() throws IOException {
-        ensureLockHeld();
-        lockStream.close();
+        // Move file to target
         Files.move(lockFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-        lockStream = null;
+        close();
     }
 
     public void rollback() throws IOException {
-        if (lockStream != null) {
-            lockStream.close();
+        if (lockFile != null) {
             Files.deleteIfExists(lockFile);
-            lockStream = null;
         }
+        close();
     }
 
     private void ensureLockHeld() {
@@ -62,7 +92,14 @@ public class Lockfile implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
-        rollback();
+    public void close() throws IOException {
+        if (lockStream != null) {
+            lockStream.close();
+            lockStream = null;
+        }
+        if (fileChannel != null && fileChannel.isOpen()) {
+            fileChannel.close();
+            fileChannel = null;
+        }
     }
 }

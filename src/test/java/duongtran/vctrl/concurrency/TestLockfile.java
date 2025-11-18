@@ -1,8 +1,11 @@
 package duongtran.vctrl.concurrency;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +14,9 @@ import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TestLockfile {
+
+    @TempDir
+    Path tempDir;
 
     @Test
     void testAcquireCreatesLockFileSuccessfully() throws IOException {
@@ -86,5 +92,28 @@ class TestLockfile {
             Files.deleteIfExists(targetFile.resolveSibling(targetFile.getFileName() + ".lock"));
             Files.deleteIfExists(targetFile);
         }
+    }
+
+    @Test
+    void testMoveContentToTarget() throws Exception {
+        Path target = tempDir.resolve("index");
+        Lockfile lockFile = new Lockfile(target);
+
+        String content = "Hello, world";
+        byte[] data = content.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer buf = ByteBuffer.wrap(data);
+        int writtenBytes = lockFile.write(buf);
+
+        assertEquals(data.length, writtenBytes);
+        assertTrue(Files.exists(target));
+        assertArrayEquals(data, Files.readAllBytes(target));
+        assertFalse(Files.exists(target.resolveSibling("index.lock")));
+
+        // Override existing content
+        String newContent = "Hello, Duong";
+        buf = ByteBuffer.wrap(newContent.getBytes(StandardCharsets.UTF_8));
+        lockFile.write(buf);
+        assertEquals(newContent, Files.readString(target));
+
     }
 }

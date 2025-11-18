@@ -15,7 +15,7 @@ import java.util.List;
 
 public class AddAction {
 
-    private static final Logger logger = LoggerFactory.getLogger(AddAction.class);
+    private static final Logger log = LoggerFactory.getLogger(AddAction.class);
 
     private final Workspace workspace;
     private final Database database;
@@ -29,7 +29,7 @@ public class AddAction {
         try {
             // Init index with version 2
             // Create 12-bytes header
-            Index index = new Index(2);
+            Index index = new Index();
 
             // list all files in the working directory
             // for each file, create a Blob object and store
@@ -45,10 +45,10 @@ public class AddAction {
                 }
             }
 
-            index.writeUpdate();
+            index.write();
 
         } catch (IOException | NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            log.error("Failed to write index file: {}\n", e.getMessage());
             throw new IOException("Failed to add index");
         }
     }

@@ -4,8 +4,6 @@ import duongtran.vctrl.utils.HexUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 
 public class IndexEntry {
