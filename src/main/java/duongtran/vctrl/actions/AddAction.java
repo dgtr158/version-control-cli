@@ -1,8 +1,8 @@
 package duongtran.vctrl.actions;
 
+import duongtran.vctrl.index.Index;
 import duongtran.vctrl.metadata.Workspace;
 import duongtran.vctrl.storage.Database;
-import duongtran.vctrl.index.Index;
 import duongtran.vctrl.storage.objects.Blob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

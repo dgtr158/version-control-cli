@@ -1,6 +1,6 @@
 package duongtran.vctrl.index;
 
-import duongtran.vctrl.utils.HexUtil;
+import duongtran.vctrl.utils.Utils;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +14,7 @@ public class IndexEntry {
 
     public static final int FIXED_SIZE_IN_BYTE = 62;
 
+    private int size;
     private final int ctimeSeconds;
     private final int ctimeNanos;
     private final int mtimeSeconds;
@@ -46,8 +47,10 @@ public class IndexEntry {
         this.oid = oid;
         this.flags = flags;
         this.path = path;
+        this.size = getSizeInBytes();
     }
 
+    public int getSize() { return size; }
     public long getCtimeSeconds() { return ctimeSeconds; }
     public int getCtimeNanos() { return ctimeNanos; }
     public long getMtimeSeconds() { return mtimeSeconds; }
@@ -63,8 +66,6 @@ public class IndexEntry {
     public String getPath() { return path; }
 
 
-
-
     public void toBytes(ByteBuffer buf) throws IllegalArgumentException {
         buf.putInt(this.ctimeSeconds);
         buf.putInt(this.ctimeNanos);
@@ -78,7 +79,7 @@ public class IndexEntry {
         buf.putInt(this.fileSize);
 
         // Entry's ObjectID
-        byte[] oidBytes = HexUtil.hexStringToByteArray(this.oid);
+        byte[] oidBytes = Utils.hexStringToByteArray(this.oid);
         if (oidBytes.length != 20) {
             throw new IllegalArgumentException("Index entry's oid is not 20 bytes in size");
         }
@@ -117,7 +118,7 @@ public class IndexEntry {
         // Object ID
         byte[] oidBytes = new byte[20];
         buf.get(oidBytes);
-        String oid = HexUtil.bytesToHex(oidBytes);
+        String oid = Utils.bytesToHex(oidBytes);
 
         // Flags
         int flags = buf.getShort() & 0xFFFF;
@@ -131,7 +132,13 @@ public class IndexEntry {
         byte[] pathBytes = new byte[end - start];
         buf.get(pathBytes);
         String path = new String(pathBytes, StandardCharsets.UTF_8);
-        buf.get(); // Consume the NUll terminator
+
+        // Consume the NUll terminators
+        end = buf.position();
+        while (buf.hasRemaining() && buf.get(end) == 0) {
+            buf.get();
+            end++;
+        }
 
         return new IndexEntry(
                 ctimeSec, ctimeNanos
@@ -142,7 +149,7 @@ public class IndexEntry {
 
     }
 
-    public int getSizeInBytes() {
+    private int getSizeInBytes() {
         int pathSize = path.getBytes(java.nio.charset.StandardCharsets.UTF_8).length + 1; // include NULL terminator
         int totalSize = FIXED_SIZE_IN_BYTE + pathSize;
         int paddingSize = (8 - (totalSize % 8)) % 8;

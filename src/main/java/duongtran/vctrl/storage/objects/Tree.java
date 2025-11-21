@@ -5,7 +5,7 @@ import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.storage.ObjectType;
 import duongtran.vctrl.utils.DirectoryNames;
-import duongtran.vctrl.utils.HexUtil;
+import duongtran.vctrl.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -39,7 +39,7 @@ public class Tree extends ObjectStorage {
                 byte[] entryData = entryHeader.getBytes(StandardCharsets.ISO_8859_1);
                 out.write(entryData);
 
-                byte[] objectID = HexUtil.hexStringToByteArray(entry.getOid());
+                byte[] objectID = Utils.hexStringToByteArray(entry.getOid());
                 out.write(objectID);
             }
         } catch (IOException e) {

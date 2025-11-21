@@ -5,7 +5,8 @@ import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class IndexEntryTest {
 
@@ -28,28 +29,21 @@ public class IndexEntryTest {
         String path = "test.txt";
 
         IndexEntry expected = new IndexEntry(
-                ctimeSeconds
-                ,ctimeNanos
-                ,mtimeSeconds
-                ,mtimeNanos
-                ,dev
-                ,ino
-                ,mode
-                ,uid
-                ,gid
-                ,fileSize
-                ,oid
-                ,flags
-                ,path
+                ctimeSeconds,ctimeNanos
+                ,mtimeSeconds,mtimeNanos
+                ,dev,ino,mode,uid
+                ,gid,fileSize
+                ,oid,flags,path
         );
         int expectedSize = 72;
 
-        ByteBuffer buffer = ByteBuffer.allocate(expected.getSizeInBytes());
+        ByteBuffer buffer = ByteBuffer.allocate(expected.getSize());
         expected.toBytes(buffer);
         buffer.flip();
 
         IndexEntry actual = IndexEntry.fromBytes(buffer);
-        assertEquals(expectedSize, actual.getSizeInBytes());
+        assertFalse(buffer.hasRemaining());
+        assertEquals(expectedSize, actual.getSize());
         assertEquals(expected, actual);
 
     }

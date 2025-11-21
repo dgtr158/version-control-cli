@@ -1,25 +1,26 @@
 package duongtran.vctrl.index;
 
-import java.nio.ByteBuffer;
-
 import duongtran.vctrl.concurrency.Lockfile;
 import duongtran.vctrl.storage.ObjectStorage;
+import duongtran.vctrl.storage.objects.ObjectID;
 import duongtran.vctrl.utils.DirectoryNames;
 import duongtran.vctrl.utils.FileUtil;
-import duongtran.vctrl.utils.HexUtil;
+import duongtran.vctrl.utils.Utils;
+import jdk.jshell.execution.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
 public class Index {
 
@@ -33,15 +34,22 @@ public class Index {
     private final Path indexPath;
 
     private int sizeInBytes;
+    private final IndexHeader header;
     private Map<Path, IndexEntry> entryMap;
-    private String indexId;
+    private ObjectID indexId;
 
     public Index() {
         File gitPath = new File(DirectoryNames.WORKING_DIRECTORY, DirectoryNames.ROOT_DIR_NAME);
         File indexPath = new File(gitPath, DirectoryNames.INDEX);
         this.indexPath = indexPath.toPath();
-        this.entryMap = new HashMap<>();
+
+        this.header = new IndexHeader(VERSION, 0);
+        this.entryMap = new TreeMap<>();
         this.sizeInBytes = IndexHeader.HEADER_SIZE + ObjectStorage.OID_SIZE;
+    }
+
+    public IndexHeader getHeader() {
+        return this.header;
     }
 
     public Path getIndexPath() {
@@ -56,7 +64,7 @@ public class Index {
         return entryMap;
     }
 
-    public String getIndexId() {
+    public ObjectID getIndexId() {
         return indexId;
     }
 
@@ -66,10 +74,11 @@ public class Index {
 
     public void setEntryMap(Map<Path, IndexEntry> entryMap) {
         this.entryMap = entryMap;
+        this.header.setEntryCount(entryMap.size());
     }
 
-    public void setIndexId(String indexId) {
-        if (this.indexId != null) {
+    public void setIndexId(ObjectID indexId) {
+        if (this.indexId == null) {
             this.indexId = indexId;
         }
     }
@@ -81,7 +90,8 @@ public class Index {
 
         IndexEntry entry = createIndexEntry(path, blobId, stat);
         entryMap.put(path, entry);
-        sizeInBytes += entry.getSizeInBytes();
+        sizeInBytes += entry.getSize();
+        this.header.incrementEntryCount();
 
     }
 
@@ -137,8 +147,7 @@ public class Index {
 
     public void toBytes(ByteBuffer buf) throws NoSuchAlgorithmException {
         // Header
-        IndexHeader header = new IndexHeader(VERSION, this.entryMap.size());
-        header.toBytes(buf);
+        this.header.toBytes(buf);
 
         // Index Entries
         for (Map.Entry<Path, IndexEntry> mapEntry : this.entryMap.entrySet()) {
@@ -147,21 +156,26 @@ public class Index {
         }
 
         // Calculate index's sha-1 hash
+        ObjectID objectID = computeChecksum(buf);
+
+        // Update the index's ID
+        this.indexId = new ObjectID(objectID.getValue());
+    }
+
+    private ObjectID computeChecksum(ByteBuffer buf) throws NoSuchAlgorithmException {
         int dataLen = buf.position();
         byte[] hashInput = new byte[dataLen];
         buf.rewind();
         buf.get(hashInput, 0, dataLen);
-        String hashID = calculateOid(hashInput);
-        byte[] checksum = HexUtil.hexStringToByteArray(hashID);
+        ObjectID objectID = ObjectID.fromBytes(hashInput);
+        byte[] checksum = Utils.hexStringToByteArray(objectID.getValue());
         buf.put(checksum);
-
-        // Update the index's ID
-        this.indexId = hashID;
+        return objectID;
     }
 
     public static Index fromBytes(ByteBuffer buf) throws Exception {
         int size = 0;
-        Map<Path, IndexEntry> entryMap = new HashMap<>();
+        Map<Path, IndexEntry> entryMap = new TreeMap<>();
         Index index = new Index();
 
         // Header
@@ -173,17 +187,16 @@ public class Index {
         for (int i = 0; i < numEntries; i++) {
             // Create index's entries
             IndexEntry indexEntry = IndexEntry.fromBytes(buf);
-            Path path = Paths.get(indexEntry.getPath());
+            Path path = Paths.get(indexEntry.getPath()).normalize();
             entryMap.put(path, indexEntry);
 
             // Update index's size
-            size += indexEntry.getSizeInBytes();
+            size += indexEntry.getSize();
         }
 
         // Index's ID
-        byte[] idBytes = new byte[20];
-        buf.get(idBytes);
-        String id = HexUtil.bytesToHex(idBytes);
+        ObjectID id = ObjectID.fromBytes(buf);
+        size += ObjectID.SIZE_IN_BYTES;
 
         // Set index's attributes
         index.setEntryMap(entryMap);
@@ -193,15 +206,16 @@ public class Index {
         return index;
     }
 
-    /**
-     * Calculates the object ID using SHA-1 hash.
-     *
-     * @return SHA1 hash ID
-     * @throws NoSuchAlgorithmException If SHA-1 is not available
-     */
-    private String calculateOid(byte[] content) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance(ObjectStorage.HASH_ALGORITHM);
-        return HexUtil.bytesToHex(digest.digest(content));
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Index index = (Index) o;
+        return sizeInBytes == index.sizeInBytes && Objects.equals(indexPath, index.indexPath) && Utils.mapsEqual(entryMap, index.entryMap) && Objects.equals(indexId, index.indexId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(indexPath, sizeInBytes, entryMap, indexId);
     }
 
 }

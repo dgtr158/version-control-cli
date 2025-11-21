@@ -10,7 +10,7 @@ public class IndexHeader {
     public static final int HEADER_SIZE = 12;
 
     private final int version;
-    private final int entryCount;
+    private int entryCount;
 
     public IndexHeader(int version, int entryCount) {
         this.version = version;
@@ -23,6 +23,14 @@ public class IndexHeader {
 
     public int getVersion() {
         return version;
+    }
+
+    public void setEntryCount(int count) {
+        this.entryCount = count;
+    }
+
+    public void incrementEntryCount() {
+        this.entryCount++;
     }
 
     /**

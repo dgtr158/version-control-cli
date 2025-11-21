@@ -1,6 +1,6 @@
 package duongtran.vctrl.storage;
 
-import duongtran.vctrl.utils.HexUtil;
+import duongtran.vctrl.utils.Utils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -26,7 +26,7 @@ public abstract class ObjectStorage {
             return;
         }
         MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
-        this.oid = HexUtil.bytesToHex(digest.digest(content));
+        this.oid = Utils.bytesToHex(digest.digest(content));
     }
 
     protected byte[] formatContent() {

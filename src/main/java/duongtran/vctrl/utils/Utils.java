@@ -1,6 +1,12 @@
 package duongtran.vctrl.utils;
 
-public final class HexUtil {
+import duongtran.vctrl.index.IndexEntry;
+
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Objects;
+
+public final class Utils {
 
     // Convert byte[] to hex string
     public static String bytesToHex(byte[] bytes) {
@@ -27,6 +33,15 @@ public final class HexUtil {
             data[i / 2] = (byte) ((high << 4) + low);
         }
         return data;
+    }
+
+    public static boolean mapsEqual(Map<Path, IndexEntry> m1, Map<Path, IndexEntry> m2) {
+        if (m1.size() != m2.size()) return false;
+        for (Path key : m1.keySet()) {
+            if (!m2.containsKey(key)) return false;
+            if (!Objects.equals(m1.get(key), m2.get(key))) return false;
+        }
+        return true;
     }
 
 }
