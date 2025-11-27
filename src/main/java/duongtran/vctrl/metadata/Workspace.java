@@ -20,8 +20,8 @@ public class Workspace {
     private Workspace() {}
 
     // Method to initialize the Workspace
-    public static void initialize() {
-        getInstance().rootPath = Paths.get(DirectoryNames.WORKING_DIRECTORY);
+    public static void initialize(String path) {
+        getInstance().rootPath = Paths.get(path);
     }
 
 

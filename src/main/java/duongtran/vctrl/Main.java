@@ -24,7 +24,7 @@ public class Main {
 
         // Initialize Workspace at startup
         // TODO: Remove after done storing changes part
-        Workspace.initialize();
+        Workspace.initialize(DirectoryNames.WORKING_DIRECTORY);
         Database.initialize();
 
         switch (command) {
