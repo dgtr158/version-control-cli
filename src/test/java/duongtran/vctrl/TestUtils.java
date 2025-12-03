@@ -51,6 +51,7 @@ public class TestUtils {
             // Init workspace object
             Workspace.initialize(rootPath.toString());
 
+
         } catch (IOException e) {
             throw new RuntimeException("Failed to prepare test workspace at: " + rootPath, e);
         }

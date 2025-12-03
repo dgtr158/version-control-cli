@@ -1,6 +1,7 @@
 package duongtran.vctrl.index;
 
 import duongtran.vctrl.concurrency.Lockfile;
+import duongtran.vctrl.metadata.Workspace;
 import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.storage.objects.ObjectID;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -39,8 +40,8 @@ public class Index {
     private ObjectID indexId;
 
     public Index() {
-        File gitPath = new File(DirectoryNames.WORKING_DIRECTORY, DirectoryNames.ROOT_DIR_NAME);
-        File indexPath = new File(gitPath, DirectoryNames.INDEX);
+        File rootPath = new File(Workspace.getInstance().getRootPath().toString());
+        File indexPath = new File(rootPath, DirectoryNames.INDEX);
         this.indexPath = indexPath.toPath();
 
         this.header = new IndexHeader(VERSION, 0);
