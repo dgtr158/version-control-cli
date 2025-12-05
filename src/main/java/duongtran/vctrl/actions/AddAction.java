@@ -28,7 +28,7 @@ public class AddAction {
     public void execute() throws IOException {
         try {
             // Init index with version 2
-            // Create 12-bytes header
+            // Creates a 12-bytes header
             Index index = new Index();
 
             // list all files in the working directory

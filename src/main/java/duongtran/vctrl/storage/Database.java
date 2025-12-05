@@ -1,5 +1,6 @@
 package duongtran.vctrl.storage;
 
+import duongtran.vctrl.metadata.Workspace;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +34,8 @@ public class Database {
     private Database() {}
 
     public static void initialize() {
-        File gitPath = new File(DirectoryNames.WORKING_DIRECTORY, DirectoryNames.ROOT_DIR_NAME);
-        File dbPath = new File(gitPath, DirectoryNames.OBJECTS);
-        getInstance().dbPath = dbPath.toPath();
+        Path rootPath = Workspace.getInstance().getRootPath();
+        getInstance().dbPath = rootPath.resolve(DirectoryNames.OBJECTS);
     }
 
     public static Database getInstance() {

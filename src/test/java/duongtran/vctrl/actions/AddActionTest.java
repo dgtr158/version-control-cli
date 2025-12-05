@@ -32,7 +32,7 @@ public class AddActionTest {
     void setup() {
         TestUtils.createTestWorkspace();
         workspace = Workspace.getInstance();
-        log.info(workspace.toString());
+        database = Database.getInstance();
     }
 
     @AfterEach
@@ -43,35 +43,37 @@ public class AddActionTest {
 
 
     @Test
-    void testSerializeDeserialize() {
+    void testAddActionExecutesSuccessfully() {
 
         AddAction addAction;
 
         try {
+            // Initialize workspace with some test files
+            Path testFile1 = workspace.getRootPath().resolve("file1.txt");
+            Files.writeString(testFile1, "Test content 1");
+            Path testFile2 = workspace.getRootPath().resolve("file2.txt");
+            Files.writeString(testFile2, "Test content 2");
+
             // Execute action
             addAction = new AddAction();
             addAction.execute();
 
-            // Validate
-            // Load index file, Convert it into ByteBuffer
-            Path indexPath = Workspace.getInstance().getRootPath().resolve(DirectoryNames.INDEX);
+            // Validate that index contains the correct entries
+            Path indexPath = workspace.getRootPath().resolve(DirectoryNames.INDEX);
+            assertTrue(Files.exists(indexPath));
+
             byte[] indexAllBytes = Files.readAllBytes(indexPath);
             ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
             Index actual = Index.fromBytes(byteBuffer);
 
-            // Validate header
-            IndexHeader header = actual.getHeader();
-            assertEquals(3, header.getEntryCount());
-            assertEquals(Index.VERSION, header.getVersion());
-
-            // Validate entries
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-
+            assertEquals(2, actual.getHeader().getEntryCount());
+            assertTrue(actual.getEntryMap().containsKey(testFile1));
+            assertTrue(actual.getEntryMap().containsKey(testFile2));
 
         } catch (Exception e) {
-            log.error("Failed to execute add action: {}", e.getMessage());
+            log.error("Test failed: {}", e.getMessage());
+            fail();
         }
-
 
     }
 

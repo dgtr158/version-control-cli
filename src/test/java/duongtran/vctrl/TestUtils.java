@@ -2,6 +2,7 @@ package duongtran.vctrl;
 
 import duongtran.vctrl.actions.AddActionTest;
 import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.storage.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +51,9 @@ public class TestUtils {
 
             // Init workspace object
             Workspace.initialize(rootPath.toString());
+
+            // Init Database
+            Database.initialize();
 
 
         } catch (IOException e) {
