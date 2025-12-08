@@ -1,25 +1,75 @@
 package duongtran.vctrl.index;
 
+import duongtran.vctrl.TestUtils;
+import duongtran.vctrl.actions.AddAction;
+import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectStorage;
+import duongtran.vctrl.utils.DirectoryNames;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class IndexTest {
 
     private static final Logger log = LoggerFactory.getLogger(IndexTest.class);
+
+    // Vctrl instances
+    Workspace workspace;
+    Database database;
+    Path rootPath;
+    Path indexPath;
+
+    // Mock directories
+    Path testFile11;
+    Path testFile12;
+    Path testFile21;
+    Path firstDir;
+    Path secondDir;
+
+
+    @BeforeEach
+    void setup() throws IOException {
+        TestUtils.createTestWorkspace();
+        workspace = Workspace.getInstance();
+        database = Database.getInstance();
+
+        // Root path
+        rootPath = workspace.getRootPath();
+        indexPath = rootPath.resolve(DirectoryNames.INDEX);
+
+        // Initialize test directories and files
+        firstDir = rootPath.resolve("firstDir");
+        secondDir = rootPath.resolve("secondDir");
+
+        testFile11 = firstDir.resolve("file11.txt");
+        testFile12 = firstDir.resolve("file12.txt");
+        testFile21 = secondDir.resolve("file21.txt");
+
+        // Create folders
+        Files.createDirectories(firstDir);
+        Files.createDirectories(secondDir);
+
+    }
+
+    @AfterEach
+    void tearDown() {
+        TestUtils.removeWorkspace();
+        workspace = null;
+    }
 
     @Test
     void testSerializeDeserialize() {
@@ -60,13 +110,56 @@ public class IndexTest {
             assertEquals(expected, actual);
 
         } catch (NoSuchAlgorithmException ex) {
-            log.error("Error when creating object ID: {}" , ex.getMessage());
+            log.error("Error when creating object ID: {}", ex.getMessage());
             fail();
         } catch (Exception ex) {
-            log.error("Error when convert the index into bytes: {}" , ex.getMessage());
+            log.error("Error when convert the index into bytes: {}", ex.getMessage());
             fail();
         }
 
+    }
+
+    @Test
+    void testLoadFromDisk() {
+
+        AddAction addAction;
+
+        try {
+
+            // Create files in the firstDir
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Create a file in the secondDir
+            TestUtils.writeText(testFile21, "Test content 21");
+
+            // Execute action
+            addAction = new AddAction();
+            addAction.execute(rootPath);
+
+            // Validate that index contains the correct entries
+            Path indexPath = rootPath.resolve(DirectoryNames.INDEX);
+            assertTrue(Files.exists(indexPath));
+
+            // Load index from disk
+            Index actual = Index.loadFromDisk();
+
+            // Validate entries
+            List<Path> expectedEntries = Arrays.asList(
+                    testFile11
+                    , testFile12
+                    , testFile21
+            );
+            assertEquals(3, actual.getHeader().getEntryCount());
+            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
+            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            assertIterableEquals(expectedEntries, actualEntries);
+
+
+        } catch (Exception e) {
+            log.error("Failed to load index from disk");
+            fail();
+        }
     }
 
     private Map<Path, IndexEntry> createIndexEntryMap(int num, Instant time) {
@@ -81,7 +174,7 @@ public class IndexTest {
     private IndexEntry createIndexEntry(Instant time, int i) {
         int ctimeSeconds = (int) time.getEpochSecond();
         int ctimeNanos = time.getNano();
-        int mtimeSeconds  = (int) time.getEpochSecond();
+        int mtimeSeconds = (int) time.getEpochSecond();
         int mtimeNanos = time.getNano();
         int dev = 2048;
         int ino = 62000161;
@@ -94,13 +187,12 @@ public class IndexTest {
         String path = "test" + i + ".txt";
 
         return new IndexEntry(
-                ctimeSeconds,ctimeNanos
-                ,mtimeSeconds,mtimeNanos,dev,ino
-                ,mode,uid,gid,fileSize
-                ,oid,flags,path
+                ctimeSeconds, ctimeNanos
+                , mtimeSeconds, mtimeNanos, dev, ino
+                , mode, uid, gid, fileSize
+                , oid, flags, path
         );
     }
-
 
 
 }

@@ -27,6 +27,8 @@ public class Main {
         Workspace.initialize(DirectoryNames.WORKING_DIRECTORY);
         Database.initialize();
 
+        Workspace workspace = Workspace.getInstance();
+
         switch (command) {
             case ActionConstants.INIT:
                 String basePath = args.length == 2 ? args[1] : null;
@@ -38,7 +40,7 @@ public class Main {
                 break;
             case ActionConstants.ADD:
                 AddAction addAction = new AddAction();
-                addAction.execute();
+                addAction.execute(workspace.getRootPath());
                 break;
 
 

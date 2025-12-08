@@ -7,7 +7,6 @@ import duongtran.vctrl.storage.objects.ObjectID;
 import duongtran.vctrl.utils.DirectoryNames;
 import duongtran.vctrl.utils.FileUtil;
 import duongtran.vctrl.utils.Utils;
-import jdk.jshell.execution.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +15,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
@@ -174,7 +174,7 @@ public class Index {
         return objectID;
     }
 
-    public static Index fromBytes(ByteBuffer buf) throws Exception {
+    public static Index fromBytes(ByteBuffer buf) {
         int size = 0;
         Map<Path, IndexEntry> entryMap = new TreeMap<>();
         Index index = new Index();
@@ -205,6 +205,18 @@ public class Index {
         index.setIndexId(id);
 
         return index;
+    }
+
+    /**
+     * Load the index from the disk.
+     *
+     * @return the loaded index
+     * @throws Exception If There's failure in reading the index file.
+     */
+    public static Index loadFromDisk() throws IOException {
+        byte[] indexAllBytes = Files.readAllBytes(Workspace.getInstance().getRootPath().resolve(DirectoryNames.INDEX));
+        ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
+        return Index.fromBytes(byteBuffer);
     }
 
     @Override

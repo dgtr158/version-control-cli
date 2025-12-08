@@ -1,6 +1,5 @@
 package duongtran.vctrl;
 
-import duongtran.vctrl.actions.AddActionTest;
 import duongtran.vctrl.metadata.Workspace;
 import duongtran.vctrl.storage.Database;
 import org.slf4j.Logger;
@@ -30,24 +29,12 @@ public class TestUtils {
      */
     public static void createTestWorkspace() {
         Path rootPath = Paths.get(TEST_ROOT_PATH, "workspace");
-        Path firstDir = rootPath.resolve("firstDir");
-        Path secondDir = rootPath.resolve("secondDir");
+
 
         try {
             if (Files.exists(rootPath)) {
                 deleteRecursively(rootPath);
             }
-
-            // Create folders
-            Files.createDirectories(firstDir);
-            Files.createDirectories(secondDir);
-
-            // Create files in the firstDir
-            writeText(firstDir.resolve("foo.txt"), "Foo in the first directory");
-            writeText(firstDir.resolve("bar.txt"), "Bar in the first directory");
-
-            // Create a file in the secondDir
-            writeText(secondDir.resolve("bas.txt"), "Bas in the second directory");
 
             // Init workspace object
             Workspace.initialize(rootPath.toString());
@@ -73,7 +60,7 @@ public class TestUtils {
 
     }
 
-    private static void writeText(Path file, String content) throws IOException {
+    public static void writeText(Path file, String content) throws IOException {
         Files.writeString(file, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 

@@ -41,7 +41,7 @@ public class CommitAction {
     public void execute() throws IOException {
         try {
             storeWorkspaceFiles();
-            logger.info("Successfully committed files: {}", workspace.listFiles());
+            logger.info("Successfully committed files: {}", workspace.listFiles(workspace.getRootPath()));
         } catch (IOException | NoSuchAlgorithmException e) {
             throw new IOException("Failed to commit changes", e);
         }

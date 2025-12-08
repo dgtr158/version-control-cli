@@ -46,7 +46,7 @@ public class IndexHeader {
                 .putInt(entryCount);
     }
 
-    public static IndexHeader fromBytes(ByteBuffer buf) throws Exception {
+    public static IndexHeader fromBytes(ByteBuffer buf) {
         // Get the signature
         byte[] signatureBytes = new byte[4];
         buf.get(signatureBytes);

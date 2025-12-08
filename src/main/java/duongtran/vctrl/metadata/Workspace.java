@@ -57,18 +57,15 @@ public class Workspace {
      *         the reserved root directory. Returns an empty list if the root path is unset
      *         or if an I/O error occurs.
      */
-    // List all files in the workspace
-    public List<Path> listFiles() {
-        if (rootPath == null) {
-            System.out.println("Workspace root is not set.");
-            return new ArrayList<>();
+    public List<Path> listFiles(Path path) {
+        if (path == null) {
+            path = rootPath;
         }
-
-        try (Stream<Path> stream = Files.list(rootPath)) {
+        try (Stream<Path> stream = Files.list(path)) {
 
             return stream
-                    .filter(path -> !path.equals(rootPath))
-                    .filter(path -> !path.getFileName().toString().contains(File.separator + DirectoryNames.ROOT_DIR_NAME))
+                    .filter(p -> !p.equals(rootPath))
+                    .filter(p -> !p.getFileName().toString().contains(File.separator + DirectoryNames.ROOT_DIR_NAME))
                     .collect(Collectors.toList());
         } catch (IOException e) {
             System.out.println("Error reading files: " + e.getMessage());
