@@ -46,6 +46,7 @@ public class AddAction {
     private void execute(Path addPath, Index index) throws IOException, NoSuchAlgorithmException {
         if (!Files.isDirectory(addPath)) {
             addFile(addPath, index);
+            return;
         }
         // If addPath is a directory, list all files in the provided path
         // For each file, create a Blob object and store in DB

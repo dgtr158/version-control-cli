@@ -10,7 +10,7 @@ import java.nio.file.*;
 public class Lockfile implements AutoCloseable {
 
     private final Path targetFile;
-    private final Path lockFile;
+    private Path lockFile;
     private OutputStream lockStream;
     private FileChannel fileChannel;
 
@@ -72,6 +72,10 @@ public class Lockfile implements AutoCloseable {
         return bytes;
     }
 
+    public byte[] read(Path path) throws IOException{
+        return Files.readAllBytes(path);
+    }
+
     public void commit() throws IOException {
         // Move file to target
         Files.move(lockFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
@@ -93,6 +97,10 @@ public class Lockfile implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
+        if (lockFile != null) {
+            Files.deleteIfExists(lockFile);
+            lockFile = null;
+        }
         if (lockStream != null) {
             lockStream.close();
             lockStream = null;

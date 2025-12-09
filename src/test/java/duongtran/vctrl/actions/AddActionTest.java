@@ -100,7 +100,6 @@ public class AddActionTest {
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
-            e.printStackTrace();
             log.error("Test failed: {}", e.getMessage());
             fail();
         }
@@ -207,10 +206,14 @@ public class AddActionTest {
             addAction.execute(testFile12);
             addAction.execute(testFile21);
 
-            // Add second time
+            // Add the second time
             addAction.execute(testFile11);
             addAction.execute(testFile12);
             addAction.execute(testFile21);
+
+            // Add the third time
+            addAction.execute(firstDir);
+            addAction.execute(secondDir);
 
             // Load index from disk
             Index actual = Index.loadFromDisk();
@@ -227,7 +230,6 @@ public class AddActionTest {
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
-            e.printStackTrace();
             log.error("Test failed: {}", e.getMessage());
             fail();
         }

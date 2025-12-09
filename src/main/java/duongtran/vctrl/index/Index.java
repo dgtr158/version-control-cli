@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
@@ -85,11 +84,17 @@ public class Index {
     }
 
     public void addEntry(Path path, String blobId) throws IOException {
+        // Get file stat
         FileStat stat;
         if (FileUtil.isWindows()) stat = new WindowFileStat(path);
         else stat = new UnixFileStat(path);
 
+        // Create the index entry
         IndexEntry entry = createIndexEntry(path, blobId, stat);
+
+        // If the new entry is already in the index, do nothing
+        if (!isChanged(entry)) return;
+
         entryMap.put(path, entry);
         sizeInBytes += entry.getSize();
         this.header.incrementEntryCount();
@@ -211,12 +216,32 @@ public class Index {
      * Load the index from the disk.
      *
      * @return the loaded index
-     * @throws Exception If There's failure in reading the index file.
      */
     public static Index loadFromDisk() throws IOException {
-        byte[] indexAllBytes = Files.readAllBytes(Workspace.getInstance().getRootPath().resolve(DirectoryNames.INDEX));
-        ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
-        return Index.fromBytes(byteBuffer);
+        Path indexPath = Workspace.getInstance().getRootPath().resolve(DirectoryNames.INDEX);
+        try (Lockfile in = new Lockfile(indexPath)) {
+            in.acquire();
+            byte[] indexAllBytes = in.read(indexPath);
+            in.close();
+            ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
+            return Index.fromBytes(byteBuffer);
+        }
+    }
+
+    /**
+     * Checks if the given {@code IndexEntry} is already present in the index and is identical
+     * to the corresponding entry.
+     *
+     * @param entry the {@code IndexEntry} to be checked
+     * @return {@code true} if the entry exists and is identical to the given entry;
+     *         {@code false} otherwise
+     */
+    private boolean isChanged(IndexEntry entry) {
+        Path entryPath = Paths.get(entry.getPath());
+        IndexEntry existingEntry = entryMap.get(entryPath);
+
+        if (existingEntry == null) return true;
+        return !existingEntry.equals(entry);
     }
 
     @Override
