@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -217,12 +218,23 @@ public class Index {
      *
      * @return the loaded index
      */
-    public static Index loadFromDisk() throws IOException {
+    public static Index loadFromDisk() throws IOException, NoSuchAlgorithmException {
         Path indexPath = Workspace.getInstance().getRootPath().resolve(DirectoryNames.INDEX);
         try (Lockfile in = new Lockfile(indexPath)) {
             in.acquire();
             byte[] indexAllBytes = in.read(indexPath);
             in.close();
+            
+            // Verify checksum
+            int separator = indexAllBytes.length - ObjectID.SIZE_IN_BYTES;
+            byte[] contentBytes = Arrays.copyOfRange(indexAllBytes, 0, separator);
+            byte[] checksumBytes = Arrays.copyOfRange(indexAllBytes, separator, indexAllBytes.length);
+
+            ObjectID content = ObjectID.fromBytes(contentBytes);
+            ObjectID checksum = ObjectID.fromBytes(ByteBuffer.wrap(checksumBytes));
+            if (!content.equals(checksum)) {
+                throw new IOException("Failed to load index file, checksum failed");
+            }
             ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
             return Index.fromBytes(byteBuffer);
         }

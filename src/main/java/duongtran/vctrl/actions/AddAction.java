@@ -25,7 +25,7 @@ public class AddAction {
         this.database = Database.getInstance();
     }
 
-    public void execute(Path addPath) throws IOException {
+    public void execute(Path addPath) {
         try {
 
             Index index;
@@ -39,7 +39,6 @@ public class AddAction {
 
         } catch (IOException | NoSuchAlgorithmException e) {
             log.error("Failed to write index file: {}\n", e.getMessage());
-            throw new IOException("Failed to add index");
         }
     }
 

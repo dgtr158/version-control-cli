@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.*;
@@ -120,7 +121,7 @@ public class IndexTest {
     }
 
     @Test
-    void testLoadFromDisk() {
+    void testLoadFromDiskSuccessfully() {
 
         AddAction addAction;
 
@@ -160,6 +161,45 @@ public class IndexTest {
             log.error("Failed to load index from disk");
             fail();
         }
+    }
+
+    @Test
+    void testLoadFromDiskFailedChecksum() {
+
+        AddAction addAction;
+
+        try {
+
+            // Create files in the firstDir
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Create a file in the secondDir
+            TestUtils.writeText(testFile21, "Test content 21");
+
+            // Execute action
+            addAction = new AddAction();
+            addAction.execute(rootPath);
+
+            // Append some content into the index file
+            String newContent = "new content for checksum fail";
+            Files.writeString(
+                    indexPath
+                    , newContent
+                    , StandardOpenOption.CREATE
+                    , StandardOpenOption.APPEND
+            );
+
+            // Execute the load the index file from disk
+            Index.loadFromDisk();
+
+            log.error("Checksum failed, need to throw Exception");
+            fail();
+
+        } catch (Exception ex) {
+            assertEquals("Failed to load index file, checksum failed", ex.getMessage());
+        }
+
     }
 
     private Map<Path, IndexEntry> createIndexEntryMap(int num, Instant time) {
