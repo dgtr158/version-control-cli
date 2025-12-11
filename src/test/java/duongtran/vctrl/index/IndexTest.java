@@ -2,7 +2,7 @@ package duongtran.vctrl.index;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.actions.AddAction;
-import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.Workspace;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -225,12 +225,13 @@ public class IndexTest {
         String oid = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
         int flags = 0x0A5B; // 16-bit
         String path = "test" + i + ".txt";
+        int size = 72;
 
         return new IndexEntry(
                 ctimeSeconds, ctimeNanos
                 , mtimeSeconds, mtimeNanos, dev, ino
                 , mode, uid, gid, fileSize
-                , oid, flags, path
+                , oid, flags, path, size
         );
     }
 

@@ -1,7 +1,7 @@
 package duongtran.vctrl.index;
 
 import duongtran.vctrl.concurrency.Lockfile;
-import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.Workspace;
 import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.storage.objects.ObjectID;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -93,12 +93,16 @@ public class Index {
         // Create the index entry
         IndexEntry entry = createIndexEntry(path, blobId, stat);
 
-        // If the new entry is already in the index, do nothing
-        if (!isChanged(entry)) return;
-
-        entryMap.put(path, entry);
-        sizeInBytes += entry.getSize();
-        this.header.incrementEntryCount();
+        // Create or update the index entry
+        Path entryPath = Paths.get(entry.getPath());
+        IndexEntry existingEntry = entryMap.get(entryPath);
+        if (existingEntry == null) {
+            entryMap.put(path, entry);
+            sizeInBytes += entry.getSize();
+            this.header.incrementEntryCount();
+        } else if (!existingEntry.equals(entry)){
+            entryMap.put(path, entry);
+        }
 
     }
 
@@ -126,6 +130,7 @@ public class Index {
                 , blobId
                 , flags
                 , path.toString()
+                , IndexEntry.computeEntrySize(path.toString())
         );
     }
 
@@ -238,22 +243,6 @@ public class Index {
             ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
             return Index.fromBytes(byteBuffer);
         }
-    }
-
-    /**
-     * Checks if the given {@code IndexEntry} is already present in the index and is identical
-     * to the corresponding entry.
-     *
-     * @param entry the {@code IndexEntry} to be checked
-     * @return {@code true} if the entry exists and is identical to the given entry;
-     *         {@code false} otherwise
-     */
-    private boolean isChanged(IndexEntry entry) {
-        Path entryPath = Paths.get(entry.getPath());
-        IndexEntry existingEntry = entryMap.get(entryPath);
-
-        if (existingEntry == null) return true;
-        return !existingEntry.equals(entry);
     }
 
     @Override

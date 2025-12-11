@@ -1,6 +1,6 @@
 package duongtran.vctrl.actions;
 
-import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.Workspace;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.CommitAuthor;
 import duongtran.vctrl.storage.Database;

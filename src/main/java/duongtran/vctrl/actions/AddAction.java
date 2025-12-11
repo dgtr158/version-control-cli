@@ -1,7 +1,7 @@
 package duongtran.vctrl.actions;
 
 import duongtran.vctrl.index.Index;
-import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.Workspace;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Blob;
 import duongtran.vctrl.utils.DirectoryNames;

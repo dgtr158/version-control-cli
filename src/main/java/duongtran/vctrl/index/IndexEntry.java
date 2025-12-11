@@ -13,6 +13,8 @@ public class IndexEntry {
     public static final int MAX_PATH_SIZE = 0xfff;
 
     public static final int FIXED_SIZE_IN_BYTE = 62;
+    public static final int MIN_PATH_SIZE = 2;
+    public static final int CONSUME_BYTES_BLOCK = 8;
 
     private int size;
     private final int ctimeSeconds;
@@ -33,7 +35,7 @@ public class IndexEntry {
                  int mtimeSeconds, int mtimeNanos,
                  int dev, int ino, int mode,
                  int uid, int gid, int fileSize,
-                 String oid, int flags, String path) {
+                 String oid, int flags, String path, int size) {
         this.ctimeSeconds = ctimeSeconds;
         this.ctimeNanos = ctimeNanos;
         this.mtimeSeconds = mtimeSeconds;
@@ -47,7 +49,7 @@ public class IndexEntry {
         this.oid = oid;
         this.flags = flags;
         this.path = path;
-        this.size = getSizeInBytes();
+        this.size = size;
     }
 
     public int getSize() { return size; }
@@ -66,6 +68,13 @@ public class IndexEntry {
     public String getPath() { return path; }
 
 
+    /**
+     * Convert the Index Entry into byte buffer.
+     * Index Entry size in bytes is multiple of 8.
+     *
+     * @param buf The byte buffer to write into
+     * @throws IllegalArgumentException If hashed object id is not in 20 bytes
+     */
     public void toBytes(ByteBuffer buf) throws IllegalArgumentException {
         buf.putInt(this.ctimeSeconds);
         buf.putInt(this.ctimeNanos);
@@ -102,6 +111,12 @@ public class IndexEntry {
 
     }
 
+    /**
+     * Create an index entry from byte buffer.
+     *
+     * @param buf The byte buffer to read from
+     * @return an index entry object
+     */
     public static IndexEntry fromBytes(ByteBuffer buf) {
 
         int ctimeSec = buf.getInt();
@@ -123,37 +138,54 @@ public class IndexEntry {
         // Flags
         int flags = buf.getShort() & 0xFFFF;
 
-        // Paths
-        int start = buf.position();
-        int end = start;
-        while (buf.get(end) != 0) {
-            end++;
-        }
-        byte[] pathBytes = new byte[end - start];
-        buf.get(pathBytes);
+        // Path
+        byte[] pathBytes = parseIndexPath(buf);
         String path = new String(pathBytes, StandardCharsets.UTF_8);
 
-        // Consume the NUll terminators
-        end = buf.position();
-        while (buf.hasRemaining() && buf.get(end) == 0) {
-            buf.get();
-            end++;
-        }
+        // Entry size
+        int size = FIXED_SIZE_IN_BYTE + pathBytes.length;
 
         return new IndexEntry(
                 ctimeSec, ctimeNanos
                 ,mtimeSec, mtimeNanos
                 ,dev, ino, mode, uid, gid, fileSize
-                ,oid, flags, path
+                ,oid, flags, path, size
         );
 
     }
 
-    private int getSizeInBytes() {
+    /**S
+     * Calculate the size in bytes of the index entry.
+     *
+     * @return the size in bytes of the index entry.
+     */
+    public static int computeEntrySize(String path) {
         int pathSize = path.getBytes(java.nio.charset.StandardCharsets.UTF_8).length + 1; // include NULL terminator
         int totalSize = FIXED_SIZE_IN_BYTE + pathSize;
-        int paddingSize = (8 - (totalSize % 8)) % 8;
+        int paddingSize = (CONSUME_BYTES_BLOCK - (totalSize % CONSUME_BYTES_BLOCK)) % CONSUME_BYTES_BLOCK;
         return totalSize + paddingSize;
+    }
+
+    private static byte[] parseIndexPath(ByteBuffer buf) {
+        byte[] pathBytes = consume(buf, MIN_PATH_SIZE);
+        while (pathBytes.length > 0 && pathBytes[pathBytes.length - 1] != 0x00) {
+            byte[] block = consume(buf, CONSUME_BYTES_BLOCK);
+            pathBytes = concat(pathBytes, block);
+        }
+        return pathBytes;
+    }
+
+    private static byte[] consume(ByteBuffer buf, int size) {
+        byte[] out = new byte[size];
+        buf.get(out);
+        return out;
+    }
+
+    private static byte[] concat(byte[] a, byte[] b) {
+        byte[] result = new byte[a.length + b.length];
+        System.arraycopy(a, 0, result, 0, a.length);
+        System.arraycopy(b, 0, result, a.length, b.length);
+        return result;
     }
 
     @Override

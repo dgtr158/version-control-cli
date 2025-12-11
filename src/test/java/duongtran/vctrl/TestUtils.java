@@ -1,6 +1,5 @@
 package duongtran.vctrl;
 
-import duongtran.vctrl.metadata.Workspace;
 import duongtran.vctrl.storage.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

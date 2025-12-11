@@ -1,4 +1,4 @@
-package duongtran.vctrl.metadata;
+package duongtran.vctrl;
 
 import duongtran.vctrl.utils.DirectoryNames;
 
@@ -21,7 +21,9 @@ public class Workspace {
 
     // Method to initialize the Workspace
     public static void initialize(String path) {
-        getInstance().rootPath = Paths.get(path);
+        Workspace instance = getInstance();
+        if (instance.getRootPath() != null) return;
+        instance.rootPath = Paths.get(path);
     }
 
 

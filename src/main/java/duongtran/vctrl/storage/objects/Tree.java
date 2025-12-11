@@ -1,6 +1,6 @@
 package duongtran.vctrl.storage.objects;
 
-import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.Workspace;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.storage.ObjectType;

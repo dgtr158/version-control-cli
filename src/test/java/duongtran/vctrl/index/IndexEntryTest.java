@@ -27,15 +27,16 @@ public class IndexEntryTest {
         String oid = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
         int flags = 0x0A5B; // 16-bit
         String path = "test.txt";
+        int expectedSize = 72;
 
         IndexEntry expected = new IndexEntry(
                 ctimeSeconds,ctimeNanos
                 ,mtimeSeconds,mtimeNanos
                 ,dev,ino,mode,uid
                 ,gid,fileSize
-                ,oid,flags,path
+                ,oid,flags,path, expectedSize
         );
-        int expectedSize = 72;
+
 
         ByteBuffer buffer = ByteBuffer.allocate(expected.getSize());
         expected.toBytes(buffer);

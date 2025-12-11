@@ -1,6 +1,6 @@
 package duongtran.vctrl.actions;
 
-import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.Workspace;
 import duongtran.vctrl.utils.DirectoryNames;
 
 import java.io.File;

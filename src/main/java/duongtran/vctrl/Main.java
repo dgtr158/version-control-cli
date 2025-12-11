@@ -3,7 +3,6 @@ package duongtran.vctrl;
 import duongtran.vctrl.actions.AddAction;
 import duongtran.vctrl.actions.CommitAction;
 import duongtran.vctrl.actions.InitAction;
-import duongtran.vctrl.metadata.Workspace;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.utils.ActionConstants;
 import duongtran.vctrl.utils.DirectoryNames;

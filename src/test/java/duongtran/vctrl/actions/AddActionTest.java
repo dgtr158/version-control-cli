@@ -3,7 +3,7 @@ package duongtran.vctrl.actions;
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
-import duongtran.vctrl.metadata.Workspace;
+import duongtran.vctrl.Workspace;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
@@ -214,6 +214,52 @@ public class AddActionTest {
             // Add the third time
             addAction.execute(firstDir);
             addAction.execute(secondDir);
+
+            // Load index from disk
+            Index actual = Index.loadFromDisk();
+
+            // Validate entries
+            List<Path> expectedEntries = Arrays.asList(
+                    testFile11
+                    , testFile12
+                    , testFile21
+            );
+            assertEquals(3, actual.getHeader().getEntryCount());
+            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
+            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            assertIterableEquals(expectedEntries, actualEntries);
+
+        } catch (Exception e) {
+            log.error("Test failed: {}", e.getMessage());
+            fail();
+        }
+    }
+
+    @Test
+    void testAddActionOverwriteExisting() {
+
+        AddAction addAction;
+
+        try {
+
+            // Create files in the firstDir
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Create a file in the secondDir
+            TestUtils.writeText(testFile21, "Test content 21");
+
+            // Execute action (incremental changes)
+            addAction = new AddAction();
+
+            // Add the files
+            addAction.execute(testFile11);
+            addAction.execute(testFile12);
+            addAction.execute(testFile21);
+
+            // Overwrite the testFile12
+            TestUtils.writeText(testFile12, "Test content 12 overwritten");
+            addAction.execute(testFile12);
 
             // Load index from disk
             Index actual = Index.loadFromDisk();
