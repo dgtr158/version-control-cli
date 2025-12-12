@@ -19,27 +19,35 @@ import java.util.Comparator;
 import java.util.List;
 
 public class Tree extends ObjectStorage {
-    private final List<Entry> entries;
+    private final List<TreeEntry> entries;
 
-    public Tree(List<Entry> entries) {
+    public Tree(List<TreeEntry> entries) {
         this.entries = entries;
-        entries.sort(Comparator.comparing(Entry::getName));
+        entries.sort(Comparator.comparing(TreeEntry::getFileName));
     }
 
     public ObjectType getType() {
         return ObjectType.TREE;
     }
 
+    /**
+     * Converts the tree and its entries into a byte array representation.
+     * The representation includes the mode, file name, and object ID of each entry.
+     *      <mode> <fileName>\0<oid>
+     *
+     * @return a byte array containing the serialized tree with its entries.
+     * @throws RuntimeException if an I/O error occurs during the conversion process.
+     */
     @Override
     protected byte[] toBytes() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            for (Entry entry : entries) {
-                String entryHeader = String.format("%s %s\0", entry.getMode(), entry.getName());
+            for (TreeEntry treeEntry : entries) {
+                String entryHeader = String.format("%s %s\0", treeEntry.getMode(), treeEntry.getFileName());
                 byte[] entryData = entryHeader.getBytes(StandardCharsets.ISO_8859_1);
                 out.write(entryData);
 
-                byte[] objectID = Utils.hexStringToByteArray(entry.getOid());
+                byte[] objectID = Utils.hexStringToByteArray(treeEntry.getOid());
                 out.write(objectID);
             }
         } catch (IOException e) {
@@ -64,24 +72,24 @@ public class Tree extends ObjectStorage {
                 .filter(path -> !path.getFileName().toString().contains(File.separator + DirectoryNames.ROOT_DIR_NAME))
                 .sorted()
                 .toList();
-        List<Entry> entryList = new ArrayList<>();
+        List<TreeEntry> treeEntryList = new ArrayList<>();
         for (Path p : paths) {
             if (Files.isDirectory(p)) {
                 Tree subTree = buildTree(p, database);
-                entryList.add(
-                        new Entry(p.getFileName().toString(), subTree.getOid(), false)
+                treeEntryList.add(
+                        new TreeEntry(p.getFileName().toString(), subTree.getOid(), false)
                 );
             } else {
                 Blob blob = new Blob(Files.readAllBytes(p));
                 String blobId = database.store(blob);
-                entryList.add(
-                        new Entry(p.getFileName().toString(), blobId, Files.isExecutable(p))
+                treeEntryList.add(
+                        new TreeEntry(p.getFileName().toString(), blobId, Files.isExecutable(p))
                 );
             }
         }
 
         // Store the tree and return its object ID
-        Tree tree = new Tree(entryList);
+        Tree tree = new Tree(treeEntryList);
         database.store(tree);
 
         return tree;

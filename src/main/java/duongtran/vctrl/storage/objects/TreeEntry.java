@@ -1,20 +1,20 @@
 package duongtran.vctrl.storage.objects;
 
-public class Entry {
+public class TreeEntry {
     public static final String REGULAR_MODE = "100644";
     public static final String EXECUTABLE_MODE = "100644";
-    private final String name;
+    private final String fileName;
     private final String oid;
     private final String mode;
 
-    public Entry(String name, String oid, boolean isExecutable) {
-        this.name = name;
+    public TreeEntry(String fileName, String oid, boolean isExecutable) {
+        this.fileName = fileName;
         this.oid = oid;
         mode = isExecutable ? EXECUTABLE_MODE : REGULAR_MODE;
     }
 
-    public String getName() {
-        return name;
+    public String getFileName() {
+        return fileName;
     }
 
     public String getOid() {

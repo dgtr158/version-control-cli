@@ -8,7 +8,7 @@ import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class IndexEntryTest {
+public class IndexTreeEntryTest {
 
     @Test
     void testSerializeDeserialize() throws Exception {
