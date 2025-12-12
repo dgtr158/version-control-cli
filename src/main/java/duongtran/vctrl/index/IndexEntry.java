@@ -2,21 +2,19 @@ package duongtran.vctrl.index;
 
 import duongtran.vctrl.utils.Utils;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class IndexEntry {
 
-    public static final int REGULAR_MODE = 0100644;
-    public static final int EXECUTABLE_MODE = 0100755;
-    public static final int MAX_PATH_SIZE = 0xfff;
-
     public static final int FIXED_SIZE_IN_BYTE = 62;
     public static final int MIN_PATH_SIZE = 2;
     public static final int CONSUME_BYTES_BLOCK = 8;
 
-    private int size;
+    private transient final int size;
+
     private final int ctimeSeconds;
     private final int ctimeNanos;
     private final int mtimeSeconds;
@@ -30,6 +28,7 @@ public class IndexEntry {
     private final String oid;
     private final int flags;
     private final String path;
+
 
     public IndexEntry(int ctimeSeconds, int ctimeNanos,
                  int mtimeSeconds, int mtimeNanos,
@@ -67,7 +66,6 @@ public class IndexEntry {
     public int getFlags() { return flags; }
     public String getPath() { return path; }
 
-
     /**
      * Convert the Index Entry into byte buffer.
      * Index Entry size in bytes is multiple of 8.
@@ -104,7 +102,7 @@ public class IndexEntry {
 
         // Padding
         int totalSize = FIXED_SIZE_IN_BYTE + pathBytes.length + 1;
-        int paddingSize = (8 - (totalSize % 8)) % 8;
+        int paddingSize = (CONSUME_BYTES_BLOCK - (totalSize % CONSUME_BYTES_BLOCK)) % CONSUME_BYTES_BLOCK;
         for (int i = 0; i < paddingSize; i++) {
             buf.put((byte) 0);
         }
@@ -140,7 +138,8 @@ public class IndexEntry {
 
         // Path
         byte[] pathBytes = parseIndexPath(buf);
-        String path = new String(pathBytes, StandardCharsets.UTF_8);
+        String parsedPath = new String(pathBytes, StandardCharsets.UTF_8);
+        String path = parsedPath.trim();
 
         // Entry size
         int size = FIXED_SIZE_IN_BYTE + pathBytes.length;
@@ -166,6 +165,14 @@ public class IndexEntry {
         return totalSize + paddingSize;
     }
 
+    /**
+     * Parses the index path from the given ByteBuffer.
+     * This method reads bytes from the buffer until it encounters a null-terminated byte sequence or exhausts the buffer.
+     * The resulting byte sequence represents the index path.
+     *
+     * @param buf the ByteBuffer containing the index data to parse the path from
+     * @return a byte array containing the parsed index path
+     */
     private static byte[] parseIndexPath(ByteBuffer buf) {
         byte[] pathBytes = consume(buf, MIN_PATH_SIZE);
         while (pathBytes.length > 0 && pathBytes[pathBytes.length - 1] != 0x00) {
@@ -175,12 +182,29 @@ public class IndexEntry {
         return pathBytes;
     }
 
+    /**
+     * Reads a specified number of bytes from the given ByteBuffer and returns them as a byte array.
+     *
+     * @param buf  the ByteBuffer to read from
+     * @param size the number of bytes to read from the buffer
+     * @return a byte array containing the read bytes
+     */
     private static byte[] consume(ByteBuffer buf, int size) {
         byte[] out = new byte[size];
         buf.get(out);
         return out;
     }
 
+    /**
+     * Concatenates two byte arrays into a single byte array.
+     * The order of concatenation is such that the contents of the first array
+     * are followed by the contents of the second array.
+     *
+     * @param a the first byte array to be concatenated
+     * @param b the second byte array to be concatenated
+     * @return a new byte array containing all the elements of the first array
+     *         followed by all the elements of the second array
+     */
     private static byte[] concat(byte[] a, byte[] b) {
         byte[] result = new byte[a.length + b.length];
         System.arraycopy(a, 0, result, 0, a.length);

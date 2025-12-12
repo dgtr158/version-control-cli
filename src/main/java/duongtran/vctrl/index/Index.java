@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-public class Index {
+public class Index implements Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(Index.class);
 
@@ -32,9 +33,10 @@ public class Index {
     public static final int MAX_PATH_SIZE = 0xfff;
     public static final int VERSION = 2;
 
-    private final Path indexPath;
+    private transient final Path indexPath;
+    private transient int sizeInBytes;
+    private transient boolean isChanged;
 
-    private int sizeInBytes;
     private final IndexHeader header;
     private Map<Path, IndexEntry> entryMap;
     private ObjectID indexId;
@@ -47,6 +49,7 @@ public class Index {
         this.header = new IndexHeader(VERSION, 0);
         this.entryMap = new TreeMap<>();
         this.sizeInBytes = IndexHeader.HEADER_SIZE + ObjectStorage.OID_SIZE;
+        this.isChanged = false;
     }
 
     public IndexHeader getHeader() {
@@ -69,6 +72,10 @@ public class Index {
         return indexId;
     }
 
+    public boolean isChanged() {
+        return isChanged;
+    }
+
     public void setSizeInBytes(int sizeInBytes) {
         this.sizeInBytes = sizeInBytes;
     }
@@ -84,6 +91,16 @@ public class Index {
         }
     }
 
+    /**
+     * Adds an entry to the index.
+     * If the entry does not already exist, it is created.
+     * If the entry exists but has changed, it is updated with the new data.
+     * The method also updates the index size and marks the index as changed if any modifications occur.
+     *
+     * @param path The file path of the entry to be added.
+     * @param blobId The identifier of the blob associated with the entry.
+     * @throws IOException If an I/O error occurs while processing the file.
+     */
     public void addEntry(Path path, String blobId) throws IOException {
         // Get file stat
         FileStat stat;
@@ -100,12 +117,22 @@ public class Index {
             entryMap.put(path, entry);
             sizeInBytes += entry.getSize();
             this.header.incrementEntryCount();
+            this.isChanged = true;
         } else if (!existingEntry.equals(entry)){
             entryMap.put(path, entry);
+            this.isChanged = true;
         }
 
     }
 
+    /**
+     * Creates an index entry based on the provided path, blob ID, and file statistics.
+     *
+     * @param path the file path for the index entry
+     * @param blobId the identifier of the blob associated with the file
+     * @param stat the file statistics providing metadata such as modification time, size, and permissions
+     * @return an IndexEntry object representing the data and metadata for the given file
+     */
     private IndexEntry createIndexEntry(Path path, String blobId, FileStat stat) {
         /*
             TODO: modify flags 16-bit
@@ -134,6 +161,21 @@ public class Index {
         );
     }
 
+    /**
+     * Writes the current state of the index to the disk in a thread-safe and consistent manner.
+     *
+     * The method performs the following steps:
+     * - Acquires a lock on the target file to ensure no other process modifies it concurrently.
+     * - Converts the index data into a byte array using the associated {@code toBytes} method.
+     * - Writes the byte array into the locked file.
+     * - Logs the number of bytes written for verification.
+     *
+     * If any errors occur during the conversion or file write process, appropriate exceptions are caught and handled:
+     * - {@link NoSuchAlgorithmException} is logged in case of an issue with creating index object IDs.
+     * - {@link IOException} is logged when the file write operation fails, and a retry attempt is suggested.
+     *
+     * The lock and resources are properly released after the operation completes.
+     */
     public void write() {
         try (Lockfile out = new Lockfile(this.indexPath)) {
 
@@ -157,6 +199,15 @@ public class Index {
 
     }
 
+    /**
+     * Converts the index and its components into bytes and writes them into the provided buffer.
+     *
+     * This method serializes the index header and its associated index entries into the given buffer.
+     * It also computes and updates the SHA-1 checksum of the index, storing it as the index ID.
+     *
+     * @param buf the buffer into which the index and its components should be written
+     * @throws NoSuchAlgorithmException if the algorithm used for checksum computation is not available
+     */
     public void toBytes(ByteBuffer buf) throws NoSuchAlgorithmException {
         // Header
         this.header.toBytes(buf);
@@ -174,6 +225,14 @@ public class Index {
         this.indexId = new ObjectID(objectID.getValue());
     }
 
+    /**
+     * Computes a checksum for the content stored in the provided buffer.
+     * The method processes the buffer content, calculates a hash, and updates the buffer with the checksum.
+     *
+     * @param buf the buffer containing the data for which the checksum is to be computed
+     * @return an ObjectID constructed from the computed checksum
+     * @throws NoSuchAlgorithmException if the specified hashing algorithm is not available
+     */
     private ObjectID computeChecksum(ByteBuffer buf) throws NoSuchAlgorithmException {
         int dataLen = buf.position();
         byte[] hashInput = new byte[dataLen];
@@ -185,6 +244,15 @@ public class Index {
         return objectID;
     }
 
+    /**
+     * Creates an Index object by deserializing it from the provided ByteBuffer.
+     *
+     * This method reads and constructs the IndexHeader, IndexEntries, and Index ID
+     * from the buffer to create an Index instance.
+     *
+     * @param buf the ByteBuffer containing the serialized index data
+     * @return a new Index instance constructed from the deserialized data
+     */
     public static Index fromBytes(ByteBuffer buf) {
         int size = 0;
         Map<Path, IndexEntry> entryMap = new TreeMap<>();

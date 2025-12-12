@@ -106,6 +106,7 @@ public class IndexTest {
             List<Path> sorted = new ArrayList<>(keys);
             sorted.sort(null);
             assertEquals(sorted, keys);
+            assertTrue(actual.isChanged());
 
             // serialized object and deserialized object are identical
             assertEquals(expected, actual);
@@ -148,14 +149,13 @@ public class IndexTest {
             // Validate entries
             List<Path> expectedEntries = Arrays.asList(
                     testFile11
-                    , testFile12
-                    , testFile21
+                    ,testFile12
+                    ,testFile21
             );
             assertEquals(3, actual.getHeader().getEntryCount());
             Map<Path, IndexEntry> entryMap = actual.getEntryMap();
             List<Path> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
-
 
         } catch (Exception e) {
             log.error("Failed to load index from disk");
@@ -200,6 +200,47 @@ public class IndexTest {
             assertEquals("Failed to load index file, checksum failed", ex.getMessage());
         }
 
+    }
+
+    @Test
+    void testIndexNotChange() {
+
+        AddAction addAction;
+        Index index;
+
+        try {
+
+            // Create files in the firstDir
+            TestUtils.writeText(testFile11, "Test content 11");
+
+            // Create a file in the secondDir
+            TestUtils.writeText(testFile21, "Test content 21");
+
+            // Execute action
+            addAction = new AddAction();
+            index = addAction.execute(rootPath);
+
+            // Add the same index entry
+            index = addAction.execute(testFile11);
+            assertFalse(index.isChanged());
+
+            // Add a new index entry n times
+            int n = 10;
+            for (int i = 0; i < n; i++) {
+                TestUtils.writeText(testFile12, "Test content 12");
+                index = addAction.execute(testFile12);
+                assertTrue(index.isChanged());
+            }
+
+            // Modify a file, then add again
+            TestUtils.writeText(testFile12, "Test content 12 Overwrite");
+            index = addAction.execute(testFile12);
+            assertTrue(index.isChanged());
+
+        } catch (Exception e) {
+            log.error("Failed to load index from disk");
+            fail();
+        }
     }
 
     private Map<Path, IndexEntry> createIndexEntryMap(int num, Instant time) {

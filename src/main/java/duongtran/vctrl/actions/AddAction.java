@@ -25,10 +25,10 @@ public class AddAction {
         this.database = Database.getInstance();
     }
 
-    public void execute(Path addPath) {
+    public Index execute(Path addPath) {
+        Index index = null;
         try {
 
-            Index index;
             if (Files.exists(Workspace.getInstance().getRootPath().resolve(DirectoryNames.INDEX))) {
                 index = Index.loadFromDisk();
             } else {
@@ -40,6 +40,8 @@ public class AddAction {
         } catch (IOException | NoSuchAlgorithmException e) {
             log.error("Failed to write index file: {}\n", e.getMessage());
         }
+
+        return index;
     }
 
     private void execute(Path addPath, Index index) throws IOException, NoSuchAlgorithmException {
