@@ -8,7 +8,7 @@ public class ObjectStorageHeaderTest {
 
     @Test
     void testSerializeDeserialize() {
-        long size = 1024L;
+        int size = 1024;
         ObjectType type = ObjectType.BLOB;
         ObjectStorageHeader expected = new ObjectStorageHeader(type, size);
 
@@ -19,20 +19,11 @@ public class ObjectStorageHeaderTest {
 
     @Test
     void testSize() {
-        int fixedSize = Long.BYTES + 2;
-        long objectSize = 1024L;
+        int objectSize = 1024;
 
         for (ObjectType type : ObjectType.values()) {
             ObjectStorageHeader header = new ObjectStorageHeader(type, objectSize);
-            int typeSize;
-            switch (type) {
-                case BLOB, TREE -> typeSize = 4;
-                case COMMIT -> typeSize = 6;
-                case TAG -> typeSize = 3;
-                default -> typeSize = 0;
-            }
-            int expectedSize = typeSize + fixedSize;
-            assertEquals(expectedSize, header.size());
+            assertEquals(objectSize, header.getContentLength());
         }
     }
 

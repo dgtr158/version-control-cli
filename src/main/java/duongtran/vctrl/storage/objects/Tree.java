@@ -39,7 +39,7 @@ public class Tree extends ObjectStorage {
      * @throws RuntimeException if an I/O error occurs during the conversion process.
      */
     @Override
-    protected byte[] toBytes() {
+    protected byte[] getContent() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             for (TreeEntry treeEntry : entries) {

@@ -13,15 +13,16 @@ import java.util.Objects;
  */
 public class ObjectStorageHeader implements Serializable {
 
+    public static final byte FIXED_SIZE = Integer.BYTES + 2;
     private static final byte SPACE = 0X20;
     private static final byte NULL_TERMINATOR = 0X00;
 
     private final ObjectType type;
-    private final long size;
+    private final int contentLength;
 
-    public ObjectStorageHeader(ObjectType type, long size) {
+    public ObjectStorageHeader(ObjectType type, int contentLength) {
         this.type = type;
-        this.size = size;
+        this.contentLength = contentLength;
     }
 
     /**
@@ -31,11 +32,11 @@ public class ObjectStorageHeader implements Serializable {
      * @return a byte array containing the object type and its content length.
      */
     public byte[] toBytes() {
-        byte[] bytes = new byte[size()];
+        byte[] bytes = new byte[type.getObjectHeaderSize()];
         ByteBuffer buf = ByteBuffer.wrap(bytes);
         buf.put(type.toBytes());
         buf.put(SPACE);
-        buf.putLong(size);
+        buf.putInt(contentLength);
         buf.put(NULL_TERMINATOR);
         return bytes;
     }
@@ -58,7 +59,7 @@ public class ObjectStorageHeader implements Serializable {
         buf.get();
 
         // Size
-        long size = buf.getLong();
+        int size = buf.getInt();
 
         // Consume Null Terminator
         buf.get();
@@ -66,18 +67,18 @@ public class ObjectStorageHeader implements Serializable {
         return new ObjectStorageHeader(type, size);
     }
 
-    public int size() {
-        return type.size() + Long.BYTES + 2;
+    public int getContentLength() {
+        return contentLength;
     }
 
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ObjectStorageHeader that)) return false;
-        return size == that.size && type == that.type;
+        return contentLength == that.contentLength && type == that.type;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, size);
+        return Objects.hash(type, contentLength);
     }
 }

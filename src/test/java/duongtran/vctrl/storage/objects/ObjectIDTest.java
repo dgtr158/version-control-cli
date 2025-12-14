@@ -1,8 +1,8 @@
-package duongtran.vctrl.storage.object;
+package duongtran.vctrl.storage.objects;
 
 import java.nio.ByteBuffer;
 
-import duongtran.vctrl.storage.objects.ObjectID;
+import duongtran.vctrl.storage.ObjectID;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

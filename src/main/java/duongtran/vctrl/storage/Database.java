@@ -44,20 +44,6 @@ public class Database {
         return instance;
     }
 
-
-    /**
-     * Initialize a database with the path in the disk.
-     * @param dbPath - the directory path (.vctrl/objects)
-     * @throws IllegalArgumentException if dbPath is null
-     */
-    public Database(Path dbPath) {
-        if (dbPath == null) {
-            throw new IllegalArgumentException("Database path cannot be null");
-        }
-        this.dbPath = dbPath;
-    }
-
-
     /**
      * Stores a blob object in the database.
      *
@@ -69,7 +55,7 @@ public class Database {
         if (object == null) {
             throw new IllegalArgumentException("Blob object cannot be null");
         }
-        byte[] content = object.formatContent();
+        byte[] content = object.getContent();
         object.calculateOid(content);
         writeObject(object.getOid(), content);
         return object.getOid();

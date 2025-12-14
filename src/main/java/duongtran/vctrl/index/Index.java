@@ -3,7 +3,7 @@ package duongtran.vctrl.index;
 import duongtran.vctrl.concurrency.Lockfile;
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.storage.ObjectStorage;
-import duongtran.vctrl.storage.objects.ObjectID;
+import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.utils.DirectoryNames;
 import duongtran.vctrl.utils.FileUtil;
 import duongtran.vctrl.utils.Utils;

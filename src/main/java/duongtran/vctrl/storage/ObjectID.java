@@ -1,6 +1,5 @@
-package duongtran.vctrl.storage.objects;
+package duongtran.vctrl.storage;
 
-import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.utils.Utils;
 
 import java.nio.ByteBuffer;

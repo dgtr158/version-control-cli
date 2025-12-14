@@ -12,9 +12,11 @@ public enum ObjectType {
     TAG("tag");
 
     private final String type;
+    private final int objectHeaderSize;
 
     ObjectType(String type) {
         this.type = type;
+        this.objectHeaderSize = headerSize();
     }
 
     /**
@@ -50,6 +52,15 @@ public enum ObjectType {
         return type.getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     * Retrieves the size of the object header in bytes.
+     *
+     * @return the size of the object header.
+     */
+    public int getObjectHeaderSize() {
+        return objectHeaderSize;
+    }
+
 
     /**
      * Converts a string representation of an object type to its corresponding {@code ObjectType} enum value.
@@ -78,4 +89,16 @@ public enum ObjectType {
     public int size() {
         return this.toBytes().length;
     }
+
+    /**
+     * Calculates the total size of the header for the object type.
+     * The total size is the sum of the size of the object type (in bytes)
+     * and the fixed size defined in the {@code ObjectStorageHeader}.
+     *
+     * @return the total size of the header in bytes.
+     */
+    private int headerSize() {
+        return size() + ObjectStorageHeader.FIXED_SIZE;
+    }
+
 }
