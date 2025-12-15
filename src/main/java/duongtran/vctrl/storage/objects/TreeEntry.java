@@ -1,16 +1,16 @@
 package duongtran.vctrl.storage.objects;
 
+import duongtran.vctrl.storage.FileMode;
+
 public class TreeEntry {
-    public static final String REGULAR_MODE = "100644";
-    public static final String EXECUTABLE_MODE = "100644";
     private final String fileName;
     private final String oid;
-    private final String mode;
+    private final FileMode mode;
 
-    public TreeEntry(String fileName, String oid, boolean isExecutable) {
+    public TreeEntry(String fileName, String oid, FileMode mode) {
         this.fileName = fileName;
         this.oid = oid;
-        mode = isExecutable ? EXECUTABLE_MODE : REGULAR_MODE;
+        this.mode = mode;
     }
 
     public String getFileName() {
@@ -20,7 +20,7 @@ public class TreeEntry {
     public String getOid() {
         return oid;
     }
-    public String getMode() {
+    public FileMode getMode() {
         return mode;
     }
 }

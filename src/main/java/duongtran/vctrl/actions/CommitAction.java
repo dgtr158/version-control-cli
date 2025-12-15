@@ -1,6 +1,7 @@
 package duongtran.vctrl.actions;
 
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.index.Index;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.CommitAuthor;
 import duongtran.vctrl.storage.Database;
@@ -63,9 +64,17 @@ public class CommitAction {
      */
     private void storeWorkspaceFiles() throws IOException, NoSuchAlgorithmException {
 
-        Tree tree = Tree.buildTree(workspace.getRootPath(), database);
+        //   TODO: 1. Build new trees from index's entries
+        Index index = Index.loadFromDisk();
 
-        // Storing commit
+//        Tree tree = Tree.buildTree(workspace.getRootPath(), database);
+        Tree tree = Tree.buildTree(index.getEntryMap());
+
+
+        //   TODO: 2. Store the tree
+        database.store(tree);
+
+        // 3. Storing commit
         String authorName = System.getenv(Constants.ENV_AUTHOR_KEY);
         String authorEmail = System.getenv(Constants.ENV_EMAIL_KEY);
         CommitAuthor author = new CommitAuthor(authorName, authorEmail, Instant.now());
@@ -79,10 +88,10 @@ public class CommitAction {
         Commit commit = new Commit(author, tree, message, parentId);
         database.store(commit);
 
-        // Update HEAD
+        // 4. Update HEAD
         ref.updateHead(commit.getOid());
 
-        // Display the commit confirmation message
+        // 5. Display the commit confirmation message
         String firstLine = getFirstLine(message);
         System.out.printf("[(root-commit) %s] %s\n", commit.getOid(), firstLine);
 
