@@ -80,7 +80,7 @@ public class TreeTest {
     @Test
     void testBuildTree() {
 
-        AddAction addAction = null;
+        AddAction addAction;
 
         try {
 
@@ -106,13 +106,12 @@ public class TreeTest {
             Tree expected = getExpectedTree(indexEntries);
 
             // Execute: build a tree from index
-            Tree tree = Tree.buildTree(index.getEntryMap());
+            Tree actual = Tree.buildTree(index.getEntryMap());
 
-            assertEquals(expected, tree);
+            assertEquals(expected, actual);
 
 
         } catch (Exception ex) {
-            ex.printStackTrace();
             log.error("failed: {}", ex.getMessage());
             fail();
         }

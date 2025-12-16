@@ -2,9 +2,7 @@ package duongtran.vctrl.storage.objects;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.IndexEntry;
-import duongtran.vctrl.storage.FileMode;
-import duongtran.vctrl.storage.ObjectStorage;
-import duongtran.vctrl.storage.ObjectType;
+import duongtran.vctrl.storage.*;
 import duongtran.vctrl.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
@@ -68,6 +66,11 @@ public class Tree extends ObjectStorage {
     public static Tree buildTree(Map<Path, IndexEntry> indexEntries) {
         Map<Path, IndexEntry> relativeEntryPath = normalizePath(indexEntries);
         return buildWithNormalize(relativeEntryPath);
+    }
+
+    public static ObjectID store(Tree root, Database database) {
+        // TODO
+        return null;
     }
 
     @Override
