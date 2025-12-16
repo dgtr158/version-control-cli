@@ -1,6 +1,7 @@
 package duongtran.vctrl.storage.objects;
 
 import duongtran.vctrl.storage.CommitAuthor;
+import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.storage.ObjectType;
 
@@ -9,13 +10,13 @@ import java.nio.charset.StandardCharsets;
 public class Commit extends ObjectStorage {
 
     private final CommitAuthor author;
-    private final Tree tree;
+    private final ObjectID treeOid;
     private final String message;
     private final String parentId;
 
-    public Commit(CommitAuthor author, Tree tree, String message, String parentId) {
+    public Commit(CommitAuthor author, ObjectID treeOid, String message, String parentId) {
         this.author = author;
-        this.tree = tree;
+        this.treeOid = treeOid;
         this.message = message;
         this.parentId = parentId;
     }
@@ -23,7 +24,7 @@ public class Commit extends ObjectStorage {
     @Override
     protected byte[] getContent() {
         StringBuilder bodyBuilder = new StringBuilder();
-        bodyBuilder.append("tree ").append(tree.getOid()).append("\n");
+        bodyBuilder.append("tree ").append(treeOid.getValue()).append("\n");
         if (parentId != null) {
             bodyBuilder.append("parent ").append(parentId).append("\n");
         }

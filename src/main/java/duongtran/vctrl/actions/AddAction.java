@@ -59,7 +59,7 @@ public class AddAction {
     private void addFile(Path path, Index index) throws IOException, NoSuchAlgorithmException {
         // Store files
         Blob blob = new Blob(Files.readAllBytes(path));
-        String blobId = database.store(blob);
+        String blobId = database.store(blob).getValue();
 
         // Create the index entries
         index.addEntry(path, blobId);

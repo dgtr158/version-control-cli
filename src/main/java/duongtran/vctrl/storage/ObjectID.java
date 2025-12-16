@@ -26,6 +26,10 @@ public class ObjectID {
         buf.put(bytes);
     }
 
+    public byte[] toBytes() {
+        return Utils.hexStringToByteArray(this.value);
+    }
+
     public static ObjectID fromBytes(ByteBuffer buf) {
         byte[] bytes = new byte[SIZE_IN_BYTES];
         buf.get(bytes);

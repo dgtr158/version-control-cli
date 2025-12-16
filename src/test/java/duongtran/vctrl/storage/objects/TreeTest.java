@@ -7,6 +7,7 @@ import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.FileMode;
+import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -124,39 +125,41 @@ public class TreeTest {
         // subFirstDir Tree
         TreeEntry file111Entry = new TreeEntry(
                 testFile111.getFileName().toString()
-                , indexEntries.get(testFile111).getOid()
+                , new ObjectID(indexEntries.get(testFile111).getOid())
                 , FileMode.REGULAR_FILE
         );
-        Tree subFirstDirTree = new Tree(new ArrayList<>(List.of(file111Entry)), new ArrayList<>());
+        Tree subFirstDirTree = new Tree(new ArrayList<>(List.of(file111Entry)), new ArrayList<>(), rootPath.relativize(subFirstDir));
 
         // firstDir Tree
         TreeEntry file12Entry = new TreeEntry(
                 testFile12.getFileName().toString()
-                , indexEntries.get(testFile12).getOid()
+                , new ObjectID(indexEntries.get(testFile12).getOid())
                 , FileMode.REGULAR_FILE
         );
         TreeEntry file11Entry = new TreeEntry(
                 testFile11.getFileName().toString()
-                , indexEntries.get(testFile11).getOid()
+                , new ObjectID(indexEntries.get(testFile11).getOid())
                 , FileMode.REGULAR_FILE
         );
         Tree firstDirTree = new Tree(
                 new ArrayList<>(List.of(file11Entry, file12Entry))
-                ,new ArrayList<>(List.of(subFirstDirTree))
+                , new ArrayList<>(List.of(subFirstDirTree))
+                , rootPath.relativize(firstDir)
         );
 
         // secondDir Tree
         TreeEntry file21Entry = new TreeEntry(
                 testFile21.getFileName().toString()
-                , indexEntries.get(testFile21).getOid()
+                , new ObjectID(indexEntries.get(testFile21).getOid())
                 , FileMode.REGULAR_FILE
         );
-        Tree secondDirTree = new Tree(new ArrayList<>(List.of(file21Entry)), new ArrayList<>());
+        Tree secondDirTree = new Tree(new ArrayList<>(List.of(file21Entry)), new ArrayList<>(), rootPath.relativize(secondDir));
 
         // Expected Tree
         return new Tree(
                 new ArrayList<>()
-                ,new ArrayList<>(List.of(firstDirTree, secondDirTree))
+                , new ArrayList<>(List.of(firstDirTree, secondDirTree))
+                , Path.of("")
         );
     }
 

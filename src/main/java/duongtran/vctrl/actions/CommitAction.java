@@ -5,6 +5,7 @@ import duongtran.vctrl.index.Index;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.CommitAuthor;
 import duongtran.vctrl.storage.Database;
+import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.storage.objects.Blob;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.storage.objects.Tree;
@@ -39,10 +40,10 @@ public class CommitAction {
      * @throws IOException if there is an error during the commit process, such as
      *                     issues with reading files, hashing, or storing data.
      */
-    public void execute() throws IOException {
+    public Commit execute() throws IOException {
         try {
-            storeWorkspaceFiles();
             logger.info("Successfully committed files: {}", workspace.listFiles(workspace.getRootPath()));
+            return saveCommit();
         } catch (IOException | NoSuchAlgorithmException e) {
             throw new IOException("Failed to commit changes", e);
         }
@@ -62,17 +63,14 @@ public class CommitAction {
      * @throws NoSuchAlgorithmException if a required hashing algorithm is unavailable
      *                                  during the blob storage process.
      */
-    private void storeWorkspaceFiles() throws IOException, NoSuchAlgorithmException {
+    private Commit saveCommit() throws IOException, NoSuchAlgorithmException {
 
-        //   TODO: 1. Build new trees from index's entries
+        // 1. Build new trees from index's entries
         Index index = Index.loadFromDisk();
-
-//        Tree tree = Tree.buildTree(workspace.getRootPath(), database);
         Tree tree = Tree.buildTree(index.getEntryMap());
 
-
-        //   TODO: 2. Store the tree
-        database.store(tree);
+        // 2. Store the tree
+        ObjectID treeObjectId = Tree.store(tree, database);
 
         // 3. Storing commit
         String authorName = System.getenv(Constants.ENV_AUTHOR_KEY);
@@ -85,7 +83,7 @@ public class CommitAction {
         System.out.println("Enter the commit messages:");
         String message = getCommitMsg();
 
-        Commit commit = new Commit(author, tree, message, parentId);
+        Commit commit = new Commit(author, treeObjectId, message, parentId);
         database.store(commit);
 
         // 4. Update HEAD
@@ -94,6 +92,8 @@ public class CommitAction {
         // 5. Display the commit confirmation message
         String firstLine = getFirstLine(message);
         System.out.printf("[(root-commit) %s] %s\n", commit.getOid(), firstLine);
+
+        return commit;
 
     }
 

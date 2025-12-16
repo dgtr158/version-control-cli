@@ -51,14 +51,14 @@ public class Database {
      * @throws IOException If failed to write the object
      * @throws IllegalArgumentException If an object is null
      */
-    public String store(ObjectStorage object) throws IOException, NoSuchAlgorithmException {
+    public ObjectID store(ObjectStorage object) throws IOException, NoSuchAlgorithmException {
         if (object == null) {
             throw new IllegalArgumentException("Blob object cannot be null");
         }
         byte[] content = object.getContent();
         object.calculateOid(content);
         writeObject(object.getOid(), content);
-        return object.getOid();
+        return new ObjectID(object.getOid());
     }
 
 

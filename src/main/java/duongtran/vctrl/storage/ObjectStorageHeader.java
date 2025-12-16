@@ -1,5 +1,7 @@
 package duongtran.vctrl.storage;
 
+import duongtran.vctrl.utils.Constants;
+
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -14,8 +16,6 @@ import java.util.Objects;
 public class ObjectStorageHeader implements Serializable {
 
     public static final byte FIXED_SIZE = Integer.BYTES + 2;
-    private static final byte SPACE = 0X20;
-    private static final byte NULL_TERMINATOR = 0X00;
 
     private final ObjectType type;
     private final int contentLength;
@@ -35,9 +35,9 @@ public class ObjectStorageHeader implements Serializable {
         byte[] bytes = new byte[type.getObjectHeaderSize()];
         ByteBuffer buf = ByteBuffer.wrap(bytes);
         buf.put(type.toBytes());
-        buf.put(SPACE);
+        buf.put(Constants.SPACE);
         buf.putInt(contentLength);
-        buf.put(NULL_TERMINATOR);
+        buf.put(Constants.NULL_TERMINATOR);
         return bytes;
     }
 
@@ -50,7 +50,7 @@ public class ObjectStorageHeader implements Serializable {
         ByteBuffer buf = ByteBuffer.wrap(bytes);
         // Type
         int start = 0, end = 0;
-        while (buf.get(end) != SPACE) end++;
+        while (buf.get(end) != Constants.SPACE) end++;
         byte[] typeBytes = new byte[end - start];
         buf.get(typeBytes);
         ObjectType type = ObjectType.fromString(new String(typeBytes));

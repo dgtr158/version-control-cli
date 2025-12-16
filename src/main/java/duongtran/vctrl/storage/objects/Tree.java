@@ -3,24 +3,31 @@ package duongtran.vctrl.storage.objects;
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.IndexEntry;
 import duongtran.vctrl.storage.*;
-import duongtran.vctrl.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class Tree extends ObjectStorage {
     private final List<TreeEntry> entries;
     private final List<Tree> subTrees;
+    private final TreeMap<String, TreeEntry> storedEntries; // <name, entry>
+    private final Path path;
 
-    public Tree(List<TreeEntry> entries, List<Tree> subTrees) {
+    public Tree(List<TreeEntry> entries, List<Tree> subTrees, Path path) {
         this.entries = entries;
         this.subTrees = subTrees;
-        entries.sort(Comparator.comparing(TreeEntry::getFileName));
+        this.path = path;
+        this.storedEntries = new TreeMap<>();
+        for (TreeEntry entry : entries) {
+            storedEntries.put(entry.getFileName(), entry);
+        }
     }
 
+    @Override
     public ObjectType getType() {
         return ObjectType.TREE;
     }
@@ -37,12 +44,13 @@ public class Tree extends ObjectStorage {
     protected byte[] getContent() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            for (TreeEntry treeEntry : entries) {
-                String entryHeader = String.format("%s %s\0", treeEntry.getMode(), treeEntry.getFileName());
+            for (Map.Entry<String, TreeEntry> entryMap : storedEntries.entrySet()) {
+                TreeEntry entry = entryMap.getValue();
+                String entryHeader = String.format("%s %s\0", entry.getMode(), entry.getFileName());
                 byte[] entryData = entryHeader.getBytes(StandardCharsets.ISO_8859_1);
                 out.write(entryData);
 
-                byte[] objectID = Utils.hexStringToByteArray(treeEntry.getOid());
+                byte[] objectID = entry.getOid().toBytes();
                 out.write(objectID);
             }
         } catch (IOException e) {
@@ -50,6 +58,25 @@ public class Tree extends ObjectStorage {
         }
 
         return out.toByteArray();
+    }
+
+    /**
+     * Retrieves the path associated with the current tree instance.
+     *
+     * @return the Path object representing the location or identifier of the tree.
+     */
+    public Path getPath() {
+        return path;
+    }
+
+    /**
+     * Adds a {@code TreeEntry} object to the stored entries map in the current tree instance.
+     * The entry is associated with its file name as the key in the map.
+     *
+     * @param entry the {@code TreeEntry} object to be added to the map. Must not be null.
+     */
+    public void addStoreEntry(TreeEntry entry) {
+        this.storedEntries.put(entry.getFileName(), entry);
     }
 
     /**
@@ -65,12 +92,20 @@ public class Tree extends ObjectStorage {
      */
     public static Tree buildTree(Map<Path, IndexEntry> indexEntries) {
         Map<Path, IndexEntry> relativeEntryPath = normalizePath(indexEntries);
-        return buildWithNormalize(relativeEntryPath);
+        return buildWithNormalize(Path.of(""), relativeEntryPath);
     }
 
-    public static ObjectID store(Tree root, Database database) {
-        // TODO
-        return null;
+    public static ObjectID store(Tree root, Database database) throws IOException, NoSuchAlgorithmException {
+        // Build the subtree
+        for (Tree subTree : root.subTrees) {
+            ObjectID subTreeOID = store(subTree, database);
+            root.addStoreEntry(new TreeEntry(
+                    root.getPath().getFileName().toString()
+                    ,subTreeOID
+                    ,FileMode.DIRECTORY
+            ));
+        }
+        return database.store(root);
     }
 
     @Override
@@ -93,7 +128,7 @@ public class Tree extends ObjectStorage {
      *                            The paths are expected to be normalized relative paths.
      * @return a Tree object representing the hierarchical structure of the given paths and index entries.
      */
-    private static Tree buildWithNormalize(Map<Path, IndexEntry> normalizedEntryPath) {
+    private static Tree buildWithNormalize(Path currentPath, Map<Path, IndexEntry> normalizedEntryPath) {
         List<TreeEntry> files = new ArrayList<>();
         Map<String, Map<Path, IndexEntry>> children = new TreeMap<>();
 
@@ -104,7 +139,7 @@ public class Tree extends ObjectStorage {
 
                 files.add(new TreeEntry(
                         path.getFileName().toString()
-                        ,e.getValue().getOid()
+                        ,new ObjectID(e.getValue().getOid())
                         ,FileMode.REGULAR_FILE
                 ));
             } else {
@@ -119,11 +154,12 @@ public class Tree extends ObjectStorage {
 
         List<Tree> subTrees = new ArrayList<>();
         for (Map.Entry<String, Map<Path, IndexEntry>> child : children.entrySet()) {
-            Tree subTree = buildWithNormalize(child.getValue());
+            Path childPath = currentPath.resolve(child.getKey());
+            Tree subTree = buildWithNormalize(childPath, child.getValue());
             subTrees.add(subTree);
         }
 
-        return new Tree(files, subTrees);
+        return new Tree(files, subTrees, currentPath);
     }
 
     /**
@@ -171,6 +207,5 @@ public class Tree extends ObjectStorage {
 
         return true;
     }
-
 
 }
