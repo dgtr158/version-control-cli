@@ -1,0 +1,297 @@
+package duongtran.vctrl.storage.objects;
+
+import duongtran.vctrl.Workspace;
+import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.storage.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+
+/**
+ * Represents a hierarchical tree structure with entries and subtrees.
+ * A tree consists of file entries and subtrees, allowing for a directory-like structure.
+ *
+ * Tree object format:
+ *      tree<space><contentLength><null><listOfTreeEntry>
+ * See {@code TreeEntry} for tree's entry format.
+ *
+ */
+public class Tree extends ObjectStorage {
+    private final List<TreeEntry> entries;
+    private final List<Tree> subTrees;
+    private final TreeMap<String, TreeEntry> storedEntries; // <name, entry>
+    private final Path path;
+
+    public Tree(List<TreeEntry> entries, List<Tree> subTrees, Path path) {
+        this.entries = entries;
+        this.subTrees = subTrees;
+        this.path = path;
+        this.storedEntries = new TreeMap<>();
+        for (TreeEntry entry : entries) {
+            storedEntries.put(entry.getFileName(), entry);
+        }
+    }
+
+    public Tree(TreeMap<String, TreeEntry> storedEntries, Path path) {
+        this.entries = new ArrayList<>();
+        this.subTrees = new ArrayList<>();
+        this.storedEntries = storedEntries;
+        this.path = path;
+    }
+
+    @Override
+    public ObjectType getType() {
+        return ObjectType.TREE;
+    }
+
+    /**
+     * Converts the tree and its entries into a byte array representation.
+     * The representation includes the mode, file name, and object ID of each entry.
+     *      <mode> <fileName>\0<oid>
+     *
+     * @return a byte array containing the serialized tree with its entries.
+     * @throws RuntimeException if an I/O error occurs during the conversion process.
+     */
+    @Override
+    protected byte[] getContent() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            for (Map.Entry<String, TreeEntry> entryMap : storedEntries.entrySet()) {
+                TreeEntry entry = entryMap.getValue();
+                String entryHeader = String.format("%s %s\0", entry.getMode(), entry.getFileName());
+                byte[] entryData = entryHeader.getBytes(StandardCharsets.ISO_8859_1);
+                out.write(entryData);
+
+                byte[] objectID = entry.getOid().toBytes();
+                out.write(objectID);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return out.toByteArray();
+    }
+
+    /**
+     * Retrieves the path associated with the current tree instance.
+     *
+     * @return the Path object representing the location or identifier of the tree.
+     */
+    public Path getPath() {
+        return path;
+    }
+
+    /**
+     * Retrieves the stored entries of the tree.
+     * The stored entries are represented as a map where the key is the file name
+     * and the value is the corresponding {@code TreeEntry}.
+     *
+     * @return a {@code TreeMap<String, TreeEntry>} containing the stored entries of the tree.
+     */
+    public TreeMap<String, TreeEntry> getStoredEntries() {
+        return storedEntries;
+    }
+
+    /**
+     * Adds a {@code TreeEntry} object to the stored entries map in the current tree instance.
+     * The entry is associated with its file name as the key in the map.
+     *
+     * @param entry the {@code TreeEntry} object to be added to the map. Must not be null.
+     */
+    public void addStoreEntry(TreeEntry entry) {
+        this.storedEntries.put(entry.getFileName(), entry);
+    }
+
+    /**
+     * Builds a tree structure from a map of paths and associated index entries.
+     * The method normalizes the given paths before constructing the tree by
+     * organizing paths into a hierarchical structure of entries and subtrees.
+     *
+     * @param indexEntries a map containing absolute paths as keys and their
+     *                     associated index entries as values. Each path represents
+     *                     a file or directory within the workspace.
+     * @return a Tree object representing the hierarchical structure of the given
+     *         paths and index entries.
+     */
+    public static Tree buildTree(Map<Path, IndexEntry> indexEntries) {
+        Map<Path, IndexEntry> relativeEntryPath = normalizePath(indexEntries);
+        return buildWithNormalize(Path.of(""), relativeEntryPath);
+    }
+
+    /**
+     * Stores the specified tree into the database. The method recursively processes
+     * all subtrees of the given tree, stores them into the database, and then constructs and
+     * stores the root tree in the database. Each subtree is represented as a directory entry
+     * in the root tree.
+     *
+     * @param root the root {@code Tree} object to be stored. Must not be null and should contain
+     *             its associated subtrees and entries.
+     * @param database the {@code Database} instance where the tree and its contents will be stored.
+     *                 Must not be null.
+     * @return the {@code ObjectID} representing the stored tree in the database.
+     * @throws IOException if an I/O error occurs during the storage process.
+     * @throws NoSuchAlgorithmException if the hash algorithm used for generating the
+     *                                   {@code ObjectID} is not available.
+     */
+    public static ObjectID store(Tree root, Database database) throws IOException, NoSuchAlgorithmException {
+        // Build the subtree
+        for (Tree subTree : root.subTrees) {
+            ObjectID subTreeOID = store(subTree, database);
+            root.addStoreEntry(new TreeEntry(
+                    subTree.getPath().getFileName().toString()
+                    ,subTreeOID
+                    ,FileMode.DIRECTORY
+            ));
+        }
+        return database.store(root);
+    }
+
+    /**
+     * Loads a {@code Tree} object from the database using its specified {@code ObjectID}.
+     * The method retrieves the object from the database and casts it to a {@code Tree}.
+     *
+     * @param oid the {@code ObjectID} of the {@code Tree} to be loaded. Must not be null.
+     * @return the {@code Tree} object corresponding to the provided {@code ObjectID}.
+     * @throws IOException if an I/O error occurs while loading the object from the database.
+     * @throws NoSuchAlgorithmException if the hashing algorithm used during the loading process is unavailable.
+     */
+    public static Tree loadTree(ObjectID oid) throws IOException, NoSuchAlgorithmException {
+        Database database = Database.getInstance();
+        return (Tree) database.loadObject(oid, ObjectType.TREE);
+    }
+
+    /**
+     * Constructs a {@code Tree} object from the provided byte array representation.
+     * The byte array should encode the header and the stored entries of the tree.
+     *
+     * @param bytes the byte array containing the serialized representation of a {@code Tree}.
+     *              Must not be null and must include both the header and entry data.
+     * @return a {@code Tree} object constructed from the provided byte array.
+     * @throws NoSuchAlgorithmException if the algorithm used for processing the byte array is unavailable.
+     */
+    public static Tree fromBytes(byte[] bytes) throws NoSuchAlgorithmException {
+        ByteBuffer buf = ByteBuffer.wrap(bytes);
+
+        // Header
+        byte[] headerBytes = new byte[ObjectType.TREE.getObjectHeaderSize()];
+        buf.get(headerBytes);
+        ObjectStorageHeader.fromBytes(headerBytes);
+
+        // Stored Entries
+        TreeMap<String, TreeEntry> storedEntryMap = new TreeMap<>();
+        Path rootPath = Path.of("");
+        while (buf.hasRemaining()) {
+            TreeEntry treeEntry = TreeEntry.fromBytes(buf);
+            Path treePath = Path.of(treeEntry.getFileName());
+            storedEntryMap.put(treePath.toString(), treeEntry);
+        }
+
+        return new Tree(storedEntryMap, rootPath);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Tree tree)) return false;
+        return deepEquals(tree);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(entries, subTrees);
+    }
+
+    /**
+     * Builds a tree structure by normalizing the given map of paths and index entries.
+     * The method processes the provided map to create file entries and subtree structures,
+     * grouping paths based on their directory hierarchy.
+     *
+     * @param normalizedEntryPath a map containing paths as keys and their associated index entries as values.
+     *                            The paths are expected to be normalized relative paths.
+     * @return a Tree object representing the hierarchical structure of the given paths and index entries.
+     */
+    private static Tree buildWithNormalize(Path currentPath, Map<Path, IndexEntry> normalizedEntryPath) {
+        List<TreeEntry> files = new ArrayList<>();
+        Map<String, Map<Path, IndexEntry>> children = new TreeMap<>();
+
+        for (Map.Entry<Path, IndexEntry> e : normalizedEntryPath.entrySet()) {
+            Path path = e.getKey();
+
+            if (path.getNameCount() == 1) {
+
+                files.add(new TreeEntry(
+                        path.getFileName().toString()
+                        ,new ObjectID(e.getValue().getOid())
+                        ,FileMode.REGULAR_FILE
+                ));
+            } else {
+                String dir = path.getName(0).toString();
+                Path rest = path.subpath(1, path.getNameCount());
+
+                children
+                        .computeIfAbsent(dir, k -> new TreeMap<>())
+                        .put(rest, e.getValue());
+            }
+        }
+
+        List<Tree> subTrees = new ArrayList<>();
+        for (Map.Entry<String, Map<Path, IndexEntry>> child : children.entrySet()) {
+            Path childPath = currentPath.resolve(child.getKey());
+            Tree subTree = buildWithNormalize(childPath, child.getValue());
+            subTrees.add(subTree);
+        }
+
+        return new Tree(files, subTrees, currentPath);
+    }
+
+    /**
+     * Normalizes the paths in the given map by converting them to relative paths
+     * with respect to the workspace root path.
+     *
+     * @param map a map containing absolute paths as keys and their associated index entries as values
+     * @return a new map with keys as relative paths to the workspace root and their original index entries as values
+     */
+    private static Map<Path, IndexEntry> normalizePath(Map<Path, IndexEntry> map) {
+        Map<Path, IndexEntry> relativeMap = new TreeMap<>();
+        for (Map.Entry<Path, IndexEntry> e : map.entrySet()) {
+            relativeMap.put(Workspace.getInstance().getRootPath().relativize(e.getKey()), e.getValue());
+        }
+        return relativeMap;
+    }
+
+    /**
+     * Compares this tree with another tree to check for deep structural equality.
+     * The comparison includes the entries and the hierarchical structure of the subtrees.
+     *
+     * @param other the other tree to compare with this tree. Can be null.
+     * @return true if this tree and the other tree are deeply equal, false otherwise.
+     */
+    private boolean deepEquals(Tree other) {
+        if (other == null) return false;
+        if (this == other) return true;
+
+        // compare files
+        if (!entries.equals(other.entries)) {
+            return false;
+        }
+
+        // compare subtree count
+        if (subTrees.size() != other.subTrees.size()) {
+            return false;
+        }
+
+        // compare subtrees recursively
+        for (int i = 0; i < subTrees.size(); i++) {
+            if (!subTrees.get(i).deepEquals(other.subTrees.get(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+}
