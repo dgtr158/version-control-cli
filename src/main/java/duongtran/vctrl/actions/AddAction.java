@@ -80,6 +80,9 @@ public class AddAction {
      * @throws NoSuchAlgorithmException if the algorithm required for blob creation is unavailable
      */
     private void execute(Path addPath, Index index) throws IOException, NoSuchAlgorithmException {
+        if (!Files.exists(addPath)) {
+            throw new IOException("Path does not exist: " + addPath);
+        }
 
         // Ignore the .vctrl directory
         Path normalized = addPath.toAbsolutePath().normalize();

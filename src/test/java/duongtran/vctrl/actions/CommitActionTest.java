@@ -5,7 +5,6 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Commit;
-import duongtran.vctrl.storage.objects.TreeTest;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class CommitActionTest {
 
-    private static final Logger log = LoggerFactory.getLogger(TreeTest.class);
+    private static final Logger log = LoggerFactory.getLogger(CommitActionTest.class);
 
     // Vctrl instances
     Workspace workspace;
