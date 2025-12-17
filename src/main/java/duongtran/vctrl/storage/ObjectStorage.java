@@ -33,6 +33,18 @@ public abstract class ObjectStorage {
     }
 
     /**
+     * Sets the Object ID (OID) for the current object. The OID can only be set once and
+     * subsequent calls to this method after the OID is already assigned will have no effect.
+     *
+     * @param oid the {@code ObjectID} to be assigned to the current object. This value
+     *            must not be null and represents the unique identifier of the object.
+     */
+    public void setOid(ObjectID oid) {
+        if (this.oid != null) return;
+        this.oid = oid;
+    }
+
+    /**
      * Converts the current object into its corresponding byte array representation,
      * including a header and content. The header contains metadata such as the object
      * type and content length, while the content represents the original data of the object.

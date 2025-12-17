@@ -15,12 +15,19 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Ref;
 import java.time.Instant;
 
 import static duongtran.vctrl.utils.Constants.DEFAULT_AUTHOR;
 import static duongtran.vctrl.utils.Constants.DEFAULT_EMAIL;
 import static duongtran.vctrl.utils.Utils.getEnvOrDefault;
 
+/**
+ * The CommitAction class is responsible for managing the commit operation within the application.
+ * It interacts with the workspace, indexes file changes, creates commit objects, and updates
+ * the repository's state. This class uses internal services such as the {@link Workspace}
+ * and {@link Database} to carry out these operations.
+ */
 public class CommitAction {
 
     private static final Logger logger = LoggerFactory.getLogger(CommitAction.class);
@@ -80,20 +87,16 @@ public class CommitAction {
         String authorName = getEnvOrDefault(Constants.ENV_AUTHOR_KEY, DEFAULT_AUTHOR);
         String authorEmail = getEnvOrDefault(Constants.ENV_EMAIL_KEY, DEFAULT_EMAIL);
         CommitAuthor author = new CommitAuthor(authorName, authorEmail, Instant.now());
-
-        Refs ref = new Refs();
-        String parentId = ref.readHead();
-
+        String parentId = Refs.readHead();
 //        System.out.println("Enter the commit messages:");
 //        String message = getCommitMsg();
         // TODO: get commit message from terminal
         String message = "Dummy commit message";
-
         Commit commit = new Commit(author, treeObjectId, message, parentId);
         database.store(commit);
 
         // 4. Update HEAD
-        ref.updateHead(commit.getOid().getValue());
+        Refs.updateHead(commit.getOid());
 
         // 5. Display the commit confirmation message
         String firstLine = getFirstLine(message);
@@ -120,6 +123,16 @@ public class CommitAction {
         return message.toString();
     }
 
+    /**
+     * Extracts the first line from the provided string. If the input string is null or empty,
+     * an empty string is returned. Line breaks are determined using platform-independent
+     * line separators.
+     *
+     * @param message the input string from which the first line is to be extracted;
+     *                may contain multiple lines or may be null/empty
+     * @return the first line of the input string, trimmed of leading and trailing whitespace;
+     *         if the input string is null or empty, returns an empty string
+     */
     private String getFirstLine(String message) {
         if (message == null || message.trim().isEmpty()) {
             return "";

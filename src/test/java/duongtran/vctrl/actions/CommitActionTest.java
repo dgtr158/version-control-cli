@@ -2,6 +2,7 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.storage.objects.TreeTest;
@@ -27,6 +28,7 @@ public class CommitActionTest {
     Workspace workspace;
     Database database;
     Path rootPath;
+    Path vctrlPath;
     Path objectPath;
 
     // Mock directories
@@ -47,7 +49,8 @@ public class CommitActionTest {
 
         // Paths
         rootPath = workspace.getRootPath();
-        objectPath = rootPath.resolve(DirectoryNames.OBJECTS);
+        vctrlPath = workspace.getVctrlPath();
+        objectPath = vctrlPath.resolve(DirectoryNames.OBJECTS);
 
         // Initialize test directories and files
         firstDir = rootPath.resolve("firstDir");
@@ -101,6 +104,7 @@ public class CommitActionTest {
             // Load the saved commit from the disk
             Commit loadedCommit = Commit.loadCommit(savedCommit.getOid());
             assertEquals(savedCommit, loadedCommit);
+            assertEquals(savedCommit.getOid().getValue(), Refs.readHead());
 
         } catch (Exception ex) {
             log.error("failed: {}", ex.getMessage());

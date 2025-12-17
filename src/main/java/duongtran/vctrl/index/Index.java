@@ -1,16 +1,15 @@
 package duongtran.vctrl.index;
 
-import duongtran.vctrl.concurrency.Lockfile;
 import duongtran.vctrl.Workspace;
-import duongtran.vctrl.storage.ObjectStorage;
+import duongtran.vctrl.concurrency.Lockfile;
 import duongtran.vctrl.storage.ObjectID;
+import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.utils.DirectoryNames;
 import duongtran.vctrl.utils.FileUtil;
 import duongtran.vctrl.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -24,6 +23,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
+/**
+ * The Index class represents a repository index, providing functionality for managing
+ * file metadata, tracking changes, and persisting the index to disk. It is a serializable
+ * class that encapsulates data structures for storing header information, entries,
+ * and associated metadata.
+ *
+ * The class includes methods to handle adding entries, managing file states, computing
+ * checksums, and writing the index to a file in a thread-safe manner. The Index supports
+ * key operations like serialization of its components into bytes and updating entry
+ * states based on changes in the file system.
+ *
+ * This implementation accommodates file stat information, index entry creation, and blob
+ * object references as part of its design, enabling efficient version control operations.
+ */
 public class Index implements Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(Index.class);
@@ -42,10 +55,7 @@ public class Index implements Serializable {
     private ObjectID indexId;
 
     public Index() {
-        File rootPath = new File(Workspace.getInstance().getRootPath().toString());
-        File indexPath = new File(rootPath, DirectoryNames.INDEX);
-        this.indexPath = indexPath.toPath();
-
+        this.indexPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.INDEX);
         this.header = new IndexHeader(VERSION, 0);
         this.entryMap = new TreeMap<>();
         this.sizeInBytes = IndexHeader.HEADER_SIZE + ObjectStorage.OID_SIZE;
@@ -292,7 +302,7 @@ public class Index implements Serializable {
      * @return the loaded index
      */
     public static Index loadFromDisk() throws IOException, NoSuchAlgorithmException {
-        Path indexPath = Workspace.getInstance().getRootPath().resolve(DirectoryNames.INDEX);
+        Path indexPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.INDEX);
         try (Lockfile in = new Lockfile(indexPath)) {
             in.acquire();
             byte[] indexAllBytes = in.read(indexPath);

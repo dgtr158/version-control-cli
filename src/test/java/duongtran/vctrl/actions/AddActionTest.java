@@ -1,9 +1,9 @@
 package duongtran.vctrl.actions;
 
 import duongtran.vctrl.TestUtils;
+import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
-import duongtran.vctrl.Workspace;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
@@ -30,6 +30,7 @@ public class AddActionTest {
     Workspace workspace;
     Database database;
     Path rootPath;
+    Path vctrlPath;
     Path indexPath;
 
     // Mock directories
@@ -48,7 +49,8 @@ public class AddActionTest {
 
         // Root path
         rootPath = workspace.getRootPath();
-        indexPath = rootPath.resolve(DirectoryNames.INDEX);
+        vctrlPath = workspace.getVctrlPath();
+        indexPath = vctrlPath.resolve(DirectoryNames.INDEX);
 
         // Initialize test directories and files
         firstDir = rootPath.resolve("firstDir");
@@ -84,7 +86,7 @@ public class AddActionTest {
             addAction.execute(testFile11);
 
             // Validate that index contains the correct entries
-            Path indexPath = rootPath.resolve(DirectoryNames.INDEX);
+            Path indexPath = vctrlPath.resolve(DirectoryNames.INDEX);
             assertTrue(Files.exists(indexPath));
 
             // Load index from disk
@@ -126,7 +128,7 @@ public class AddActionTest {
             addAction.execute(rootPath);
 
             // Validate that index contains the correct entries
-            Path indexPath = rootPath.resolve(DirectoryNames.INDEX);
+            Path indexPath = vctrlPath.resolve(DirectoryNames.INDEX);
             assertTrue(Files.exists(indexPath));
 
             // Load index from disk

@@ -37,11 +37,24 @@ public class Database {
 
     private Database() {}
 
+    /**
+     * Initializes the database instance by setting up the database path.
+     * This method retrieves the virtual control (vctrl) path from the workspace
+     * and resolves the database path to the objects directory. It ensures that
+     * the singleton instance of the Database class has its internal state correctly
+     * initialized with the path to the storage location.
+     */
     public static void initialize() {
-        Path rootPath = Workspace.getInstance().getRootPath();
-        getInstance().dbPath = rootPath.resolve(DirectoryNames.OBJECTS);
+        Path vctrlPath = Workspace.getInstance().getVctrlPath();
+        getInstance().dbPath = vctrlPath.resolve(DirectoryNames.OBJECTS);
     }
 
+    /**
+     * Provides access to the singleton instance of the Database class.
+     * If the instance does not exist, it initializes and returns a new one.
+     *
+     * @return The singleton instance of the Database class.
+     */
     public static Database getInstance() {
         if (instance == null) {
             instance = new Database();
@@ -66,6 +79,19 @@ public class Database {
         return object.getOid();
     }
 
+    /**
+     * Loads an object from the database, based on its identifier and type.
+     * The method reads the object's data, decompresses it, performs deserialization,
+     * and returns the corresponding object representation.
+     *
+     * @param objectID The identifier of the object to be loaded. It uniquely identifies the object in the database.
+     * @param type The type of the object being loaded. Determines how the data is deserialized.
+     *
+     * @return The deserialized object corresponding to the specified identifier and type.
+     * @throws IOException If an I/O error occurs while accessing the object data.
+     * @throws NoSuchAlgorithmException If the checksum verification process requires an unsupported algorithm.
+     * @throws IllegalArgumentException If the specified type is not recognized.
+     */
     public ObjectStorage loadObject(ObjectID objectID, ObjectType type) throws IOException, NoSuchAlgorithmException {
 
         Path path = constructObjectPath(objectID.getValue());
@@ -79,12 +105,14 @@ public class Database {
         }
 
         // Deserialize the object
-        return switch (type) {
+        ObjectStorage object = switch (type) {
             case BLOB -> Blob.fromBytes(bytes);
             case TREE -> Tree.fromBytes(bytes);
             case COMMIT -> Commit.fromBytes(bytes);
             default -> throw new IllegalArgumentException("Type cannot be: " + type);
         };
+        object.setOid(objectID);
+        return object;
 
     }
 

@@ -12,22 +12,40 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * The Workspace class is a singleton responsible for managing the file paths
+ * and directory structure within the application's root workspace.
+ * It allows initializing the workspace with a given root directory and provides
+ * utility methods to handle files and directories within the workspace.
+ */
 public class Workspace {
     private static Workspace instance;
     private Path rootPath;
+    private Path vctrlPath;
 
     // Private constructor to prevent direct instantiation
     private Workspace() {}
 
-    // Method to initialize the Workspace
+    /**
+     * Initializes the Workspace with the specified root path. If the root path
+     * is already set, this method does nothing.
+     *
+     * @param path the root directory path to initialize the Workspace with
+     */
     public static void initialize(String path) {
         Workspace instance = getInstance();
         if (instance.getRootPath() != null) return;
         instance.rootPath = Paths.get(path);
+        instance.vctrlPath = instance.rootPath.resolve(DirectoryNames.ROOT_DIR_NAME);
     }
 
 
-    // Get a single instance of Workspace
+    /**
+     * Provides a singleton instance of the Workspace class.
+     * If the instance does not already exist, it initializes a new Workspace object.
+     *
+     * @return the singleton instance of the Workspace class
+     */
     public static Workspace getInstance() {
         if (instance == null) {
             instance = new Workspace();
@@ -35,15 +53,33 @@ public class Workspace {
         return instance;
     }
 
-    // Set the root path only once
+    /**
+     * Sets the root path for the workspace. If the root path is already set, this method does nothing.
+     *
+     * @param rootPath the root directory path to set for the workspace
+     */
     public void setRootPath(Path rootPath) {
         if (this.rootPath == null) {
             this.rootPath = rootPath;
         }
     }
 
+    /**
+     * Retrieves the root directory path of the workspace.
+     *
+     * @return the root directory path as a {@code Path} object
+     */
     public Path getRootPath() {
         return rootPath;
+    }
+
+    /**
+     * Retrieves the path of the internal `.vctrl` directory within the workspace.
+     *
+     * @return the path of the `.vctrl` directory as a {@code Path} object
+     */
+    public Path getVctrlPath() {
+        return vctrlPath;
     }
 
     /**
@@ -75,15 +111,4 @@ public class Workspace {
         }
     }
 
-    /**
-     * Read the content of the file.
-     *
-     * @param path the file path
-     * @return byte array of the file
-     * @throws IOException - if cannot read the file
-     */
-    public byte[] readFile(String path) throws IOException {
-        File file = new File(path);
-        return Files.readAllBytes(file.toPath());
-    }
 }

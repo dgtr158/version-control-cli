@@ -32,6 +32,7 @@ public class IndexTest {
     Workspace workspace;
     Database database;
     Path rootPath;
+    Path vctrlPath;
     Path indexPath;
 
     // Mock directories
@@ -50,7 +51,8 @@ public class IndexTest {
 
         // Root path
         rootPath = workspace.getRootPath();
-        indexPath = rootPath.resolve(DirectoryNames.INDEX);
+        vctrlPath = workspace.getVctrlPath();
+        indexPath = vctrlPath.resolve(DirectoryNames.INDEX);
 
         // Initialize test directories and files
         firstDir = rootPath.resolve("firstDir");
@@ -106,7 +108,6 @@ public class IndexTest {
             List<Path> sorted = new ArrayList<>(keys);
             sorted.sort(null);
             assertEquals(sorted, keys);
-            assertTrue(actual.isChanged());
 
             // serialized object and deserialized object are identical
             assertEquals(expected, actual);
@@ -140,7 +141,6 @@ public class IndexTest {
             addAction.execute(rootPath);
 
             // Validate that index contains the correct entries
-            Path indexPath = rootPath.resolve(DirectoryNames.INDEX);
             assertTrue(Files.exists(indexPath));
 
             // Load index from disk

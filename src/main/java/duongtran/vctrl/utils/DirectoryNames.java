@@ -8,4 +8,5 @@ public class DirectoryNames {
     public static final String OBJECTS = "objects";
     public static final String REFS = "refs";
     public static final String INDEX = "index";
+    public static final String HEAD = "HEAD";
 }

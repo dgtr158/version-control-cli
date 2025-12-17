@@ -33,6 +33,7 @@ public class TreeTest {
     Workspace workspace;
     Database database;
     Path rootPath;
+    Path vctrlPath;
     Path objectPath;
 
     // Mock directories
@@ -53,7 +54,8 @@ public class TreeTest {
 
         // Paths
         rootPath = workspace.getRootPath();
-        objectPath = rootPath.resolve(DirectoryNames.OBJECTS);
+        vctrlPath = workspace.getVctrlPath();
+        objectPath = vctrlPath.resolve(DirectoryNames.OBJECTS);
 
         // Initialize test directories and files
         firstDir = rootPath.resolve("firstDir");
