@@ -17,6 +17,10 @@ import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 
+import static duongtran.vctrl.utils.Constants.DEFAULT_AUTHOR;
+import static duongtran.vctrl.utils.Constants.DEFAULT_EMAIL;
+import static duongtran.vctrl.utils.Utils.getEnvOrDefault;
+
 public class CommitAction {
 
     private static final Logger logger = LoggerFactory.getLogger(CommitAction.class);
@@ -73,21 +77,23 @@ public class CommitAction {
         ObjectID treeObjectId = Tree.store(tree, database);
 
         // 3. Storing commit
-        String authorName = System.getenv(Constants.ENV_AUTHOR_KEY);
-        String authorEmail = System.getenv(Constants.ENV_EMAIL_KEY);
+        String authorName = getEnvOrDefault(Constants.ENV_AUTHOR_KEY, DEFAULT_AUTHOR);
+        String authorEmail = getEnvOrDefault(Constants.ENV_EMAIL_KEY, DEFAULT_EMAIL);
         CommitAuthor author = new CommitAuthor(authorName, authorEmail, Instant.now());
 
         Refs ref = new Refs();
         String parentId = ref.readHead();
 
-        System.out.println("Enter the commit messages:");
-        String message = getCommitMsg();
+//        System.out.println("Enter the commit messages:");
+//        String message = getCommitMsg();
+        // TODO: get commit message from terminal
+        String message = "Dummy commit message";
 
         Commit commit = new Commit(author, treeObjectId, message, parentId);
         database.store(commit);
 
         // 4. Update HEAD
-        ref.updateHead(commit.getOid());
+        ref.updateHead(commit.getOid().getValue());
 
         // 5. Display the commit confirmation message
         String firstLine = getFirstLine(message);

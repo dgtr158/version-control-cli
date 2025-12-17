@@ -80,14 +80,13 @@ public class TreeEntry {
      * The byte array is parsed to extract the file mode, file name, and object ID,
      * which are used to construct the {@code TreeEntry} instance.
      *
-     * @param bytes the byte array representing a serialized {@code TreeEntry} object.
+     * @param buf the byte buffer containing a serialized {@code TreeEntry} object.
      *              It must follow the format: <mode><space><filename><null_terminator><objectID>.
      * @return a new {@code TreeEntry} object reconstructed from the provided byte array.
      * @throws NoSuchAlgorithmException if the hash algorithm required for creating the {@code ObjectID}
      *                                   is not available.
      */
-    public static TreeEntry fromBytes(byte[] bytes) throws NoSuchAlgorithmException {
-        ByteBuffer buf = ByteBuffer.wrap(bytes);
+    public static TreeEntry fromBytes(ByteBuffer buf) throws NoSuchAlgorithmException {
         // Mode
         int start = buf.position();
         int end = start;

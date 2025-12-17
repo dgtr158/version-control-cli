@@ -6,11 +6,21 @@ import duongtran.vctrl.storage.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+/**
+ * Represents a hierarchical tree structure with entries and subtrees.
+ * A tree consists of file entries and subtrees, allowing for a directory-like structure.
+ *
+ * Tree object format:
+ *      tree<space><contentLength><null><listOfTreeEntry>
+ * See {@code TreeEntry} for tree's entry format.
+ *
+ */
 public class Tree extends ObjectStorage {
     private final List<TreeEntry> entries;
     private final List<Tree> subTrees;
@@ -25,6 +35,13 @@ public class Tree extends ObjectStorage {
         for (TreeEntry entry : entries) {
             storedEntries.put(entry.getFileName(), entry);
         }
+    }
+
+    public Tree(TreeMap<String, TreeEntry> storedEntries, Path path) {
+        this.entries = new ArrayList<>();
+        this.subTrees = new ArrayList<>();
+        this.storedEntries = storedEntries;
+        this.path = path;
     }
 
     @Override
@@ -70,6 +87,17 @@ public class Tree extends ObjectStorage {
     }
 
     /**
+     * Retrieves the stored entries of the tree.
+     * The stored entries are represented as a map where the key is the file name
+     * and the value is the corresponding {@code TreeEntry}.
+     *
+     * @return a {@code TreeMap<String, TreeEntry>} containing the stored entries of the tree.
+     */
+    public TreeMap<String, TreeEntry> getStoredEntries() {
+        return storedEntries;
+    }
+
+    /**
      * Adds a {@code TreeEntry} object to the stored entries map in the current tree instance.
      * The entry is associated with its file name as the key in the map.
      *
@@ -95,17 +123,75 @@ public class Tree extends ObjectStorage {
         return buildWithNormalize(Path.of(""), relativeEntryPath);
     }
 
+    /**
+     * Stores the specified tree into the database. The method recursively processes
+     * all subtrees of the given tree, stores them into the database, and then constructs and
+     * stores the root tree in the database. Each subtree is represented as a directory entry
+     * in the root tree.
+     *
+     * @param root the root {@code Tree} object to be stored. Must not be null and should contain
+     *             its associated subtrees and entries.
+     * @param database the {@code Database} instance where the tree and its contents will be stored.
+     *                 Must not be null.
+     * @return the {@code ObjectID} representing the stored tree in the database.
+     * @throws IOException if an I/O error occurs during the storage process.
+     * @throws NoSuchAlgorithmException if the hash algorithm used for generating the
+     *                                   {@code ObjectID} is not available.
+     */
     public static ObjectID store(Tree root, Database database) throws IOException, NoSuchAlgorithmException {
         // Build the subtree
         for (Tree subTree : root.subTrees) {
             ObjectID subTreeOID = store(subTree, database);
             root.addStoreEntry(new TreeEntry(
-                    root.getPath().getFileName().toString()
+                    subTree.getPath().getFileName().toString()
                     ,subTreeOID
                     ,FileMode.DIRECTORY
             ));
         }
         return database.store(root);
+    }
+
+    /**
+     * Loads a {@code Tree} object from the database using its specified {@code ObjectID}.
+     * The method retrieves the object from the database and casts it to a {@code Tree}.
+     *
+     * @param oid the {@code ObjectID} of the {@code Tree} to be loaded. Must not be null.
+     * @return the {@code Tree} object corresponding to the provided {@code ObjectID}.
+     * @throws IOException if an I/O error occurs while loading the object from the database.
+     * @throws NoSuchAlgorithmException if the hashing algorithm used during the loading process is unavailable.
+     */
+    public static Tree loadTree(ObjectID oid) throws IOException, NoSuchAlgorithmException {
+        Database database = Database.getInstance();
+        return (Tree) database.loadObject(oid, ObjectType.TREE);
+    }
+
+    /**
+     * Constructs a {@code Tree} object from the provided byte array representation.
+     * The byte array should encode the header and the stored entries of the tree.
+     *
+     * @param bytes the byte array containing the serialized representation of a {@code Tree}.
+     *              Must not be null and must include both the header and entry data.
+     * @return a {@code Tree} object constructed from the provided byte array.
+     * @throws NoSuchAlgorithmException if the algorithm used for processing the byte array is unavailable.
+     */
+    public static Tree fromBytes(byte[] bytes) throws NoSuchAlgorithmException {
+        ByteBuffer buf = ByteBuffer.wrap(bytes);
+
+        // Header
+        byte[] headerBytes = new byte[ObjectType.TREE.getObjectHeaderSize()];
+        buf.get(headerBytes);
+        ObjectStorageHeader.fromBytes(headerBytes);
+
+        // Stored Entries
+        TreeMap<String, TreeEntry> storedEntryMap = new TreeMap<>();
+        Path rootPath = Path.of("");
+        while (buf.hasRemaining()) {
+            TreeEntry treeEntry = TreeEntry.fromBytes(buf);
+            Path treePath = Path.of(treeEntry.getFileName());
+            storedEntryMap.put(treePath.toString(), treeEntry);
+        }
+
+        return new Tree(storedEntryMap, rootPath);
     }
 
     @Override

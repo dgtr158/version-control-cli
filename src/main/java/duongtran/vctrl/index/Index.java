@@ -238,7 +238,7 @@ public class Index implements Serializable {
         byte[] hashInput = new byte[dataLen];
         buf.rewind();
         buf.get(hashInput, 0, dataLen);
-        ObjectID objectID = ObjectID.fromBytes(hashInput);
+        ObjectID objectID = ObjectID.toObjectID(hashInput);
         byte[] checksum = Utils.hexStringToByteArray(objectID.getValue());
         buf.put(checksum);
         return objectID;
@@ -275,7 +275,7 @@ public class Index implements Serializable {
         }
 
         // Index's ID
-        ObjectID id = ObjectID.fromBytes(buf);
+        ObjectID id = ObjectID.toObjectID(buf);
         size += ObjectID.SIZE_IN_BYTES;
 
         // Set index's attributes
@@ -303,8 +303,8 @@ public class Index implements Serializable {
             byte[] contentBytes = Arrays.copyOfRange(indexAllBytes, 0, separator);
             byte[] checksumBytes = Arrays.copyOfRange(indexAllBytes, separator, indexAllBytes.length);
 
-            ObjectID content = ObjectID.fromBytes(contentBytes);
-            ObjectID checksum = ObjectID.fromBytes(ByteBuffer.wrap(checksumBytes));
+            ObjectID content = ObjectID.toObjectID(contentBytes);
+            ObjectID checksum = ObjectID.toObjectID(ByteBuffer.wrap(checksumBytes));
             if (!content.equals(checksum)) {
                 throw new IOException("Failed to load index file, checksum failed");
             }

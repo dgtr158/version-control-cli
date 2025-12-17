@@ -21,9 +21,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TreeTest {
 
@@ -110,6 +110,59 @@ public class TreeTest {
             Tree actual = Tree.buildTree(index.getEntryMap());
 
             assertEquals(expected, actual);
+
+
+        } catch (Exception ex) {
+            log.error("failed: {}", ex.getMessage());
+            fail();
+        }
+
+    }
+
+    @Test
+    void testStoreTree() {
+
+        AddAction addAction;
+
+        try {
+
+            // Create files in the firstDir
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Create files in the subFirstDir
+            TestUtils.writeText(testFile111, "Test content 111");
+
+            // Create a file in the secondDir
+            TestUtils.writeText(testFile21, "Test content 21");
+
+            // Execute action
+            addAction = new AddAction();
+            addAction.execute(rootPath);
+
+            // Load index from disk
+            Index index = Index.loadFromDisk();
+            Tree storedTree = Tree.buildTree(index.getEntryMap());
+
+            // Execute: store the tree
+            ObjectID storedTreeOid = Tree.store(storedTree, database);
+
+            // Load tree from disk
+            Tree loadedTree = Tree.loadTree(storedTreeOid);
+
+            // Verify if the loaded tree is valid
+            log.debug("Loaded Tree: {}", loadedTree.getType());
+            TreeMap<String, TreeEntry> loadedEntries = loadedTree.getStoredEntries();
+            assertEquals(2, loadedEntries.size());
+            TreeEntry firstDirTreeEntry = loadedEntries.get(firstDir.getFileName().toString());
+            assertNotNull(firstDirTreeEntry);
+            assertEquals(firstDir.getFileName().toString(), firstDirTreeEntry.getFileName());
+            assertEquals(FileMode.DIRECTORY, firstDirTreeEntry.getMode());
+
+            TreeEntry secondDirTreeEntry = loadedEntries.get(secondDir.getFileName().toString());
+            assertNotNull(secondDirTreeEntry);
+            assertEquals(secondDir.getFileName().toString(), secondDirTreeEntry.getFileName());
+            assertEquals(FileMode.DIRECTORY, secondDirTreeEntry.getMode());
 
 
         } catch (Exception ex) {

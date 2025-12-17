@@ -6,6 +6,7 @@ import duongtran.vctrl.storage.ObjectStorage;
 import duongtran.vctrl.utils.Utils;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -29,7 +30,9 @@ public class TreeEntryTest {
                 , FileMode.REGULAR_FILE
         );
 
-        TreeEntry actual = TreeEntry.fromBytes(expected.toBytes());
+        byte[] bytes = expected.toBytes();
+        ByteBuffer buf = ByteBuffer.wrap(bytes);
+        TreeEntry actual = TreeEntry.fromBytes(buf);
         assertEquals(expected, actual);
 
     }

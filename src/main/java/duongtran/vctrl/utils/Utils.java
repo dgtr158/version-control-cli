@@ -44,4 +44,9 @@ public final class Utils {
         return true;
     }
 
+    public static String getEnvOrDefault(String key, String defaultValue) {
+        String value = System.getenv(key);
+        return (value != null && !value.isEmpty()) ? value : defaultValue;
+    }
+
 }

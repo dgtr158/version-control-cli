@@ -1,8 +1,5 @@
 package duongtran.vctrl.storage;
 
-import duongtran.vctrl.utils.Utils;
-
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
@@ -12,14 +9,14 @@ public abstract class ObjectStorage {
     public static final String HASH_ALGORITHM = "SHA-1";
     public static final int OID_SIZE = 20;
 
-    private String oid; // object ID
+    private ObjectID oid; // object ID
 
     /**
      * Retrieves the Object ID (OID) of the current object.
      *
      * @return the OID of the object as a string.
      */
-    public String getOid() {
+    public ObjectID getOid() {
         return oid;
     }
 
@@ -32,8 +29,7 @@ public abstract class ObjectStorage {
         if (this.oid != null) {
             return;
         }
-        MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
-        this.oid = Utils.bytesToHex(digest.digest(content));
+        this.oid = ObjectID.toObjectID(content);
     }
 
     /**

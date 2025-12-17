@@ -20,7 +20,7 @@ public class ObjectIDTest {
         // change buffer into read mode
         buf.flip();
 
-        ObjectID actual = ObjectID.fromBytes(buf);
+        ObjectID actual = ObjectID.toObjectID(buf);
         assertEquals(expected, actual);
     }
 

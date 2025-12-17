@@ -1,10 +1,13 @@
 package duongtran.vctrl.storage;
 
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.concurrency.Lockfile;
+import duongtran.vctrl.storage.objects.Blob;
+import duongtran.vctrl.storage.objects.Commit;
+import duongtran.vctrl.storage.objects.Tree;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,7 +17,9 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 /**
  * Responsible for storing content in .vctrl/objects
@@ -55,10 +60,32 @@ public class Database {
         if (object == null) {
             throw new IllegalArgumentException("Blob object cannot be null");
         }
-        byte[] content = object.getContent();
+        byte[] content = object.toBytes();
         object.calculateOid(content);
         writeObject(object.getOid(), content);
-        return new ObjectID(object.getOid());
+        return object.getOid();
+    }
+
+    public ObjectStorage loadObject(ObjectID objectID, ObjectType type) throws IOException, NoSuchAlgorithmException {
+
+        Path path = constructObjectPath(objectID.getValue());
+        byte[] bytes;
+        try (Lockfile in = new Lockfile(path)) {
+            in.acquire();
+            byte[] compressedBytes = in.read(path);
+            bytes = uncompressData(compressedBytes);
+
+            // TODO: Verify checksum
+        }
+
+        // Deserialize the object
+        return switch (type) {
+            case BLOB -> Blob.fromBytes(bytes);
+            case TREE -> Tree.fromBytes(bytes);
+            case COMMIT -> Commit.fromBytes(bytes);
+            default -> throw new IllegalArgumentException("Type cannot be: " + type);
+        };
+
     }
 
 
@@ -72,8 +99,8 @@ public class Database {
      * @throws IOException If an I/O error occurs during directory creation, writing the content,
      *                     or moving the file to its final location.
      */
-    private void writeObject(String oid, byte[] content) throws IOException {
-        Path objectPath = constructObjectPath(oid);
+    private void writeObject(ObjectID oid, byte[] content) throws IOException {
+        Path objectPath = constructObjectPath(oid.getValue());
         if (Files.exists(objectPath)) {
             return;
         }
@@ -102,7 +129,7 @@ public class Database {
      * @return A {@code Path} object representing the resolved location in the database
      *         where the object resides or should reside.
      */
-    private Path constructObjectPath(String oid) {
+    public Path constructObjectPath(String oid) {
         return dbPath.resolve(oid.substring(0, 2))
                 .resolve(oid.substring(2));
     }
@@ -199,6 +226,39 @@ public class Database {
             throw new RuntimeException("Failed to compress data", e);
         } finally {
             deflater.end();
+        }
+    }
+
+    /**
+     * Decompresses the provided byte array, which is expected to be in a compressed format,
+     * using the Inflater decompression algorithm. The method returns the original uncompressed
+     * byte array.
+     *
+     * @param compressedData the byte array representing the compressed data to be decompressed.
+     *                        Must not be null.
+     * @return a byte array containing the decompressed data.
+     * @throws RuntimeException if the decompression process fails due to data format issues or
+     *                          an I/O error.
+     */
+    private byte[] uncompressData(byte[] compressedData) {
+        Inflater inflater = new Inflater();
+        try (ByteArrayOutputStream outputStream =
+                     new ByteArrayOutputStream(compressedData.length)) {
+
+            inflater.setInput(compressedData);
+
+            byte[] buffer = new byte[BUFFER_SIZE];
+            while (!inflater.finished()) {
+                int count = inflater.inflate(buffer);
+                outputStream.write(buffer, 0, count);
+            }
+
+            return outputStream.toByteArray();
+
+        } catch (DataFormatException | IOException e) {
+            throw new RuntimeException("Failed to uncompress data", e);
+        } finally {
+            inflater.end();
         }
     }
 
