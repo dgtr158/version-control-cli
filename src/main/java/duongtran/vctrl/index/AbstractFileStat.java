@@ -14,7 +14,6 @@ public abstract class AbstractFileStat implements FileStat {
 
     protected final Path path;
     protected final BasicFileAttributes attrs;
-     // For Unix file
 
     public AbstractFileStat(Path path) throws IOException {
         this.path = path;
@@ -70,6 +69,17 @@ public abstract class AbstractFileStat implements FileStat {
     @Override
     public int getSize() {
         return (int) attrs.size();
+    }
+
+    @Override
+    public Path getPath() {
+        return path;
+    }
+
+    @Override
+    public boolean isDirectory() {
+        if (path == null) return false;
+        return Files.isDirectory(path);
     }
 
 }

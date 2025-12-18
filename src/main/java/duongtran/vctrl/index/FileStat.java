@@ -1,5 +1,7 @@
 package duongtran.vctrl.index;
 
+import java.nio.file.Path;
+
 public interface FileStat {
     boolean isExecutable();
     int getCtimeSeconds();
@@ -12,4 +14,6 @@ public interface FileStat {
     int getUid();
     int getGid();
     int getSize();
+    Path getPath();
+    boolean isDirectory();
 }

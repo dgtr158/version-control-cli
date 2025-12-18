@@ -35,11 +35,15 @@ public final class Utils {
         return data;
     }
 
-    public static boolean mapsEqual(Map<Path, IndexEntry> m1, Map<Path, IndexEntry> m2) {
+    public static <K, V> boolean mapsEqual(Map<K, V> m1, Map<K, V> m2) {
+        if (m1 == m2) return true;
+        if (m1 == null || m2 == null) return false;
         if (m1.size() != m2.size()) return false;
-        for (Path key : m1.keySet()) {
+
+        for (Map.Entry<K, V> e : m1.entrySet()) {
+            K key = e.getKey();
             if (!m2.containsKey(key)) return false;
-            if (!Objects.equals(m1.get(key), m2.get(key))) return false;
+            if (!Objects.equals(e.getValue(), m2.get(key))) return false;
         }
         return true;
     }

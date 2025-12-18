@@ -2,11 +2,13 @@ package duongtran.vctrl.index;
 
 import duongtran.vctrl.utils.Utils;
 
-import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+/**
+ * Represents an entry in an index with metadata information about a file.
+ */
 public class IndexEntry {
 
     public static final int FIXED_SIZE_IN_BYTE = 62;
@@ -163,6 +165,16 @@ public class IndexEntry {
         int totalSize = FIXED_SIZE_IN_BYTE + pathSize;
         int paddingSize = (CONSUME_BYTES_BLOCK - (totalSize % CONSUME_BYTES_BLOCK)) % CONSUME_BYTES_BLOCK;
         return totalSize + paddingSize;
+    }
+
+    /**
+     * Compares the file size of the current object with the size of the given FileStat object.
+     *
+     * @param fileStat the FileStat object whose size is compared with the file size of the current object
+     * @return true if the file size is zero or matches the size in the given FileStat object, false otherwise
+     */
+    public boolean statMatch(FileStat fileStat) {
+        return fileSize == 0 || fileSize == fileStat.getSize();
     }
 
     /**

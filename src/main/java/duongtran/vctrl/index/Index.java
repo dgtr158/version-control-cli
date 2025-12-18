@@ -18,10 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * The Index class represents a repository index, providing functionality for managing
@@ -49,6 +46,7 @@ public class Index implements Serializable {
     private transient final Path indexPath;
     private transient int sizeInBytes;
     private transient boolean isChanged;
+    private final transient Set<Path> trackedDirs; // Set of tracked directories
 
     private final IndexHeader header;
     private Map<Path, IndexEntry> entryMap;
@@ -60,6 +58,7 @@ public class Index implements Serializable {
         this.entryMap = new TreeMap<>();
         this.sizeInBytes = IndexHeader.HEADER_SIZE + ObjectStorage.OID_SIZE;
         this.isChanged = false;
+        this.trackedDirs = new HashSet<>();
     }
 
     public IndexHeader getHeader() {
@@ -105,7 +104,8 @@ public class Index implements Serializable {
      * Adds an entry to the index.
      * If the entry does not already exist, it is created.
      * If the entry exists but has changed, it is updated with the new data.
-     * The method also updates the index size and marks the index as changed if any modifications occur.
+     * The method also updates the index
+     * size and marks the index as changed if any modifications occur.
      *
      * @param path The file path of the entry to be added.
      * @param blobId The identifier of the blob associated with the entry.
@@ -132,6 +132,9 @@ public class Index implements Serializable {
             entryMap.put(path, entry);
             this.isChanged = true;
         }
+
+        // Update the tracked directories set
+        this.addToCheckDir(path);
 
     }
 
@@ -282,6 +285,9 @@ public class Index implements Serializable {
 
             // Update index's size
             size += indexEntry.getSize();
+
+            // Update the tracked directories set
+            index.addToCheckDir(path);
         }
 
         // Index's ID
@@ -320,6 +326,38 @@ public class Index implements Serializable {
             }
             ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
             return Index.fromBytes(byteBuffer);
+        } catch (Exception e) {
+            return new Index();
+        }
+    }
+
+
+    /**
+     * Checks if a given path is being tracked.
+     *
+     * A path is considered tracked if it exists in the entry map
+     * or if it is present in the set of tracked directories.
+     *
+     * @param path the file or directory path to check
+     * @return true if the path is being tracked, false otherwise
+     */
+    public boolean isTracked(Path path) {
+        return entryMap.containsKey(path) || trackedDirs.contains(path);
+    }
+
+    /**
+     * Adds all parent directories of the given path to the set of tracked directories.
+     *
+     * @param path the file or directory path whose parent directories will be added
+     *             to the tracked directories set
+     */
+    private void addToCheckDir(Path path) {
+        Path rootPath = Workspace.getInstance().getRootPath();
+        Path parent = path.getParent();
+
+        while (parent != null && !parent.equals(rootPath)) {
+            trackedDirs.add(parent);
+            parent = parent.getParent();
         }
     }
 
