@@ -7,6 +7,7 @@ import duongtran.vctrl.actions.CommitAction;
 import duongtran.vctrl.actions.StatusAction;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.storage.Database;
+import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -276,12 +278,170 @@ public class StatusActionTest {
             secondExpected.addEntry(new StatusEntry(testFile112, StatusType.MODIFIED));
             assertEquals(secondExpected, secondActual);
 
+            // Add testFile11 and testFile112 to staging and commit
+            Index secondIndex = addAction.execute(firstDir);
+            Commit secondCommit = commitAction.execute();
+
+            // Execute status command a third time
+            Status thirdActual = statusAction.execute();
+
+            // Assert: After the third time, nothing changed
+            Status thirdExpected = new Status();
+            assertEquals(thirdExpected, thirdActual);
+
+
         } catch (Exception ex) {
             ex.printStackTrace();
             fail();
         }
     }
 
+    @Test
+    void testExecuteReportChangedModeFromLastStaged() {
 
+        StatusAction statusAction = new StatusAction();;
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+
+        try {
+
+            // Create files and its contents in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Create files and its contents in the subFirstDir
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+
+            // Add firstDir to staging and commit
+            Index firstIndex = addAction.execute(firstDir);
+            Commit firstCommit = commitAction.execute();
+
+            // Execute status command first time
+            Status firstActual = statusAction.execute();
+
+            // Assert: After the first time, nothing changed
+            Status firstExpected = new Status();
+            assertEquals(firstExpected, firstActual);
+
+            // Change modes of testFile11 and testFile112
+            TestUtils.changeMode(testFile11, FileMode.EXECUTABLE_FILE);
+            TestUtils.changeMode(testFile112, FileMode.EXECUTABLE_FILE);
+
+            // Execute status command a second time
+            Status secondActual = statusAction.execute();
+
+            // Assert: After modifying the two files, changes will be reported
+            Status secondExpected = new Status();
+            secondExpected.addEntry(new StatusEntry(testFile11, StatusType.MODIFIED));
+            secondExpected.addEntry(new StatusEntry(testFile112, StatusType.MODIFIED));
+            assertEquals(secondExpected, secondActual);
+
+
+        } catch (Exception ex) {
+            fail();
+        }
+    }
+
+    @Test
+    void testExecuteReportChangedButKeepSizeFromLastStaged() {
+
+        StatusAction statusAction = new StatusAction();;
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+
+        try {
+
+            // Create files and its contents in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Create files and its contents in the subFirstDir
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+
+            // Add firstDir to staging and commit
+            Index firstIndex = addAction.execute(firstDir);
+            Commit firstCommit = commitAction.execute();
+
+            // Execute status command first time
+            Status firstActual = statusAction.execute();
+
+            // Assert: After the first time, nothing changed
+            Status firstExpected = new Status();
+            assertEquals(firstExpected, firstActual);
+
+            // Change contents of testFile11 and testFile112 without changing size
+            TestUtils.writeText(testFile11, "Test content 91");
+            TestUtils.writeText(testFile112, "Test content 912");
+
+            // Execute status command a second time
+            Status secondActual = statusAction.execute();
+
+            // Assert: After modifying the two files, changes will be reported
+            Status secondExpected = new Status();
+            secondExpected.addEntry(new StatusEntry(testFile11, StatusType.MODIFIED));
+            secondExpected.addEntry(new StatusEntry(testFile112, StatusType.MODIFIED));
+            assertEquals(secondExpected, secondActual);
+
+
+        } catch (Exception ex) {
+            fail();
+        }
+    }
+
+    @Test
+    void testExecuteReportChangedModifiedTimeFromLastStaged() {
+
+        StatusAction statusAction = new StatusAction();;
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+
+        try {
+
+            // Create files and its contents in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Create files and its contents in the subFirstDir
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+
+            // Add firstDir to staging and commit
+            Index firstIndex = addAction.execute(firstDir);
+            Commit firstCommit = commitAction.execute();
+
+            // Execute status command first time
+            Status firstActual = statusAction.execute();
+
+            // Assert: After the first time, nothing changed
+            Status firstExpected = new Status();
+            assertEquals(firstExpected, firstActual);
+
+            // Change the modified time of testFile11 and testFile112
+            Instant time = Instant.parse("2099-01-01T00:00:00Z");
+            TestUtils.setMTime(testFile11, time);
+            TestUtils.setMTime(testFile112, time);
+
+            // Execute status command a second time
+            Status secondActual = statusAction.execute();
+
+            // Assert: After modifying the two files, changes will be reported
+            Status secondExpected = new Status();
+            secondExpected.addEntry(new StatusEntry(testFile11, StatusType.MODIFIED));
+            secondExpected.addEntry(new StatusEntry(testFile112, StatusType.MODIFIED));
+            assertEquals(secondExpected, secondActual);
+
+
+        } catch (Exception ex) {
+            fail();
+        }
+    }
 
 }

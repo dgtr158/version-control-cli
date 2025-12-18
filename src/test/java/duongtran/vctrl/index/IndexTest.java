@@ -191,13 +191,12 @@ public class IndexTest {
             );
 
             // Execute the load the index file from disk
-            Index.loadFromDisk();
-
-            log.error("Checksum failed, need to throw Exception");
-            fail();
+            Index index = Index.loadFromDisk();
+            assertNull(index);
 
         } catch (Exception ex) {
-            assertEquals("Failed to load index file, checksum failed", ex.getMessage());
+            log.error("Failed to load index from disk");
+            fail();
         }
 
     }

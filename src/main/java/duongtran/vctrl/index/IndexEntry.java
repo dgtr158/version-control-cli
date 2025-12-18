@@ -168,13 +168,29 @@ public class IndexEntry {
     }
 
     /**
-     * Compares the file size of the current object with the size of the given FileStat object.
+     * Compares the mode and size attributes of the current object with those of
+     * the provided FileStat object to check if they match.
      *
-     * @param fileStat the FileStat object whose size is compared with the file size of the current object
-     * @return true if the file size is zero or matches the size in the given FileStat object, false otherwise
+     * @param fileStat the FileStat object to compare against
+     * @return true if the mode matches and the file size is either zero or equal to the
+     *         file size of the provided FileStat object, false otherwise
      */
     public boolean statMatch(FileStat fileStat) {
-        return fileSize == 0 || fileSize == fileStat.getSize();
+        return (mode == fileStat.getMode()) && (fileSize == 0 || fileSize == fileStat.getSize());
+    }
+
+    /**
+     * Compares the creation and modification timestamps of the current object
+     * with those of the provided FileStat object.
+     *
+     * @param fileStat the FileStat object
+     * @return true if both the creation and modification timestamps (including
+     *         seconds and nanoseconds) match between the current object and the
+     *         provided FileStat object, false otherwise
+     */
+    public boolean timeMatch(FileStat fileStat) {
+        return (ctimeSeconds == fileStat.getCtimeSeconds() && ctimeNanos == fileStat.getCtimeNanos())
+                && (mtimeSeconds == fileStat.getMtimeSeconds() && mtimeNanos == fileStat.getMtimeNanos());
     }
 
     /**

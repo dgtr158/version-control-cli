@@ -201,8 +201,7 @@ public class Index implements Serializable {
             buf.flip();
 
             // Flush content into disk
-            int writtenBytes = out.write(buf);
-            log.info("Written bytes: {}, Total bytes: {}", writtenBytes, sizeInBytes);
+            out.write(buf);
 
         } catch (NoSuchAlgorithmException e) {
             log.error("Cannot create index object ID: {}\n", e.getMessage());
@@ -327,7 +326,7 @@ public class Index implements Serializable {
             ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
             return Index.fromBytes(byteBuffer);
         } catch (Exception e) {
-            return new Index();
+            return null;
         }
     }
 
