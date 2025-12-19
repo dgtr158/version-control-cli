@@ -2,6 +2,7 @@ package duongtran.vctrl.storage;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.concurrency.Lockfile;
+import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.objects.Blob;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.storage.objects.Tree;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -29,13 +31,14 @@ public class Database {
     private Path dbPath;
 
     private static final Logger logger = LoggerFactory.getLogger(Database.class);
-    
+
     private static final String TEMP_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int TEMP_NAME_LENGTH = 6;
     private static final String TEMP_PREFIX = "tmp_obj_";
     private static final int BUFFER_SIZE = 8192; // Increased buffer size for better performance
 
-    private Database() {}
+    private Database() {
+    }
 
     /**
      * Initializes the database instance by setting up the database path.
@@ -66,7 +69,7 @@ public class Database {
      * Stores a blob object in the database.
      *
      * @param object The blob objects to store
-     * @throws IOException If failed to write the object
+     * @throws IOException              If failed to write the object
      * @throws IllegalArgumentException If an object is null
      */
     public ObjectID store(ObjectStorage object) throws IOException, NoSuchAlgorithmException {
@@ -85,14 +88,13 @@ public class Database {
      * and returns the corresponding object representation.
      *
      * @param objectID The identifier of the object to be loaded. It uniquely identifies the object in the database.
-     * @param type The type of the object being loaded. Determines how the data is deserialized.
-     *
+     * @param type     The type of the object being loaded. Determines how the data is deserialized.
      * @return The deserialized object corresponding to the specified identifier and type.
-     * @throws IOException If an I/O error occurs while accessing the object data.
+     * @throws IOException              If an I/O error occurs while accessing the object data.
      * @throws NoSuchAlgorithmException If the checksum verification process requires an unsupported algorithm.
      * @throws IllegalArgumentException If the specified type is not recognized.
      */
-    public ObjectStorage loadObject(ObjectID objectID, ObjectType type) throws IOException, NoSuchAlgorithmException {
+    public ObjectStorage loadObject(ObjectID objectID, ObjectType type) throws IOException, NoSuchAlgorithmException, IllegalArgumentException {
 
         Path path = constructObjectPath(objectID.getValue());
         byte[] bytes;
@@ -122,7 +124,7 @@ public class Database {
      * writes the compressed content to a temporary file, then atomically moves it to its final
      * location. If any error occurs during the process, the temporary file is cleaned up.
      *
-     * @param oid The object ID, typically a hashed value used as the filename.
+     * @param oid     The object ID, typically a hashed value used as the filename.
      * @param content The byte array representing the content of the object to be stored.
      * @throws IOException If an I/O error occurs during directory creation, writing the content,
      *                     or moving the file to its final location.
@@ -155,18 +157,24 @@ public class Database {
      * @param oid The object ID, a hashed value typically used to identify and locate
      *            the object in the database.
      * @return A {@code Path} object representing the resolved location in the database
-     *         where the object resides or should reside.
+     * where the object resides or should reside.
      */
     public Path constructObjectPath(String oid) {
         return dbPath.resolve(oid.substring(0, 2))
                 .resolve(oid.substring(2));
     }
 
+    public static Map<Path, DataEntry> listFileInHead() throws IOException, NoSuchAlgorithmException {
+        String headCommitID = Refs.readHead();
+        Commit commit = Commit.loadCommit(new ObjectID(headCommitID));
+        return Tree.listAllFiles(commit.getTreeOid(), Workspace.getInstance().getRootPath());
+    }
+
     /**
      * Compresses the given content and writes it to the specified temporary file path.
      *
      * @param tempPath The temporary file path where the compressed content will be written.
-     * @param content The byte array representing the content to be compressed and written.
+     * @param content  The byte array representing the content to be compressed and written.
      * @throws IOException If an I/O error occurs during the compression or writing process.
      */
     private void writeCompressedContent(Path tempPath, byte[] content) throws IOException {
@@ -181,7 +189,7 @@ public class Database {
      * in the file system. This operation ensures that the move is performed atomically,
      * providing guarantees about file integrity and avoiding partial writes.
      *
-     * @param tempPath The path of the temporary file to be moved.
+     * @param tempPath  The path of the temporary file to be moved.
      * @param finalPath The target path where the file should be moved.
      * @throws IOException If an I/O error occurs during the move operation.
      */
@@ -263,7 +271,7 @@ public class Database {
      * byte array.
      *
      * @param compressedData the byte array representing the compressed data to be decompressed.
-     *                        Must not be null.
+     *                       Must not be null.
      * @return a byte array containing the decompressed data.
      * @throws RuntimeException if the decompression process fails due to data format issues or
      *                          an I/O error.

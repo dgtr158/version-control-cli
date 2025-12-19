@@ -160,7 +160,7 @@ public class Tree extends ObjectStorage {
      * @throws IOException if an I/O error occurs while loading the object from the database.
      * @throws NoSuchAlgorithmException if the hashing algorithm used during the loading process is unavailable.
      */
-    public static Tree loadTree(ObjectID oid) throws IOException, NoSuchAlgorithmException {
+    public static Tree loadTree(ObjectID oid) throws IOException, NoSuchAlgorithmException, IllegalArgumentException {
         Database database = Database.getInstance();
         return (Tree) database.loadObject(oid, ObjectType.TREE);
     }
@@ -174,13 +174,16 @@ public class Tree extends ObjectStorage {
      * @return a {@code Tree} object constructed from the provided byte array.
      * @throws NoSuchAlgorithmException if the algorithm used for processing the byte array is unavailable.
      */
-    public static Tree fromBytes(byte[] bytes) throws NoSuchAlgorithmException {
+    public static Tree fromBytes(byte[] bytes) throws NoSuchAlgorithmException, IllegalArgumentException {
         ByteBuffer buf = ByteBuffer.wrap(bytes);
 
         // Header
         byte[] headerBytes = new byte[ObjectType.TREE.getObjectHeaderSize()];
         buf.get(headerBytes);
-        ObjectStorageHeader.fromBytes(headerBytes);
+        ObjectStorageHeader header = ObjectStorageHeader.fromBytes(headerBytes);
+        if (!header.getType().equals(ObjectType.TREE)) {
+            throw new IllegalArgumentException("Not a tree object");
+        }
 
         // Stored Entries
         TreeMap<String, TreeEntry> storedEntryMap = new TreeMap<>();
@@ -192,6 +195,15 @@ public class Tree extends ObjectStorage {
         }
 
         return new Tree(storedEntryMap, rootPath);
+    }
+
+
+    public static Map<Path, DataEntry> listAllFiles(ObjectID objectID, Path parent) throws IOException, NoSuchAlgorithmException, IllegalArgumentException {
+        Tree tree = Tree.loadTree(objectID);
+        TreeMap<String, TreeEntry> StoredEntryMap = tree.getStoredEntries();
+
+
+        return null;
     }
 
     @Override
