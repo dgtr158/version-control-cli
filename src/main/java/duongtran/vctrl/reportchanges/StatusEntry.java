@@ -3,6 +3,10 @@ package duongtran.vctrl.reportchanges;
 import java.nio.file.Path;
 import java.util.Objects;
 
+/**
+ * Represents the status of a file or directory within a version control system.
+ * A StatusEntry object encapsulates a file path and its associated status type.
+ */
 public class StatusEntry {
 
     private final Path path;

@@ -1,5 +1,8 @@
 package duongtran.vctrl;
 
+import duongtran.vctrl.index.FileStat;
+import duongtran.vctrl.index.UnixFileStat;
+import duongtran.vctrl.index.WindowFileStat;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.utils.FileUtil;
@@ -23,11 +26,11 @@ public class TestUtils {
     /**
      * Workspace structure:
      * <pwd>/workspace/
-     *      firstDir/
-     *          foo.txt -> "Foo in the first directory"
-     *          bar.txt -> "Bar in the first directory"
-     *      secondDir/
-     *          bas.txt -> "Bas in the second directory"
+     * firstDir/
+     * foo.txt -> "Foo in the first directory"
+     * bar.txt -> "Bar in the first directory"
+     * secondDir/
+     * bas.txt -> "Bas in the second directory"
      */
     public static void createTestWorkspace() {
         Path rootPath = Paths.get(TEST_ROOT_PATH, "workspace");
@@ -66,12 +69,12 @@ public class TestUtils {
      * Writes the specified text content to a file at the given {@code Path}.
      * If the file does not exist, it will be created. If the file already exists,
      * its existing content will be overwritten.
-     *
+     * <p>
      * This method uses UTF-8 encoding and truncates the file before writing
      * the new content.
      *
-     * @param file the {@code Path} of the file where the text content should be written.
-     *             Must not be {@code null}.
+     * @param file    the {@code Path} of the file where the text content should be written.
+     *                Must not be {@code null}.
      * @param content the {@code String} content to write into the file.
      *                Must not be {@code null}.
      * @throws IOException if an I/O error occurs while writing to the file.
@@ -85,7 +88,7 @@ public class TestUtils {
      * If the specified path is a directory, its contents will also be deleted,
      * ensuring the directory is removed entirely. Files are deleted as they
      * are encountered.
-     *
+     * <p>
      * This method first traverses the directory tree in reverse order (from leaves
      * to root) to safely delete all files and directories without leaving any
      * residual files or subdirectories. If the path does not exist, the method
@@ -94,11 +97,11 @@ public class TestUtils {
      * @param path the {@code Path} to the file or directory to delete. Must not
      *             be {@code null}. If the path points to a directory, all its
      *             contents will be deleted recursively.
-     * @throws IOException if an I/O error occurs during the deletion process.
+     * @throws IOException      if an I/O error occurs during the deletion process.
      * @throws RuntimeException if an error occurs while attempting to delete a
      *                          specific file or directory.
      */
-    private static void deleteRecursively(Path path) throws IOException {
+    public static void deleteRecursively(Path path) throws IOException {
         if (!Files.exists(path)) return;
         try (var stream = Files.walk(path)) {
             stream.sorted((a, b) -> b.getNameCount() - a.getNameCount())
@@ -116,7 +119,7 @@ public class TestUtils {
      * Changes the mode of the given file or directory to the specified {@link FileMode}.
      * The method ensures that the provided {@code Path} matches the given {@code FileMode},
      * and if applicable, modifies the execution permissions based on the target file mode.
-     *
+     * <p>
      * This method is compatible with both Unix and non-Unix systems. On Unix systems,
      * it explicitly sets the POSIX file permissions, while on other systems it relies
      * on Java's file API to manage executability.
@@ -125,7 +128,7 @@ public class TestUtils {
      *             must not be {@code null}.
      * @param mode the {@link FileMode} to which the file or directory should be set;
      *             must not be {@code null}.
-     * @throws IOException if an I/O error occurs while modifying file permissions.
+     * @throws IOException              if an I/O error occurs while modifying file permissions.
      * @throws IllegalArgumentException if the specified path does not match
      *                                  the expected type for the given mode.
      */
@@ -176,14 +179,27 @@ public class TestUtils {
     /**
      * Sets the last modified time of the specified file or directory to the given {@code Instant}.
      *
-     * @param path the {@code Path} of the file or directory whose last modified time is to be updated.
-     *             Must not be {@code null}.
+     * @param path    the {@code Path} of the file or directory whose last modified time is to be updated.
+     *                Must not be {@code null}.
      * @param instant the {@code Instant} representing the new last modified time.
      *                Must not be {@code null}.
      * @throws IOException if an I/O error occurs while setting the last modified time.
      */
     public static void setMTime(Path path, Instant instant) throws IOException {
         Files.setLastModifiedTime(path, FileTime.from(instant));
+    }
+
+    /**
+     * Returns the file status information for the specified file or directory at the given {@code Path}.
+     * Depending on the operating system, the method returns an instance of {@code WindowFileStat} or {@code UnixFileStat}.
+     *
+     * @param path the {@code Path} of the file or directory whose status information is to be retrieved.
+     *             Must not be {@code null}.
+     * @return a {@code FileStat} instance containing metadata about the specified file or directory.
+     * @throws IOException if an I/O error occurs while retrieving the file or directory status.
+     */
+    public static FileStat getFileStat(Path path) throws IOException {
+        return FileUtil.isWindows() ? new WindowFileStat(path) : new UnixFileStat(path);
     }
 
 }

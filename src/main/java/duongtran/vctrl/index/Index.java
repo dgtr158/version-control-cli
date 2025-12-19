@@ -85,6 +85,10 @@ public class Index implements Serializable {
         return isChanged;
     }
 
+    public void setChanged() {
+        this.isChanged = true;
+    }
+
     public void setSizeInBytes(int sizeInBytes) {
         this.sizeInBytes = sizeInBytes;
     }

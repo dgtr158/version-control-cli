@@ -7,6 +7,11 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.TreeMap;
 
+/**
+ * The Status class tracks the state of files in a workspace. This includes
+ * categorization of files into tracked, untracked, modified, and deleted states.
+ * It operates by storing file status information in separate maps based on the file's state.
+ */
 public class Status {
 
     private final TreeMap<Path, StatusEntry> entries;
@@ -17,12 +22,16 @@ public class Status {
     private final TreeMap<Path, StatusEntry> untrackedMap;
     // Paths where the workspace content differs from what's in the index
     private final TreeMap<Path, StatusEntry> modifiedMap;
+    // Paths that deleted from workspace (right now files in the index)
+    private final TreeMap<Path, StatusEntry> deletedMap;
+
 
     public Status() {
         this.entries = new TreeMap<>();
         this.trackedFiles = new TreeMap<>();
         this.untrackedMap = new TreeMap<>();
         this.modifiedMap = new TreeMap<>();
+        this.deletedMap = new TreeMap<>();
     }
 
     public void addEntry(StatusEntry entry) {
@@ -55,6 +64,14 @@ public class Status {
 
     public TreeMap<Path, StatusEntry> getModifiedMap() {
         return modifiedMap;
+    }
+
+    public void addDeletedMapEntry(StatusEntry entry) {
+        deletedMap.put(entry.getPath(), entry);
+    }
+
+    public TreeMap<Path, StatusEntry> getDeletedMap() {
+        return deletedMap;
     }
 
     @Override
