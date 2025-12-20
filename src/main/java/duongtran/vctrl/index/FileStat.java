@@ -1,5 +1,7 @@
 package duongtran.vctrl.index;
 
+import duongtran.vctrl.storage.FileMode;
+
 import java.nio.file.Path;
 
 public interface FileStat {
@@ -10,7 +12,7 @@ public interface FileStat {
     int getMtimeNanos();
     int getDev();
     int getIno();
-    int getMode ();
+    FileMode getMode();
     int getUid();
     int getGid();
     int getSize();

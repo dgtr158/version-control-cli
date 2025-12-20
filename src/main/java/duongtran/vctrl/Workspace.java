@@ -29,7 +29,8 @@ public class Workspace {
     private Path vctrlPath;
 
     // Private constructor to prevent direct instantiation
-    private Workspace() {}
+    private Workspace() {
+    }
 
     /**
      * Initializes the Workspace with the specified root path. If the root path
@@ -93,8 +94,8 @@ public class Workspace {
      * as the parameter to default to the workspace's root path.
      *
      * @return a list of absolute file paths within the workspace's root directory, excluding
-     *         files located in the reserved root directory. Returns an empty list if the root
-     *         path is unset or if an I/O error occurs.
+     * files located in the reserved root directory. Returns an empty list if the root
+     * path is unset or if an I/O error occurs.
      */
     public List<Path> listFiles() {
         return listFiles(null);
@@ -105,13 +106,13 @@ public class Workspace {
      * located in directories matching the reserved name for the root directory.
      * The method traverses all files and directories in the workspace's root path
      * and captures their absolute paths.
-     *
+     * <p>
      * If the root path of the workspace is not set, it logs a message and returns an empty list.
      * In case of an I/O error during the operation, it logs the error message and also returns an empty list.
      *
      * @return a list of absolute file paths within the workspace, excluding files inside
-     *         the reserved root directory. Returns an empty list if the root path is unset
-     *         or if an I/O error occurs.
+     * the reserved root directory. Returns an empty list if the root path is unset
+     * or if an I/O error occurs.
      */
     public List<Path> listFiles(Path path) {
         if (path == null) {
@@ -133,15 +134,15 @@ public class Workspace {
      * Retrieves a list of all file paths within the workspace's root directory, excluding any file
      * paths located under the reserved `.vctrl` directory. The method traverses the directory tree
      * starting from the root path and collects all regular file paths.
-     *
+     * <p>
      * If the root path of the workspace is not set, the method returns an empty list. In the event
      * of an I/O error during the traversal, it logs the error message and also returns an empty list.
      *
      * @return a list of absolute file paths from the root directory of the workspace, excluding files
-     *         under the `.vctrl` directory. Returns an empty list if the root path is unset or if an
-     *         I/O error occurs.
+     * under the `.vctrl` directory. Returns an empty list if the root path is unset or if an
+     * I/O error occurs.
      */
-    public List<Path> listAllFiles() {
+    public List<Path> listAllFiles(Path path) {
         if (rootPath == null) {
             return new ArrayList<>();
         }
@@ -162,13 +163,13 @@ public class Workspace {
      * Lists the contents of a specified directory and returns the file statistics for each entry.
      * The method filters out the base directory itself and excludes files or directories
      * that are located within the `.vctrl` directory.
-     *
+     * <p>
      * If the input path is not a valid directory or if an I/O error occurs during the listing,
      * an empty list is returned.
      *
      * @param basePath the path of the directory whose contents are to be listed
      * @return a list of {@code FileStat} objects containing file information for each entry in the directory,
-     *         or an empty list if the path is not a valid directory or if an I/O error occurs
+     * or an empty list if the path is not a valid directory or if an I/O error occurs
      */
     public List<FileStat> listDir(Path basePath) {
         if (!Files.isDirectory(basePath)) return List.of();

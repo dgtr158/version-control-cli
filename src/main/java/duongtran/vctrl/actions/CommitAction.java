@@ -13,9 +13,10 @@ import duongtran.vctrl.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Ref;
 import java.time.Instant;
 
 import static duongtran.vctrl.utils.Constants.DEFAULT_AUTHOR;
@@ -53,7 +54,6 @@ public class CommitAction {
      */
     public Commit execute() throws IOException {
         try {
-            logger.info("Successfully committed files: {}", workspace.listFiles(workspace.getRootPath()));
             return saveCommit();
         } catch (IOException | NoSuchAlgorithmException e) {
             throw new IOException("Failed to commit changes", e);
@@ -131,14 +131,14 @@ public class CommitAction {
      * @param message the input string from which the first line is to be extracted;
      *                may contain multiple lines or may be null/empty
      * @return the first line of the input string, trimmed of leading and trailing whitespace;
-     *         if the input string is null or empty, returns an empty string
+     * if the input string is null or empty, returns an empty string
      */
     private String getFirstLine(String message) {
         if (message == null || message.trim().isEmpty()) {
             return "";
         }
 
-        String[] lines = message.split("\\r?\\n" );
+        String[] lines = message.split("\\r?\\n");
         return lines.length > 0 ? lines[0].trim() : "";
     }
 

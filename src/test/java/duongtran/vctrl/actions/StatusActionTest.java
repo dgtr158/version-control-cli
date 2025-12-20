@@ -116,7 +116,6 @@ public class StatusActionTest {
     void testExecuteReportUntrackedFilesHasIndexFile() {
 
         StatusAction statusAction = new StatusAction();
-        ;
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
 
@@ -153,7 +152,6 @@ public class StatusActionTest {
     void testExecuteReportUntrackedDirectories() {
 
         StatusAction statusAction = new StatusAction();
-        ;
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
 
@@ -199,7 +197,6 @@ public class StatusActionTest {
     void testExecuteReportUntrackedEmptyDirectories() {
 
         StatusAction statusAction = new StatusAction();
-        ;
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
 
@@ -242,7 +239,6 @@ public class StatusActionTest {
     void testExecuteReportChangedContentsFromLastStaged() {
 
         StatusAction statusAction = new StatusAction();
-        ;
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
 
@@ -304,7 +300,6 @@ public class StatusActionTest {
     void testExecuteReportChangedModeFromLastStaged() {
 
         StatusAction statusAction = new StatusAction();
-        ;
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
 
@@ -354,7 +349,6 @@ public class StatusActionTest {
     void testExecuteReportChangedButKeepSizeFromLastStaged() {
 
         StatusAction statusAction = new StatusAction();
-        ;
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
 
@@ -404,7 +398,6 @@ public class StatusActionTest {
     void testExecuteReportChangedModifiedTimeFromLastStaged() {
 
         StatusAction statusAction = new StatusAction();
-        ;
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
 
@@ -460,7 +453,6 @@ public class StatusActionTest {
     void testExecuteReportDeletedFromLastStaged() {
 
         StatusAction statusAction = new StatusAction();
-        ;
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
 

@@ -15,9 +15,9 @@ import java.util.*;
 /**
  * Represents a hierarchical tree structure with entries and subtrees.
  * A tree consists of file entries and subtrees, allowing for a directory-like structure.
- *
+ * <p>
  * Tree object format:
- *      tree<space><contentLength><null><listOfTreeEntry>
+ * tree<space><contentLength><null><listOfTreeEntry>
  * See {@code TreeEntry} for tree's entry format.
  *
  */
@@ -52,7 +52,7 @@ public class Tree extends ObjectStorage {
     /**
      * Converts the tree and its entries into a byte array representation.
      * The representation includes the mode, file name, and object ID of each entry.
-     *      <mode> <fileName>\0<oid>
+     * <mode> <fileName>\0<oid>
      *
      * @return a byte array containing the serialized tree with its entries.
      * @throws RuntimeException if an I/O error occurs during the conversion process.
@@ -116,7 +116,7 @@ public class Tree extends ObjectStorage {
      *                     associated index entries as values. Each path represents
      *                     a file or directory within the workspace.
      * @return a Tree object representing the hierarchical structure of the given
-     *         paths and index entries.
+     * paths and index entries.
      */
     public static Tree buildTree(Map<Path, IndexEntry> indexEntries) {
         Map<Path, IndexEntry> relativeEntryPath = normalizePath(indexEntries);
@@ -129,14 +129,14 @@ public class Tree extends ObjectStorage {
      * stores the root tree in the database. Each subtree is represented as a directory entry
      * in the root tree.
      *
-     * @param root the root {@code Tree} object to be stored. Must not be null and should contain
-     *             its associated subtrees and entries.
+     * @param root     the root {@code Tree} object to be stored. Must not be null and should contain
+     *                 its associated subtrees and entries.
      * @param database the {@code Database} instance where the tree and its contents will be stored.
      *                 Must not be null.
      * @return the {@code ObjectID} representing the stored tree in the database.
-     * @throws IOException if an I/O error occurs during the storage process.
+     * @throws IOException              if an I/O error occurs during the storage process.
      * @throws NoSuchAlgorithmException if the hash algorithm used for generating the
-     *                                   {@code ObjectID} is not available.
+     *                                  {@code ObjectID} is not available.
      */
     public static ObjectID store(Tree root, Database database) throws IOException, NoSuchAlgorithmException {
         // Build the subtree
@@ -144,8 +144,8 @@ public class Tree extends ObjectStorage {
             ObjectID subTreeOID = store(subTree, database);
             root.addStoreEntry(new TreeEntry(
                     subTree.getPath().getFileName().toString()
-                    ,subTreeOID
-                    ,FileMode.DIRECTORY
+                    , subTreeOID
+                    , FileMode.DIRECTORY
             ));
         }
         return database.store(root);
@@ -157,7 +157,7 @@ public class Tree extends ObjectStorage {
      *
      * @param oid the {@code ObjectID} of the {@code Tree} to be loaded. Must not be null.
      * @return the {@code Tree} object corresponding to the provided {@code ObjectID}.
-     * @throws IOException if an I/O error occurs while loading the object from the database.
+     * @throws IOException              if an I/O error occurs while loading the object from the database.
      * @throws NoSuchAlgorithmException if the hashing algorithm used during the loading process is unavailable.
      */
     public static Tree loadTree(ObjectID oid) throws IOException, NoSuchAlgorithmException, IllegalArgumentException {
@@ -198,12 +198,40 @@ public class Tree extends ObjectStorage {
     }
 
 
-    public static Map<Path, DataEntry> listAllFiles(ObjectID objectID, Path parent) throws IOException, NoSuchAlgorithmException, IllegalArgumentException {
+    /**
+     * Recursively lists all the files in a tree structure starting from a given object ID.
+     * For each non-directory entry, the method adds an entry to the file map with the
+     * corresponding path as the key and the file's data as the value.
+     *
+     * @param objectID the unique identifier of the root tree from which to start listing files.
+     *                 Must not be null and correspond to a valid tree object in the storage.
+     * @param parent   the parent path to which the entries are relative. This path is used
+     *                 to build full paths for each entry in the tree.
+     * @param fileMap  a map that stores the resulting file paths and their associated data
+     *                 entries. The keys are the full paths of the files, and the values
+     *                 contain information about the files such as mode and object ID.
+     *                 This map will be populated with the listed files.
+     * @throws IOException              if an I/O error occurs while processing the tree or its entries.
+     * @throws NoSuchAlgorithmException if the algorithm required to handle the object ID or entries is unavailable.
+     * @throws IllegalArgumentException if the provided object ID is invalid or any unexpected
+     *                                  argument is encountered.
+     */
+    public static void listAllFiles(ObjectID objectID, Path parent, Map<Path, DataEntry> fileMap) throws IOException, NoSuchAlgorithmException, IllegalArgumentException {
         Tree tree = Tree.loadTree(objectID);
-        TreeMap<String, TreeEntry> StoredEntryMap = tree.getStoredEntries();
-
-
-        return null;
+        TreeMap<String, TreeEntry> storedEntryMap = tree.getStoredEntries();
+        for (TreeEntry treeEntry : storedEntryMap.values()) {
+            Path currentPath = parent.resolve(Path.of(treeEntry.getFileName()));
+            // If the entry is not a tree, put it into the file map
+            if (!treeEntry.getMode().equals(FileMode.DIRECTORY)) {
+                fileMap.put(currentPath, new DataEntry(
+                        treeEntry.getMode()
+                        , treeEntry.getOid()
+                        , currentPath
+                ));
+            } else {
+                listAllFiles(treeEntry.getOid(), currentPath, fileMap);
+            }
+        }
     }
 
     @Override
@@ -237,8 +265,8 @@ public class Tree extends ObjectStorage {
 
                 files.add(new TreeEntry(
                         path.getFileName().toString()
-                        ,new ObjectID(e.getValue().getOid())
-                        ,FileMode.REGULAR_FILE
+                        , new ObjectID(e.getValue().getOid())
+                        , FileMode.REGULAR_FILE
                 ));
             } else {
                 String dir = path.getName(0).toString();

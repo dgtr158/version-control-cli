@@ -218,7 +218,7 @@ public class IndexEntry {
      * file size of the provided FileStat object, false otherwise
      */
     public boolean statMatch(FileStat fileStat) {
-        return (mode == fileStat.getMode()) && (fileSize == 0 || fileSize == fileStat.getSize());
+        return (mode == fileStat.getMode().getIntValue()) && (fileSize == 0 || fileSize == fileStat.getSize());
     }
 
     /**
@@ -243,7 +243,7 @@ public class IndexEntry {
         this.mtimeNanos = stat.getMtimeNanos();
         this.dev = stat.getDev();
         this.ino = stat.getIno();
-        this.mode = stat.getMode();
+        this.mode = stat.getMode().getIntValue();
         this.uid = stat.getUid();
         this.gid = stat.getGid();
         this.fileSize = stat.getSize();

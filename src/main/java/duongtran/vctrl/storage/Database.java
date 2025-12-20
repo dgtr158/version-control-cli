@@ -18,6 +18,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -164,10 +165,26 @@ public class Database {
                 .resolve(oid.substring(2));
     }
 
+    /**
+     * Lists all files tracked in the repository's latest commit referred to by the HEAD pointer.
+     * The method recursively traverses the file system structure represented by the commit's tree
+     * and gathers all file entries into a map, where the keys are the file paths,
+     * and the values are their corresponding {@code DataEntry} objects.
+     *
+     * @return A map containing file paths as keys and their corresponding {@code DataEntry} metadata as values.
+     * @throws IOException              If an I/O error occurs during file traversal or retrieval of data.
+     * @throws NoSuchAlgorithmException If a required cryptographic algorithm is not available.
+     */
     public static Map<Path, DataEntry> listFileInHead() throws IOException, NoSuchAlgorithmException {
+        Map<Path, DataEntry> filesMap = new TreeMap<>();
         String headCommitID = Refs.readHead();
         Commit commit = Commit.loadCommit(new ObjectID(headCommitID));
-        return Tree.listAllFiles(commit.getTreeOid(), Workspace.getInstance().getRootPath());
+        Tree.listAllFiles(
+                commit.getTreeOid()
+                , Workspace.getInstance().getRootPath()
+                , filesMap
+        );
+        return filesMap;
     }
 
     /**

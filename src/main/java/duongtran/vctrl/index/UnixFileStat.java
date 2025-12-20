@@ -1,5 +1,6 @@
 package duongtran.vctrl.index;
 
+import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.utils.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,11 +55,11 @@ public class UnixFileStat extends AbstractFileStat {
     }
 
     @Override
-    public int getMode() {
+    public FileMode getMode() {
         if (posixAttrs != null) {
             return PosixFilePermissions.toString(posixAttrs.permissions()).contains("x")
-                    ? Index.EXECUTABLE_MODE
-                    : Index.REGULAR_MODE;
+                    ? FileMode.EXECUTABLE_FILE
+                    : FileMode.REGULAR_FILE;
         } else {
             return super.getMode();
         }
