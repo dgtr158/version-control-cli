@@ -349,6 +349,29 @@ public class Index implements Serializable {
     }
 
     /**
+     * Checks if a given path is present in the index entry map.
+     *
+     * @param path the path to check for existence in the index
+     * @return true if the path exists in the entry map, false otherwise
+     */
+    public boolean contains(Path path) {
+        return entryMap.containsKey(path);
+    }
+
+    /**
+     * Removes an entry from the index based on the specified path.
+     * If the path exists in the entry map, it is removed and the entry count in the index header is decremented.
+     *
+     * @param removePath the path of the entry to be removed from the index
+     */
+    public void removeEntry(Path removePath) {
+        if (contains(removePath)) {
+            entryMap.remove(removePath, entryMap.get(removePath));
+            header.decrementEntryCount();
+        }
+    }
+
+    /**
      * Adds all parent directories of the given path to the set of tracked directories.
      *
      * @param path the file or directory path whose parent directories will be added

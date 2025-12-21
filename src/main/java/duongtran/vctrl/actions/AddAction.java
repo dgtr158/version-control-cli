@@ -19,7 +19,7 @@ import java.security.NoSuchAlgorithmException;
  * the specified paths, create necessary blob objects for files, store them
  * in a database, and update the index with entries corresponding to the added
  * files or directories.
- *
+ * <p>
  * The AddAction class interacts with a workspace to determine file paths
  * relative to a version control directory, a database to store blobs, and
  * an index to track changes made to files and directories within the workspace.
@@ -67,20 +67,22 @@ public class AddAction {
     }
 
     /**
-     * Recursively processes a file or directory for inclusion into the version control system.
-     * If the specified path is a file, it adds the file to the index. If the specified path
-     * is a directory, it iterates through all files and directories within it, processing
-     * each one individually. Files within the version control system's internal data directory
-     * are ignored during this process.
+     * Executes the process of adding a file or directory (and its contents if applicable)
+     * to the index within the context of a version control system. If the specified path
+     * does not exist and is already present in the index, the entry is removed. Otherwise,
+     * it processes the path and updates the index accordingly.
      *
-     * @param addPath the path of the file or directory to process
-     * @param index the index object representing tracked files; this is updated
-     *              with entries corresponding to the processed path
-     * @throws IOException if an I/O error occurs during file operations
-     * @throws NoSuchAlgorithmException if the algorithm required for blob creation is unavailable
+     * @param addPath the path of the file or directory to be added or removed from the index
+     * @param index   the index object to be updated based on the specified path
+     * @throws IOException              if the specified path does not exist or an I/O error occurs
+     * @throws NoSuchAlgorithmException if the required algorithm for hashing is not available
      */
     private void execute(Path addPath, Index index) throws IOException, NoSuchAlgorithmException {
         if (!Files.exists(addPath)) {
+            if (index.contains(addPath)) {
+                index.removeEntry(addPath);
+                return;
+            }
             throw new IOException("Path does not exist: " + addPath);
         }
 
@@ -103,9 +105,9 @@ public class AddAction {
      * Adds the specified file to the index by storing its contents in the repository
      * and creating a corresponding entry in the index.
      *
-     * @param path the path of the file to be added
+     * @param path  the path of the file to be added
      * @param index the index object where the file entry will be registered
-     * @throws IOException if an I/O error occurs while reading the file or accessing the repository
+     * @throws IOException              if an I/O error occurs while reading the file or accessing the repository
      * @throws NoSuchAlgorithmException if the algorithm required for creating the file blob is unavailable
      */
     private void addFile(Path path, Index index) throws IOException, NoSuchAlgorithmException {

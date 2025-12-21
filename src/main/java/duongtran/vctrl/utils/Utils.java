@@ -1,7 +1,10 @@
 package duongtran.vctrl.utils;
 
-import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.index.FileStat;
+import duongtran.vctrl.index.UnixFileStat;
+import duongtran.vctrl.index.WindowFileStat;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
@@ -51,6 +54,10 @@ public final class Utils {
     public static String getEnvOrDefault(String key, String defaultValue) {
         String value = System.getenv(key);
         return (value != null && !value.isEmpty()) ? value : defaultValue;
+    }
+
+    public static FileStat getFileStat(Path path) throws IOException {
+        return FileUtil.isWindows() ? new WindowFileStat(path) : new UnixFileStat(path);
     }
 
 }

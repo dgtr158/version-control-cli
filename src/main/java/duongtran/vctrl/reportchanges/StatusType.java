@@ -5,10 +5,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public enum StatusType {
-    MODIFIED("modified"),
+    WORKSPACE_MODIFIED("workspace_modified"), // IN the workspace and IN the index, but the content is changed
+    INDEX_MODIFIED("index_modified"), // IN the workspace and IN the index, but the content is changed
     STAGED("staged"),
-    UNTRACKED("untracked"),
-    DELETED("deleted");
+    UNTRACKED("untracked"), // IN the workspace but NOT IN the index
+    WORKSPACE_DELETED("workspace_deleted"), // NOT IN the workspace but IN the index
+    INDEX_DELETED("index_deleted"), // NOT IN the workspace but IN the index
+    ADDED("added"), // IN the index but NOT IN HEAD
+    ;
 
     private final String statusType;
 
