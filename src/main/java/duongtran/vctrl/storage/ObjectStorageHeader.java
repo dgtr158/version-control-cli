@@ -71,6 +71,10 @@ public class ObjectStorageHeader implements Serializable {
         return contentLength;
     }
 
+    public ObjectType getType() {
+        return type;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ObjectStorageHeader that)) return false;

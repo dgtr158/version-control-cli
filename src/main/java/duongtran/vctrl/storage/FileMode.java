@@ -7,23 +7,25 @@ import java.util.stream.Collectors;
 
 public enum FileMode {
 
-    REGULAR_FILE("100644"),
-    EXECUTABLE_FILE("100755"),
-    SYMBOLIC_LINK("120000"),
-    DIRECTORY("040000"),
-    GIT_LINK("160000");
+    REGULAR_FILE("100644", 100644),
+    EXECUTABLE_FILE("100755", 100755),
+    SYMBOLIC_LINK("120000", 120000),
+    DIRECTORY("040000", 040000),
+    GIT_LINK("160000", 160000);
 
     private final String value;
+    private final int intValue;
 
-    FileMode(String value) {
+    FileMode(String value, int intValue) {
         this.value = value;
+        this.intValue = intValue;
     }
 
     /**
      * A lookup map that associates string representations of file modes with their corresponding
      * {@link FileMode} enum instances. The map is constructed by iterating through all available
      * enum values and mapping each file mode's string value to its associated enum constant.
-     *
+     * <p>
      * This map allows for efficient retrieval of a {@link FileMode} instance based on its string
      * representation.
      */
@@ -37,6 +39,10 @@ public enum FileMode {
     @Override
     public String toString() {
         return value;
+    }
+
+    public int getIntValue() {
+        return intValue;
     }
 
     /**

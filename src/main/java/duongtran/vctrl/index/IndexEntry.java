@@ -2,11 +2,14 @@ package duongtran.vctrl.index;
 
 import duongtran.vctrl.utils.Utils;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+/**
+ * Represents an entry in an index with metadata information about a file.
+ */
 public class IndexEntry {
 
     public static final int FIXED_SIZE_IN_BYTE = 62;
@@ -15,26 +18,26 @@ public class IndexEntry {
 
     private transient final int size;
 
-    private final int ctimeSeconds;
-    private final int ctimeNanos;
-    private final int mtimeSeconds;
-    private final int mtimeNanos;
-    private final int dev;
-    private final int ino;
-    private final int mode;
-    private final int uid;
-    private final int gid;
-    private final int fileSize;
+    private int ctimeSeconds;
+    private int ctimeNanos;
+    private int mtimeSeconds;
+    private int mtimeNanos;
+    private int dev;
+    private int ino;
+    private int mode;
+    private int uid;
+    private int gid;
+    private int fileSize;
     private final String oid;
     private final int flags;
     private final String path;
 
 
     public IndexEntry(int ctimeSeconds, int ctimeNanos,
-                 int mtimeSeconds, int mtimeNanos,
-                 int dev, int ino, int mode,
-                 int uid, int gid, int fileSize,
-                 String oid, int flags, String path, int size) {
+                      int mtimeSeconds, int mtimeNanos,
+                      int dev, int ino, int mode,
+                      int uid, int gid, int fileSize,
+                      String oid, int flags, String path, int size) {
         this.ctimeSeconds = ctimeSeconds;
         this.ctimeNanos = ctimeNanos;
         this.mtimeSeconds = mtimeSeconds;
@@ -51,20 +54,61 @@ public class IndexEntry {
         this.size = size;
     }
 
-    public int getSize() { return size; }
-    public long getCtimeSeconds() { return ctimeSeconds; }
-    public int getCtimeNanos() { return ctimeNanos; }
-    public long getMtimeSeconds() { return mtimeSeconds; }
-    public int getMtimeNanos() { return mtimeNanos; }
-    public int getDev() { return dev; }
-    public int getIno() { return ino; }
-    public int getMode() { return mode; }
-    public int getUid() { return uid; }
-    public int getGid() { return gid; }
-    public long getFileSize() { return fileSize; }
-    public String getOid() { return oid; }
-    public int getFlags() { return flags; }
-    public String getPath() { return path; }
+    public int getSize() {
+        return size;
+    }
+
+    public long getCtimeSeconds() {
+        return ctimeSeconds;
+    }
+
+    public int getCtimeNanos() {
+        return ctimeNanos;
+    }
+
+    public long getMtimeSeconds() {
+        return mtimeSeconds;
+    }
+
+    public int getMtimeNanos() {
+        return mtimeNanos;
+    }
+
+    public int getDev() {
+        return dev;
+    }
+
+    public int getIno() {
+        return ino;
+    }
+
+    public int getMode() {
+        return mode;
+    }
+
+    public int getUid() {
+        return uid;
+    }
+
+    public int getGid() {
+        return gid;
+    }
+
+    public long getFileSize() {
+        return fileSize;
+    }
+
+    public String getOid() {
+        return oid;
+    }
+
+    public int getFlags() {
+        return flags;
+    }
+
+    public String getPath() {
+        return path;
+    }
 
     /**
      * Convert the Index Entry into byte buffer.
@@ -146,14 +190,15 @@ public class IndexEntry {
 
         return new IndexEntry(
                 ctimeSec, ctimeNanos
-                ,mtimeSec, mtimeNanos
-                ,dev, ino, mode, uid, gid, fileSize
-                ,oid, flags, path, size
+                , mtimeSec, mtimeNanos
+                , dev, ino, mode, uid, gid, fileSize
+                , oid, flags, path, size
         );
 
     }
 
-    /**S
+    /**
+     * S
      * Calculate the size in bytes of the index entry.
      *
      * @return the size in bytes of the index entry.
@@ -163,6 +208,48 @@ public class IndexEntry {
         int totalSize = FIXED_SIZE_IN_BYTE + pathSize;
         int paddingSize = (CONSUME_BYTES_BLOCK - (totalSize % CONSUME_BYTES_BLOCK)) % CONSUME_BYTES_BLOCK;
         return totalSize + paddingSize;
+    }
+
+    /**
+     * Compares the mode and size attributes of the current object with those of
+     * the provided FileStat object to check if they match.
+     *
+     * @param fileStat the FileStat object to compare against
+     * @return true if the mode matches and the file size is either zero or equal to the
+     * file size of the provided FileStat object, false otherwise
+     */
+    public boolean statMatch(FileStat fileStat) throws IOException {
+        return (mode == fileStat.getMode().getIntValue()) && (fileSize == 0 || fileSize == fileStat.getSize());
+    }
+
+    /**
+     * Compares the creation and modification timestamps of the current object
+     * with those of the provided FileStat object.
+     *
+     * @param fileStat the FileStat object
+     * @return true if both the creation and modification timestamps (including
+     * seconds and nanoseconds) match between the current object and the
+     * provided FileStat object, false otherwise
+     */
+    public boolean timeMatch(FileStat fileStat) {
+        return (ctimeSeconds == fileStat.getCtimeSeconds() && ctimeNanos == fileStat.getCtimeNanos())
+                && (mtimeSeconds == fileStat.getMtimeSeconds() && mtimeNanos == fileStat.getMtimeNanos());
+    }
+
+    public void updateStat(FileStat stat) throws IOException {
+        // Update the blob metadata
+        this.ctimeSeconds = stat.getCtimeSeconds();
+        this.ctimeNanos = stat.getCtimeNanos();
+        this.mtimeSeconds = stat.getMtimeSeconds();
+        this.mtimeNanos = stat.getMtimeNanos();
+        this.dev = stat.getDev();
+        this.ino = stat.getIno();
+        this.mode = stat.getMode().getIntValue();
+        this.uid = stat.getUid();
+        this.gid = stat.getGid();
+        this.fileSize = stat.getSize();
+
+
     }
 
     /**
@@ -203,7 +290,7 @@ public class IndexEntry {
      * @param a the first byte array to be concatenated
      * @param b the second byte array to be concatenated
      * @return a new byte array containing all the elements of the first array
-     *         followed by all the elements of the second array
+     * followed by all the elements of the second array
      */
     private static byte[] concat(byte[] a, byte[] b) {
         byte[] result = new byte[a.length + b.length];

@@ -166,6 +166,28 @@ public class TreeTest {
             assertEquals(secondDir.getFileName().toString(), secondDirTreeEntry.getFileName());
             assertEquals(FileMode.DIRECTORY, secondDirTreeEntry.getMode());
 
+            // Load subtree
+            Tree loadedSubTree = Tree.loadTree(firstDirTreeEntry.getOid());
+            TreeMap<String, TreeEntry> loadedSubTreeEntries = loadedSubTree.getStoredEntries();
+            assertEquals(3, loadedSubTreeEntries.size());
+
+            // subFirstDir
+            TreeEntry firstSubDirTreeEntry = loadedSubTreeEntries.get(subFirstDir.getFileName().toString());
+            assertNotNull(firstSubDirTreeEntry);
+            assertEquals(subFirstDir.getFileName().toString(), firstSubDirTreeEntry.getFileName());
+            assertEquals(FileMode.DIRECTORY, firstSubDirTreeEntry.getMode());
+
+            // testFile11
+            TreeEntry testFile11TreeEntry = loadedSubTreeEntries.get(testFile11.getFileName().toString());
+            assertNotNull(testFile11TreeEntry);
+            assertEquals(testFile11.getFileName().toString(), testFile11TreeEntry.getFileName());
+            assertEquals(FileMode.REGULAR_FILE, testFile11TreeEntry.getMode());
+
+            // testFile12
+            TreeEntry testFile12TreeEntry = loadedSubTreeEntries.get(testFile12.getFileName().toString());
+            assertNotNull(testFile12TreeEntry);
+            assertEquals(testFile12.getFileName().toString(), testFile12TreeEntry.getFileName());
+            assertEquals(FileMode.REGULAR_FILE, testFile12TreeEntry.getMode());
 
         } catch (Exception ex) {
             log.error("failed: {}", ex.getMessage());

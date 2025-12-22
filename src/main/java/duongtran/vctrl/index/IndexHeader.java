@@ -33,8 +33,15 @@ public class IndexHeader {
         this.entryCount++;
     }
 
+    public void decrementEntryCount() {
+        if (this.entryCount > 0) {
+            this.entryCount--;
+        }
+    }
+
     /**
      * Convert the index header into bytes and stream it into `buf`
+     *
      * @param buf the target buffer
      */
     public void toBytes(ByteBuffer buf) {

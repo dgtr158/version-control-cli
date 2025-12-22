@@ -1,8 +1,12 @@
 package duongtran.vctrl.utils;
 
-import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.index.FileStat;
+import duongtran.vctrl.index.UnixFileStat;
+import duongtran.vctrl.index.WindowFileStat;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -35,11 +39,25 @@ public final class Utils {
         return data;
     }
 
-    public static boolean mapsEqual(Map<Path, IndexEntry> m1, Map<Path, IndexEntry> m2) {
+    public static <K, V> boolean mapsEqual(Map<K, V> m1, Map<K, V> m2) {
+        if (m1 == m2) return true;
+        if (m1 == null || m2 == null) return false;
         if (m1.size() != m2.size()) return false;
-        for (Path key : m1.keySet()) {
+
+        for (Map.Entry<K, V> e : m1.entrySet()) {
+            K key = e.getKey();
             if (!m2.containsKey(key)) return false;
-            if (!Objects.equals(m1.get(key), m2.get(key))) return false;
+            if (!Objects.equals(e.getValue(), m2.get(key))) return false;
+        }
+        return true;
+    }
+
+    public static <T> boolean listsEqual(List<T> a, List<T> b) {
+        if (a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i++) {
+            if (!Objects.equals(a.get(i), b.get(i))) {
+                return false;
+            }
         }
         return true;
     }
@@ -47,6 +65,10 @@ public final class Utils {
     public static String getEnvOrDefault(String key, String defaultValue) {
         String value = System.getenv(key);
         return (value != null && !value.isEmpty()) ? value : defaultValue;
+    }
+
+    public static FileStat getFileStat(Path path) throws IOException {
+        return FileUtil.isWindows() ? new WindowFileStat(path) : new UnixFileStat(path);
     }
 
 }

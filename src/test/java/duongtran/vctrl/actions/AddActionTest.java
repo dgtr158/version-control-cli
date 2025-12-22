@@ -283,4 +283,50 @@ public class AddActionTest {
         }
     }
 
+    @Test
+    void testAddActionRemoveExisting() {
+
+        AddAction addAction;
+
+        try {
+
+            // Create files in the firstDir
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Create a file in the secondDir
+            TestUtils.writeText(testFile21, "Test content 21");
+
+            // Execute action (incremental changes)
+            addAction = new AddAction();
+
+            // Add the files
+            addAction.execute(testFile11);
+            addAction.execute(testFile12);
+            addAction.execute(testFile21);
+
+            // Remove the testFile11 and all files in the secondDir
+            TestUtils.deleteRecursively(testFile11);
+            TestUtils.deleteRecursively(secondDir);
+            addAction.execute(testFile11);
+            addAction.execute(testFile21);
+
+            // Load index from disk
+            Index actual = Index.loadFromDisk();
+
+            // Validate entries
+            List<Path> expectedEntries = Arrays.asList(
+                    testFile12
+            );
+            assertEquals(1, actual.getHeader().getEntryCount());
+            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
+            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            assertIterableEquals(expectedEntries, actualEntries);
+
+        } catch (Exception e) {
+            log.error("Test failed: {}", e.getMessage());
+            fail();
+        }
+    }
+
 }

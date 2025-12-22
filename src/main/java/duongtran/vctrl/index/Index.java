@@ -18,22 +18,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * The Index class represents a repository index, providing functionality for managing
  * file metadata, tracking changes, and persisting the index to disk. It is a serializable
  * class that encapsulates data structures for storing header information, entries,
  * and associated metadata.
- *
+ * <p>
  * The class includes methods to handle adding entries, managing file states, computing
  * checksums, and writing the index to a file in a thread-safe manner. The Index supports
  * key operations like serialization of its components into bytes and updating entry
  * states based on changes in the file system.
- *
+ * <p>
  * This implementation accommodates file stat information, index entry creation, and blob
  * object references as part of its design, enabling efficient version control operations.
  */
@@ -49,6 +46,7 @@ public class Index implements Serializable {
     private transient final Path indexPath;
     private transient int sizeInBytes;
     private transient boolean isChanged;
+    private final transient Set<Path> trackedDirs; // Set of tracked directories
 
     private final IndexHeader header;
     private Map<Path, IndexEntry> entryMap;
@@ -60,6 +58,7 @@ public class Index implements Serializable {
         this.entryMap = new TreeMap<>();
         this.sizeInBytes = IndexHeader.HEADER_SIZE + ObjectStorage.OID_SIZE;
         this.isChanged = false;
+        this.trackedDirs = new HashSet<>();
     }
 
     public IndexHeader getHeader() {
@@ -86,6 +85,10 @@ public class Index implements Serializable {
         return isChanged;
     }
 
+    public void setChanged() {
+        this.isChanged = true;
+    }
+
     public void setSizeInBytes(int sizeInBytes) {
         this.sizeInBytes = sizeInBytes;
     }
@@ -105,9 +108,10 @@ public class Index implements Serializable {
      * Adds an entry to the index.
      * If the entry does not already exist, it is created.
      * If the entry exists but has changed, it is updated with the new data.
-     * The method also updates the index size and marks the index as changed if any modifications occur.
+     * The method also updates the index
+     * size and marks the index as changed if any modifications occur.
      *
-     * @param path The file path of the entry to be added.
+     * @param path   The file path of the entry to be added.
      * @param blobId The identifier of the blob associated with the entry.
      * @throws IOException If an I/O error occurs while processing the file.
      */
@@ -128,22 +132,25 @@ public class Index implements Serializable {
             sizeInBytes += entry.getSize();
             this.header.incrementEntryCount();
             this.isChanged = true;
-        } else if (!existingEntry.equals(entry)){
+        } else if (!existingEntry.equals(entry)) {
             entryMap.put(path, entry);
             this.isChanged = true;
         }
+
+        // Update the tracked directories set
+        this.addToCheckDir(path);
 
     }
 
     /**
      * Creates an index entry based on the provided path, blob ID, and file statistics.
      *
-     * @param path the file path for the index entry
+     * @param path   the file path for the index entry
      * @param blobId the identifier of the blob associated with the file
-     * @param stat the file statistics providing metadata such as modification time, size, and permissions
+     * @param stat   the file statistics providing metadata such as modification time, size, and permissions
      * @return an IndexEntry object representing the data and metadata for the given file
      */
-    private IndexEntry createIndexEntry(Path path, String blobId, FileStat stat) {
+    private IndexEntry createIndexEntry(Path path, String blobId, FileStat stat) throws IOException {
         /*
             TODO: modify flags 16-bit
                 16-bit flags (high to low) contains:
@@ -160,7 +167,7 @@ public class Index implements Serializable {
                 , stat.getMtimeNanos()
                 , stat.getDev()
                 , stat.getIno()
-                , stat.getMode()
+                , stat.getMode().getIntValue()
                 , stat.getUid()
                 , stat.getGid()
                 , stat.getSize()
@@ -173,17 +180,17 @@ public class Index implements Serializable {
 
     /**
      * Writes the current state of the index to the disk in a thread-safe and consistent manner.
-     *
+     * <p>
      * The method performs the following steps:
      * - Acquires a lock on the target file to ensure no other process modifies it concurrently.
      * - Converts the index data into a byte array using the associated {@code toBytes} method.
      * - Writes the byte array into the locked file.
      * - Logs the number of bytes written for verification.
-     *
+     * <p>
      * If any errors occur during the conversion or file write process, appropriate exceptions are caught and handled:
      * - {@link NoSuchAlgorithmException} is logged in case of an issue with creating index object IDs.
      * - {@link IOException} is logged when the file write operation fails, and a retry attempt is suggested.
-     *
+     * <p>
      * The lock and resources are properly released after the operation completes.
      */
     public void write() {
@@ -198,8 +205,7 @@ public class Index implements Serializable {
             buf.flip();
 
             // Flush content into disk
-            int writtenBytes = out.write(buf);
-            log.info("Written bytes: {}, Total bytes: {}", writtenBytes, sizeInBytes);
+            out.write(buf);
 
         } catch (NoSuchAlgorithmException e) {
             log.error("Cannot create index object ID: {}\n", e.getMessage());
@@ -211,7 +217,7 @@ public class Index implements Serializable {
 
     /**
      * Converts the index and its components into bytes and writes them into the provided buffer.
-     *
+     * <p>
      * This method serializes the index header and its associated index entries into the given buffer.
      * It also computes and updates the SHA-1 checksum of the index, storing it as the index ID.
      *
@@ -256,7 +262,7 @@ public class Index implements Serializable {
 
     /**
      * Creates an Index object by deserializing it from the provided ByteBuffer.
-     *
+     * <p>
      * This method reads and constructs the IndexHeader, IndexEntries, and Index ID
      * from the buffer to create an Index instance.
      *
@@ -282,6 +288,9 @@ public class Index implements Serializable {
 
             // Update index's size
             size += indexEntry.getSize();
+
+            // Update the tracked directories set
+            index.addToCheckDir(path);
         }
 
         // Index's ID
@@ -307,7 +316,7 @@ public class Index implements Serializable {
             in.acquire();
             byte[] indexAllBytes = in.read(indexPath);
             in.close();
-            
+
             // Verify checksum
             int separator = indexAllBytes.length - ObjectID.SIZE_IN_BYTES;
             byte[] contentBytes = Arrays.copyOfRange(indexAllBytes, 0, separator);
@@ -320,6 +329,61 @@ public class Index implements Serializable {
             }
             ByteBuffer byteBuffer = ByteBuffer.wrap(indexAllBytes);
             return Index.fromBytes(byteBuffer);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+    /**
+     * Checks if a given path is being tracked.
+     * <p>
+     * A path is considered tracked if it exists in the entry map
+     * or if it is present in the set of tracked directories.
+     *
+     * @param path the file or directory path to check
+     * @return true if the path is being tracked, false otherwise
+     */
+    public boolean isTracked(Path path) {
+        return entryMap.containsKey(path) || trackedDirs.contains(path);
+    }
+
+    /**
+     * Checks if a given path is present in the index entry map.
+     *
+     * @param path the path to check for existence in the index
+     * @return true if the path exists in the entry map, false otherwise
+     */
+    public boolean contains(Path path) {
+        return entryMap.containsKey(path);
+    }
+
+    /**
+     * Removes an entry from the index based on the specified path.
+     * If the path exists in the entry map, it is removed and the entry count in the index header is decremented.
+     *
+     * @param removePath the path of the entry to be removed from the index
+     */
+    public void removeEntry(Path removePath) {
+        if (contains(removePath)) {
+            entryMap.remove(removePath, entryMap.get(removePath));
+            header.decrementEntryCount();
+        }
+    }
+
+    /**
+     * Adds all parent directories of the given path to the set of tracked directories.
+     *
+     * @param path the file or directory path whose parent directories will be added
+     *             to the tracked directories set
+     */
+    private void addToCheckDir(Path path) {
+        Path rootPath = Workspace.getInstance().getRootPath();
+        Path parent = path.getParent();
+
+        while (parent != null && !parent.equals(rootPath)) {
+            trackedDirs.add(parent);
+            parent = parent.getParent();
         }
     }
 
