@@ -55,7 +55,7 @@ public class UnixFileStat extends AbstractFileStat {
     }
 
     @Override
-    public FileMode getMode() {
+    public FileMode getMode() throws IOException {
         if (posixAttrs != null) {
             return PosixFilePermissions.toString(posixAttrs.permissions()).contains("x")
                     ? FileMode.EXECUTABLE_FILE

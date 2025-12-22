@@ -2,6 +2,7 @@ package duongtran.vctrl.index;
 
 import duongtran.vctrl.utils.Utils;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -217,7 +218,7 @@ public class IndexEntry {
      * @return true if the mode matches and the file size is either zero or equal to the
      * file size of the provided FileStat object, false otherwise
      */
-    public boolean statMatch(FileStat fileStat) {
+    public boolean statMatch(FileStat fileStat) throws IOException {
         return (mode == fileStat.getMode().getIntValue()) && (fileSize == 0 || fileSize == fileStat.getSize());
     }
 
@@ -235,7 +236,7 @@ public class IndexEntry {
                 && (mtimeSeconds == fileStat.getMtimeSeconds() && mtimeNanos == fileStat.getMtimeNanos());
     }
 
-    public void updateStat(FileStat stat) {
+    public void updateStat(FileStat stat) throws IOException {
         // Update the blob metadata
         this.ctimeSeconds = stat.getCtimeSeconds();
         this.ctimeNanos = stat.getCtimeNanos();

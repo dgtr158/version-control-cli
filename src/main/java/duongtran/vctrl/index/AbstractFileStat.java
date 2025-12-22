@@ -1,6 +1,7 @@
 package duongtran.vctrl.index;
 
 import duongtran.vctrl.storage.FileMode;
+import duongtran.vctrl.utils.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,8 +23,8 @@ public abstract class AbstractFileStat implements FileStat {
     }
 
     @Override
-    public boolean isExecutable() {
-        return Files.isExecutable(path);
+    public boolean isExecutable() throws IOException {
+        return FileUtil.isExecutable(path);
     }
 
     @Override
@@ -53,8 +54,8 @@ public abstract class AbstractFileStat implements FileStat {
     public abstract int getIno();
 
     @Override
-    public FileMode getMode() {
-        return Files.isExecutable(path) ? FileMode.EXECUTABLE_FILE : FileMode.REGULAR_FILE;
+    public FileMode getMode() throws IOException {
+        return FileUtil.isExecutable(path) ? FileMode.EXECUTABLE_FILE : FileMode.REGULAR_FILE;
     }
 
     @Override

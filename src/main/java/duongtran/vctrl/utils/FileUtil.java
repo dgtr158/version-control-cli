@@ -3,7 +3,11 @@ package duongtran.vctrl.utils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.Locale;
+import java.util.Set;
 
 public class FileUtil {
 
@@ -41,6 +45,17 @@ public class FileUtil {
             if (proc != null) proc.destroy();
         }
         return null;
+    }
+
+    public static boolean isExecutable(Path path) throws IOException {
+        try {
+            Set<PosixFilePermission> perms =
+                    Files.getPosixFilePermissions(path);
+            return perms.contains(PosixFilePermission.OWNER_EXECUTE);
+        } catch (UnsupportedOperationException e) {
+            // Non-POSIX FS (Windows)
+            return false;
+        }
     }
 
 }

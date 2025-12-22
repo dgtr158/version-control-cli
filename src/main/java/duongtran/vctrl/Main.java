@@ -2,17 +2,19 @@ package duongtran.vctrl;
 
 import duongtran.vctrl.actions.AddAction;
 import duongtran.vctrl.actions.CommitAction;
+import duongtran.vctrl.actions.DiffAction;
 import duongtran.vctrl.actions.InitAction;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.utils.ActionConstants;
 import duongtran.vctrl.utils.DirectoryNames;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 
 public class Main {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         if (args.length < 1 || args.length > 3) {
             System.out.println("USAGE: java Main.java init [file_path]");
             return;
@@ -41,8 +43,10 @@ public class Main {
                 AddAction addAction = new AddAction();
                 addAction.execute(workspace.getRootPath());
                 break;
-
-
+            case ActionConstants.DIFF:
+                DiffAction diffAction = new DiffAction();
+                diffAction.execute(true);
+                break;
             default:
                 String msg = MessageFormat.format("{0}: {1} is not a {2} command"
                         , DirectoryNames.PROJECT_NAME

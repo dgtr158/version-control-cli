@@ -150,7 +150,7 @@ public class Index implements Serializable {
      * @param stat   the file statistics providing metadata such as modification time, size, and permissions
      * @return an IndexEntry object representing the data and metadata for the given file
      */
-    private IndexEntry createIndexEntry(Path path, String blobId, FileStat stat) {
+    private IndexEntry createIndexEntry(Path path, String blobId, FileStat stat) throws IOException {
         /*
             TODO: modify flags 16-bit
                 16-bit flags (high to low) contains:

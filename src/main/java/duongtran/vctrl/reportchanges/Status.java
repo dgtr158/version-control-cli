@@ -21,7 +21,9 @@ public class Status {
     // Paths are not in the index
     private final TreeMap<Path, StatusEntry> untrackedMap;
     // Paths where the workspace content differs from what's in the index
-    private final TreeMap<Path, StatusEntry> modifiedMap;
+    private final TreeMap<Path, StatusEntry> workspaceModifiedMap;
+    // Paths where the HEAD content differs from what's in the index
+    private final TreeMap<Path, StatusEntry> indexModifiedMap;
     // Paths that deleted from workspace (right now files in the index)
     private final TreeMap<Path, StatusEntry> workspaceDeletedMap;
     // Paths that deleted from index (file in index but not in HEAD)
@@ -34,7 +36,8 @@ public class Status {
         this.entries = new TreeMap<>();
         this.trackedFiles = new TreeMap<>();
         this.untrackedMap = new TreeMap<>();
-        this.modifiedMap = new TreeMap<>();
+        this.workspaceModifiedMap = new TreeMap<>();
+        this.indexModifiedMap = new TreeMap<>();
         this.workspaceDeletedMap = new TreeMap<>();
         this.indexDeletedMap = new TreeMap<>();
         this.addedMap = new TreeMap<>();
@@ -64,12 +67,20 @@ public class Status {
         return trackedFiles;
     }
 
-    public void addModifiedMap(StatusEntry entry) {
-        modifiedMap.put(entry.getPath(), entry);
+    public void addWorkspaceModifiedMap(StatusEntry entry) {
+        workspaceModifiedMap.put(entry.getPath(), entry);
     }
 
-    public TreeMap<Path, StatusEntry> getModifiedMap() {
-        return modifiedMap;
+    public TreeMap<Path, StatusEntry> getWorkspaceModifiedMap() {
+        return workspaceModifiedMap;
+    }
+
+    public void addIndexModifiedMap(StatusEntry entry) {
+        indexModifiedMap.put(entry.getPath(), entry);
+    }
+
+    public TreeMap<Path, StatusEntry> getIndexModifiedMap() {
+        return indexModifiedMap;
     }
 
     public void addWorkspaceDeletedMapEntry(StatusEntry entry) {

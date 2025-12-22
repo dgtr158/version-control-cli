@@ -12,6 +12,8 @@ import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
+import duongtran.vctrl.utils.FileUtil;
+import duongtran.vctrl.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -360,16 +362,20 @@ public class StatusActionTest {
                 assertEquals(firstExpected, firstActual);
 
                 // Change modes of testFile11 and testFile112
-                TestUtils.changeMode(testFile11, FileMode.EXECUTABLE_FILE);
-                TestUtils.changeMode(testFile112, FileMode.EXECUTABLE_FILE);
+                if (FileUtil.isUnix()) {
+                    TestUtils.changeMode(testFile11, FileMode.EXECUTABLE_FILE);
+                    TestUtils.changeMode(testFile112, FileMode.EXECUTABLE_FILE);
+                }
 
                 // Execute status command a second time
                 Status secondActual = statusAction.execute();
 
                 // Assert: After modifying the two files, changes will be reported
                 Status secondExpected = new Status();
-                secondExpected.addEntry(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
-                secondExpected.addEntry(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
+                if (FileUtil.isUnix()) {
+                    secondExpected.addEntry(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
+                    secondExpected.addEntry(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
+                }
                 assertEquals(secondExpected, secondActual);
 
 
@@ -649,7 +655,9 @@ public class StatusActionTest {
                 commitAction.execute();
 
                 // Change the file mode of testFile111 to EXECUTABLE
-                TestUtils.changeMode(testFile111, FileMode.EXECUTABLE_FILE);
+                if (FileUtil.isUnix()) {
+                    TestUtils.changeMode(testFile111, FileMode.EXECUTABLE_FILE);
+                }
 
                 // Change content of testFile21
                 TestUtils.writeText(testFile21, "Test content 21 updated");
@@ -661,9 +669,16 @@ public class StatusActionTest {
 
                 // Assert: contains testFile111, testFile21 as MODIFIED
                 Status firstExpected = new Status();
-                firstExpected.addEntry(new StatusEntry(testFile111, StatusType.INDEX_MODIFIED));
+
+                if (FileUtil.isUnix()) {
+                    firstExpected.addEntry(new StatusEntry(testFile111, StatusType.INDEX_MODIFIED));
+                    TestUtils.changeMode(testFile111, FileMode.EXECUTABLE_FILE);
+                    firstExpected.addIndexModifiedMap(new StatusEntry(testFile111, StatusType.INDEX_MODIFIED));
+                }
                 firstExpected.addEntry(new StatusEntry(testFile21, StatusType.INDEX_MODIFIED));
+                firstExpected.addIndexModifiedMap(new StatusEntry(testFile21, StatusType.INDEX_MODIFIED));
                 assertEquals(firstExpected, firstActual);
+                assertTrue(Utils.mapsEqual(firstExpected.getIndexModifiedMap(), firstActual.getIndexModifiedMap()));
 
             } catch (Exception ex) {
                 ex.printStackTrace();

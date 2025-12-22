@@ -188,7 +188,7 @@ public class StatusAction {
         // Compare file size and file mode
         if (!indexEntry.statMatch(trackedFile)) {
             StatusEntry statusEntry = new StatusEntry(entryMap.getKey(), StatusType.WORKSPACE_MODIFIED);
-            status.addModifiedMap(statusEntry);
+            status.addWorkspaceModifiedMap(statusEntry);
             status.addEntry(statusEntry);
             return;
         }
@@ -207,7 +207,7 @@ public class StatusAction {
             index.setChanged();
         } else {
             StatusEntry statusEntry = new StatusEntry(entryMap.getKey(), StatusType.WORKSPACE_MODIFIED);
-            status.addModifiedMap(statusEntry);
+            status.addWorkspaceModifiedMap(statusEntry);
             status.addEntry(statusEntry);
         }
 
@@ -240,7 +240,7 @@ public class StatusAction {
         if (indexEntry.getMode() != matchedHeadFile.getMode().getIntValue()
                 || !Objects.equals(new ObjectID(indexEntry.getOid()), matchedHeadFile.getObjectID())) {
             StatusEntry statusEntry = new StatusEntry(indexEntryPath, StatusType.INDEX_MODIFIED);
-            status.addModifiedMap(statusEntry);
+            status.addIndexModifiedMap(statusEntry);
             status.addEntry(statusEntry);
             return;
         }
