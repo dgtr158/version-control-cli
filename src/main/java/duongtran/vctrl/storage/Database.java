@@ -12,13 +12,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -189,6 +189,28 @@ public class Database {
                 , filesMap
         );
         return filesMap;
+    }
+
+    /**
+     * Retrieves the content of a blob object identified by the given object ID as a list of lines.
+     * The blob content is assumed to be UTF-8 encoded, and separated into lines based on line endings.
+     * If reading the blob fails, an empty list is returned.
+     *
+     * @param objectID The identifier of the blob object to load. Must not be null.
+     * @return A list of strings, where each string represents a line from the blob content.
+     * Returns an empty list if the blob cannot be read.
+     */
+    public List<String> getBlobLines(ObjectID objectID) {
+        Objects.requireNonNull(objectID, "objectID must not be null");
+        try {
+            ObjectStorage blob = loadObject(objectID, ObjectType.BLOB);
+            String content = new String(blob.getContent(), StandardCharsets.UTF_8);
+            return Arrays.asList(content.split("\\R", -1));
+
+        } catch (IOException | NoSuchAlgorithmException e) {
+            logger.error("Failed to read object {}", objectID.getValue(), e);
+            return Collections.emptyList();
+        }
     }
 
     /**

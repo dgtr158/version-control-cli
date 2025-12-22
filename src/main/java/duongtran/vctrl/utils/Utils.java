@@ -6,6 +6,7 @@ import duongtran.vctrl.index.WindowFileStat;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -47,6 +48,16 @@ public final class Utils {
             K key = e.getKey();
             if (!m2.containsKey(key)) return false;
             if (!Objects.equals(e.getValue(), m2.get(key))) return false;
+        }
+        return true;
+    }
+
+    public static <T> boolean listsEqual(List<T> a, List<T> b) {
+        if (a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i++) {
+            if (!Objects.equals(a.get(i), b.get(i))) {
+                return false;
+            }
         }
         return true;
     }

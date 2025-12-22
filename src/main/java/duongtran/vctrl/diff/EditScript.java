@@ -2,13 +2,21 @@ package duongtran.vctrl.diff;
 
 import java.util.Objects;
 
-public final class Edit {
+/**
+ * Represents an edit operation as part of a diff process. The edit operation may be
+ * an insertion, deletion, or an equality. Each edit script associates with specific
+ * line numbers and content from the original and/or new files.
+ * <p>
+ * Instances of this class are immutable and represent one discrete change or lack
+ * thereof between two texts.
+ */
+public final class EditScript {
     private final EditType type;
     private final int oldLineNo; // -1 if not applicable
     private final int newLineNo; // -1 if not applicable
     private final String content;
 
-    public Edit(EditType type, int oldLineNo, int newLineNo, String content) {
+    public EditScript(EditType type, int oldLineNo, int newLineNo, String content) {
         this.type = type;
         this.oldLineNo = oldLineNo;
         this.newLineNo = newLineNo;
@@ -33,8 +41,8 @@ public final class Edit {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Edit edit)) return false;
-        return oldLineNo == edit.oldLineNo && newLineNo == edit.newLineNo && type == edit.type && Objects.equals(content, edit.content);
+        if (!(o instanceof EditScript editScript)) return false;
+        return oldLineNo == editScript.oldLineNo && newLineNo == editScript.newLineNo && type == editScript.type && Objects.equals(content, editScript.content);
     }
 
     @Override

@@ -9,10 +9,12 @@ import duongtran.vctrl.utils.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -182,6 +184,30 @@ public class Workspace {
         } catch (IOException e) {
             System.out.println("Error reading files: " + e.getMessage());
             return List.of();
+        }
+    }
+
+    /**
+     * Reads all lines from a file specified by the given {@code Path}.
+     * If the provided path is {@code null}, points to a directory, or does not exist,
+     * this method returns an empty list.
+     * If an I/O error occurs while reading the file, an empty list is returned.
+     *
+     * @param path the {@code Path} to the file from which to read lines
+     * @return a {@code List} of {@code String} representing all lines in the file,
+     * or an empty list if the file is invalid, does not exist,
+     * is a directory, or if an error occurs during reading
+     */
+    public List<String> getFileLines(Path path) {
+        if (path == null || !Files.exists(path) || Files.isDirectory(path)) {
+            return Collections.emptyList();
+        }
+
+        try {
+            return Files.readAllLines(path, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            // log nếu cần
+            return Collections.emptyList();
         }
     }
 

@@ -9,7 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WindowFileStatTest {
 
@@ -40,7 +41,7 @@ class WindowFileStatTest {
     }
 
     @Test
-    void devAndIno_exist_forRealFile() throws IOException {
+    void devAndInoExistForRealFile() throws IOException {
         Assumptions.assumeTrue(isWindows(), "Windows-only test");
 
         tmp1 = newProjectTempFile("winfilestat-", ".tmp");
@@ -54,7 +55,7 @@ class WindowFileStatTest {
     }
 
     @Test
-    void devAndIno_stable_forSameFileInstance() throws IOException {
+    void devAndInoStableForSameFileInstance() throws IOException {
         Assumptions.assumeTrue(isWindows(), "Windows-only test");
 
         tmp1 = newProjectTempFile("winfilestat-", ".tmp");
@@ -66,7 +67,7 @@ class WindowFileStatTest {
     }
 
     @Test
-    void inoOrDev_differs_betweenDifferentFiles() throws IOException {
+    void inoOrDevDiffersBetweenDifferentFiles() throws IOException {
         Assumptions.assumeTrue(isWindows(), "Windows-only test");
 
         tmp1 = newProjectTempFile("winfilestat-a-", ".tmp");
@@ -80,7 +81,7 @@ class WindowFileStatTest {
     }
 
     @Test
-    void rename_keeps_devAndIno_withinSameVolume() throws IOException {
+    void renameKeepsDevAndInoWithinSameVolume() throws IOException {
         Assumptions.assumeTrue(isWindows(), "Windows-only test");
 
         tmp1 = newProjectTempFile("winfilestat-", ".tmp");

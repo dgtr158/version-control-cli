@@ -15,17 +15,17 @@ public class MyersDiffTest {
         String first = "ABCABBA";
         String second = "CBABAC";
 
-        List<Edit> actual = MyersDiff.diff(toStringArray(first), toStringArray(second));
-        List<Edit> expected = new ArrayList<>(List.of(
-                new Edit(EditType.DELETE, 1, -1, "A")
-                , new Edit(EditType.DELETE, 2, -1, "B")
-                , new Edit(EditType.EQUAL, 3, 1, "C")
-                , new Edit(EditType.INSERT, -1, 2, "B")
-                , new Edit(EditType.EQUAL, 4, 3, "A")
-                , new Edit(EditType.EQUAL, 5, 4, "B")
-                , new Edit(EditType.DELETE, 6, -1, "B")
-                , new Edit(EditType.EQUAL, 7, 5, "A")
-                , new Edit(EditType.INSERT, -1, 6, "C")
+        List<EditScript> actual = MyersDiff.diff(toStringArray(first), toStringArray(second));
+        List<EditScript> expected = new ArrayList<>(List.of(
+                new EditScript(EditType.DELETE, 1, -1, "A")
+                , new EditScript(EditType.DELETE, 2, -1, "B")
+                , new EditScript(EditType.EQUAL, 3, 1, "C")
+                , new EditScript(EditType.INSERT, -1, 2, "B")
+                , new EditScript(EditType.EQUAL, 4, 3, "A")
+                , new EditScript(EditType.EQUAL, 5, 4, "B")
+                , new EditScript(EditType.DELETE, 6, -1, "B")
+                , new EditScript(EditType.EQUAL, 7, 5, "A")
+                , new EditScript(EditType.INSERT, -1, 6, "C")
         ));
 
         assertEquals(expected.size(), actual.size());

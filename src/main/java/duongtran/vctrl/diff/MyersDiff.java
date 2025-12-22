@@ -5,12 +5,40 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * The {@code MyersDiff} class implements the Myers difference algorithm for
+ * computing the differences between two sequences of strings. This algorithm
+ * identifies the sequence of edit operations required to transform one sequence
+ * into another, using an efficient approach based on edit distances.
+ * <p>
+ * This class cannot be instantiated and only provides static utility methods
+ * to compute differences.
+ * <p>
+ * Edit operations are represented as {@code EditScript} objects, which include
+ * the operation type (insertion, deletion, or equality), line numbers, and the
+ * associated content.
+ * <p>
+ * Features:
+ * - Efficient computation of differences between sequences using the Myers algorithm.
+ * - Generation of an edit script representing the changes between the sequences.
+ */
 public class MyersDiff {
 
     private MyersDiff() {
     }
 
-    public static List<Edit> diff(List<String> a, List<String> b) {
+    /**
+     * Computes the differences between two lists of strings using the Myers difference algorithm.
+     * The result represents a series of edit operations (insertion, deletion, or equality)
+     * required to transform the first list into the second list.
+     *
+     * @param a the first list of strings, representing the original content
+     * @param b the second list of strings, representing the target content
+     * @return a list of {@code EditScript} objects representing the sequence of edits
+     * needed to transform {@code a} into {@code b}
+     * @throws IllegalStateException if the computation fails to produce a valid diff
+     */
+    public static List<EditScript> diff(List<String> a, List<String> b) {
         int n = a.size();
         int m = b.size();
         int max = n + m;
@@ -62,13 +90,28 @@ public class MyersDiff {
         throw new IllegalStateException("Diff failed");
     }
 
-    private static List<Edit> backtrack(
+    /**
+     * Reconstructs the sequence of edit operations (edit script) from a provided trace
+     * generated during the computation of the Myers diff algorithm. The method performs
+     * a backtracking process to build a list of edit operations (equality, insertion, or deletion)
+     * that represent the differences between two input lists.
+     *
+     * @param trace  a list of integer arrays, representing the computation trace of
+     *               the Myers diff algorithm across edit distances
+     * @param a      the first list of strings, representing the original content
+     * @param b      the second list of strings, representing the target content
+     * @param offset the offset used to transform the edit distance index into a valid
+     *               index for the `trace` array
+     * @return a list of {@code EditScript} objects representing the sequence of edits
+     * that transform {@code a} into {@code b}
+     */
+    private static List<EditScript> backtrack(
             List<int[]> trace,
             List<String> a,
             List<String> b,
             int offset
     ) {
-        List<Edit> result = new ArrayList<>();
+        List<EditScript> result = new ArrayList<>();
 
         int x = a.size();
         int y = b.size();
@@ -90,7 +133,7 @@ public class MyersDiff {
 
             // Diagonal (equal)
             while (x > prevX && y > prevY) {
-                result.add(new Edit(EditType.EQUAL, x, y, a.get(x - 1)));
+                result.add(new EditScript(EditType.EQUAL, x, y, a.get(x - 1)));
                 x--;
                 y--;
             }
@@ -99,11 +142,11 @@ public class MyersDiff {
 
             if (x == prevX) {
                 // Insert
-                result.add(new Edit(EditType.INSERT, -1, y, b.get(y - 1)));
+                result.add(new EditScript(EditType.INSERT, -1, y, b.get(y - 1)));
                 y--;
             } else {
                 // Delete
-                result.add(new Edit(EditType.DELETE, x, -1, a.get(x - 1)));
+                result.add(new EditScript(EditType.DELETE, x, -1, a.get(x - 1)));
                 x--;
             }
         }
