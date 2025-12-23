@@ -344,6 +344,7 @@ public class DiffActionTest {
 
             // Commit the second time
             Commit secondCommit = commitAction.execute();
+            assertEquals(firstCommit.getOid().getValue(), secondCommit.getParentId());
 
             // Execute status command a third time
             Status thirdActual = statusAction.execute();

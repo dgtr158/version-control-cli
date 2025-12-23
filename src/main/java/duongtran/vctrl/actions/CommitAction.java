@@ -2,6 +2,7 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.Index;
+import duongtran.vctrl.references.RefHead;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.CommitAuthor;
 import duongtran.vctrl.storage.Database;
@@ -10,12 +11,15 @@ import duongtran.vctrl.storage.objects.Blob;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.storage.objects.Tree;
 import duongtran.vctrl.utils.Constants;
+import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 
@@ -76,6 +80,8 @@ public class CommitAction {
      */
     private Commit saveCommit() throws IOException, NoSuchAlgorithmException {
 
+        Refs refs = new Refs();
+
         // 1. Build new trees from index's entries
         Index index = Index.loadFromDisk();
         Tree tree = Tree.buildTree(index.getEntryMap());
@@ -87,7 +93,7 @@ public class CommitAction {
         String authorName = getEnvOrDefault(Constants.ENV_AUTHOR_KEY, DEFAULT_AUTHOR);
         String authorEmail = getEnvOrDefault(Constants.ENV_EMAIL_KEY, DEFAULT_EMAIL);
         CommitAuthor author = new CommitAuthor(authorName, authorEmail, Instant.now());
-        String parentId = Refs.readHead();
+        String parentId = refs.readHead();
 //        System.out.println("Enter the commit messages:");
 //        String message = getCommitMsg();
         // TODO: get commit message from terminal
@@ -96,7 +102,18 @@ public class CommitAction {
         database.store(commit);
 
         // 4. Update HEAD
-        Refs.updateHead(commit.getOid());
+        Path vctrlPath = Workspace.getInstance().getVctrlPath();
+        String headBranch = refs.readHeadRef();
+
+        // If commit the first time, create a new branch with the default name
+        RefHead refHead = refs.getRefHead();
+        if (headBranch == null) {
+            Files.createDirectories(refHead.getReafHeadPath());
+            Path defaultBranch = refHead.createBranch(DirectoryNames.DEFAULT_BRANCH_NAME);
+            headBranch = vctrlPath.relativize(defaultBranch).toString();
+            refs.updateHeadRef(headBranch);
+        }
+        refHead.updateBranchHeadValue(vctrlPath.resolve(headBranch), commit.getOid().getValue());
 
         // 5. Display the commit confirmation message
         String firstLine = getFirstLine(message);
