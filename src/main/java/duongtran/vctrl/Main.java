@@ -44,9 +44,9 @@ public class Main {
                 DiffAction diffAction = new DiffAction();
                 diffAction.execute(true);
                 break;
-            case ActionConstants.CHECKOUT:
+            case ActionConstants.BRANCH:
                 BranchAction branchAction = new BranchAction();
-                branchAction.execute("");
+                branchAction.execute("", 0);
                 break;
             default:
                 String msg = MessageFormat.format("{0}: {1} is not a {2} command"

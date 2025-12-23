@@ -93,7 +93,7 @@ public class CommitAction {
         String authorName = getEnvOrDefault(Constants.ENV_AUTHOR_KEY, DEFAULT_AUTHOR);
         String authorEmail = getEnvOrDefault(Constants.ENV_EMAIL_KEY, DEFAULT_EMAIL);
         CommitAuthor author = new CommitAuthor(authorName, authorEmail, Instant.now());
-        String parentId = refs.readHead();
+        String parentId = refs.readHeadCommitId();
 //        System.out.println("Enter the commit messages:");
 //        String message = getCommitMsg();
         // TODO: get commit message from terminal

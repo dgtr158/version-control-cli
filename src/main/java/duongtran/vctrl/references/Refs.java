@@ -3,16 +3,14 @@ package duongtran.vctrl.references;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.concurrency.Lockfile;
-import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 /**
  * The Refs class is responsible for managing the HEAD reference within a version control system.
@@ -72,9 +70,9 @@ public class Refs {
      * does not exist or an I/O error occurs while reading, the method returns {@code null}.
      *
      * @return the content of the HEAD file as a UTF-8 encoded string if the file exists and
-     *         is successfully read; otherwise, returns {@code null}
+     * is successfully read; otherwise, returns {@code null}
      */
-    public String readHead() {
+    public String readHeadCommitId() {
         Path headPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.HEAD);
         if (Files.exists(headPath)) {
             try {
@@ -96,7 +94,7 @@ public class Refs {
      * If an I/O error occurs during reading or the file does not exist, the method returns null.
      *
      * @return the content of the HEAD file as a UTF-8 encoded string if the file exists and is successfully read;
-     *         otherwise, returns null
+     * otherwise, returns null
      */
     public String readHeadRef() {
         Path headPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.HEAD);
