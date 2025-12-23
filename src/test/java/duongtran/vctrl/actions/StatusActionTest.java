@@ -556,7 +556,7 @@ public class StatusActionTest {
      ****************************/
 
     @Nested
-    class HeadIndexDifferences {
+    class RefHeadIndexDifferences {
 
         @Test
         void testExecuteReportAddedFiles() {

@@ -22,20 +22,43 @@ import java.nio.file.Paths;
 public class Refs {
     private static final Logger log = LoggerFactory.getLogger(Refs.class);
 
+    private Path refsPath;
+    private RefHead refHead;
+
+    public Refs() {
+        try {
+            Workspace workspace = Workspace.getInstance();
+            Path vctrlPath = workspace.getVctrlPath();
+            refsPath = vctrlPath.resolve(DirectoryNames.REF_DIR_NAME);
+            refHead = new RefHead(vctrlPath.resolve(DirectoryNames.REF_DIR_NAME));
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+    }
+
+    public Path getRefsPath() {
+        return refsPath;
+    }
+
+    public RefHead getRefHead() {
+        return refHead;
+    }
+
     /**
-     * Updates the HEAD reference to the specified {@code ObjectID}.
-     * This method acquires a lock on the HEAD reference file, writes the
-     * string representation of the given {@code ObjectID} to the file,
-     * and commits the change. If the lock cannot be acquired, a warning is logged.
+     * Updates the content of the HEAD reference file. This method locks the HEAD file,
+     * writes the provided content to it, and then commits the changes. If the lock cannot
+     * be acquired, a warning is logged indicating the failure.
      *
-     * @param objectId the {@code ObjectID} instance representing the new value
-     *                 to assign to the HEAD reference
+     * @param content the new content to write into the HEAD reference file. This is typically
+     *                a reference or pointer to the current branch or commit.
      */
-    public static void updateHead(ObjectID objectId) {
+    public void updateHeadRef(String content) {
         Path headPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.HEAD);
         try (Lockfile lockfile = new Lockfile(headPath)) {
             lockfile.acquire();
-            lockfile.write(objectId.getValue() + "\n");
+            lockfile.write(content + "\n");
             lockfile.commit();
         } catch (Exception e) {
             log.warn("Failed to acquire lock: {}\n Retry later", e.getMessage());
@@ -51,7 +74,31 @@ public class Refs {
      * @return the content of the HEAD file as a UTF-8 encoded string if the file exists and
      *         is successfully read; otherwise, returns {@code null}
      */
-    public static String readHead() {
+    public String readHead() {
+        Path headPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.HEAD);
+        if (Files.exists(headPath)) {
+            try {
+                String relativeRefPath = Files.readString(headPath, StandardCharsets.UTF_8).strip();
+                Path branchHeadPath = Workspace.getInstance().getVctrlPath().resolve(relativeRefPath);
+                return Files.readString(branchHeadPath, StandardCharsets.UTF_8).strip();
+            } catch (IOException e) {
+                log.error("Failed to read HEAD: {}", e.getMessage());
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Reads the content of the HEAD reference file if it exists.
+     * This method determines the HEAD file's path based on the workspace's version control directory.
+     * If the file exists, it attempts to read its content as a UTF-8 encoded string.
+     * If an I/O error occurs during reading or the file does not exist, the method returns null.
+     *
+     * @return the content of the HEAD file as a UTF-8 encoded string if the file exists and is successfully read;
+     *         otherwise, returns null
+     */
+    public String readHeadRef() {
         Path headPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.HEAD);
         if (Files.exists(headPath)) {
             try {

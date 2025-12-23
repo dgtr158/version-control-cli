@@ -176,7 +176,8 @@ public class Database {
      * @throws NoSuchAlgorithmException If a required cryptographic algorithm is not available.
      */
     public static Map<Path, DataEntry> listFileInHead() throws IOException, NoSuchAlgorithmException {
-        String headCommitID = Refs.readHead();
+        Refs refs = new Refs();
+        String headCommitID = refs.readHead();
         if (headCommitID == null) {
             return new TreeMap<>();
         }

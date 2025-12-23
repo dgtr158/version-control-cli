@@ -101,9 +101,10 @@ public class CommitActionTest {
             Commit savedCommit = commitAction.execute();
 
             // Load the saved commit from the disk
+            Refs refs = new Refs();
             Commit loadedCommit = Commit.loadCommit(savedCommit.getOid());
             assertEquals(savedCommit, loadedCommit);
-            assertEquals(savedCommit.getOid().getValue(), Refs.readHead());
+            assertEquals(savedCommit.getOid().getValue(), refs.readHead());
 
         } catch (Exception ex) {
             log.error("failed: {}", ex.getMessage());

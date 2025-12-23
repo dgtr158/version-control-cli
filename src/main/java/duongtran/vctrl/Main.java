@@ -1,9 +1,6 @@
 package duongtran.vctrl;
 
-import duongtran.vctrl.actions.AddAction;
-import duongtran.vctrl.actions.CommitAction;
-import duongtran.vctrl.actions.DiffAction;
-import duongtran.vctrl.actions.InitAction;
+import duongtran.vctrl.actions.*;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.utils.ActionConstants;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -46,6 +43,10 @@ public class Main {
             case ActionConstants.DIFF:
                 DiffAction diffAction = new DiffAction();
                 diffAction.execute(true);
+                break;
+            case ActionConstants.CHECKOUT:
+                BranchAction branchAction = new BranchAction();
+                branchAction.execute("");
                 break;
             default:
                 String msg = MessageFormat.format("{0}: {1} is not a {2} command"
