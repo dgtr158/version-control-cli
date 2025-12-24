@@ -75,6 +75,10 @@ public class TreeEntry {
         return bytes;
     }
 
+    public boolean isTree() {
+        return mode.equals(FileMode.DIRECTORY);
+    }
+
     /**
      * Converts the provided byte array into a {@code TreeEntry} object.
      * The byte array is parsed to extract the file mode, file name, and object ID,

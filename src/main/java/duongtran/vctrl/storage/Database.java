@@ -97,6 +97,7 @@ public class Database {
      */
     public ObjectStorage loadObject(ObjectID objectID, ObjectType type) throws IOException, NoSuchAlgorithmException, IllegalArgumentException {
 
+        if (objectID == null || objectID.isEmpty()) return null;
         Path path = constructObjectPath(objectID.getValue());
         byte[] bytes;
         try (Lockfile in = new Lockfile(path)) {

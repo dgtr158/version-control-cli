@@ -48,6 +48,10 @@ public class ObjectID {
         return Utils.hexStringToByteArray(this.value);
     }
 
+    public boolean isEmpty() {
+        return value == null || value.isEmpty();
+    }
+
     /**
      * Converts the current position and content of the provided {@code ByteBuffer}
      * into an {@code ObjectID} instance. The method reads a fixed number of bytes
