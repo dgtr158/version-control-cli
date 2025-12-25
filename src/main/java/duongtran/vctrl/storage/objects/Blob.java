@@ -59,7 +59,7 @@ public class Blob extends ObjectStorage {
      * @return a byte array representing the content of this instance.
      */
     @Override
-    protected byte[] getContent() {
+    public byte[] getContent() {
         return data;
     }
 

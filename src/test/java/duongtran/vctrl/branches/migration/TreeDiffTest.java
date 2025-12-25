@@ -213,23 +213,6 @@ public class TreeDiffTest {
         return added;
     }
 
-//    private Map<Path, TreeChanges> buildExpectedTreeDiffModifiedBlob(List<TreeEntry> leftEntries, List<TreeEntry> rightEntries) throws IOException, NoSuchAlgorithmException {
-//        Map<Path, TreeChanges> modified = new TreeMap<>();
-//        for (int i = 0; i < leftEntries.size(); i++) {
-//            TreeEntry left = leftEntries.get(i);
-//            TreeEntry right = rightEntries.get(i);
-//            modified.put(
-//                    left
-//                    , new TreeChanges(null
-//                            , new TreeEntry(
-//                                relativePath.getFileName().toString()
-//                                , getBlobOid(path)
-//                                , FileMode.REGULAR_FILE
-//                    )));
-//        }
-//        return modified;
-//    }
-
     private Map<Path, TreeChanges> buildExpectedTreeDiffDeletedBlob(List<Path> paths) throws IOException, NoSuchAlgorithmException {
         Map<Path, TreeChanges> deleted = new TreeMap<>();
         for (Path path : paths) {

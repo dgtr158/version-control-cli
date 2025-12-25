@@ -1,8 +1,15 @@
 package duongtran.vctrl;
 
+import duongtran.vctrl.branches.migration.Migration;
+import duongtran.vctrl.branches.migration.MigrationActionType;
+import duongtran.vctrl.branches.migration.MigrationChange;
 import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.index.UnixFileStat;
 import duongtran.vctrl.index.WindowFileStat;
+import duongtran.vctrl.storage.Database;
+import duongtran.vctrl.storage.ObjectType;
+import duongtran.vctrl.storage.objects.Blob;
+import duongtran.vctrl.storage.objects.TreeEntry;
 import duongtran.vctrl.utils.DirectoryNames;
 import duongtran.vctrl.utils.FileUtil;
 
@@ -10,14 +17,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermission;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 /**
  * The Workspace class is a singleton responsible for managing the file paths
@@ -206,9 +214,129 @@ public class Workspace {
         try {
             return Files.readAllLines(path, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            // log nếu cần
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Applies the specified migration by executing a sequence of actions including
+     * deleting files, removing directories, creating directories, and adding or
+     * modifying files as defined in the migration object.
+     * <p>
+     * Key ideas:
+     * 1. Deletes happen first
+     * 2. Empty directories are removed
+     * 3. Directories needed are created
+     * 4. Files are updated
+     * 5. New files are created
+     *
+     * @param migration the migration object that contains the details of the actions
+     *                  to be performed, such as directories to be removed or created,
+     *                  and file changes to be applied.
+     * @throws IOException              if an I/O error occurs while performing the migration actions.
+     * @throws NoSuchAlgorithmException if a required cryptographic algorithm is not available.
+     */
+    public void applyMigration(Migration migration) throws IOException, NoSuchAlgorithmException {
+        applyChangeList(migration, MigrationActionType.DELETE);
+        removeDirectories(migration.getRemoveDirs());
+        createDirectories(migration.getMakeDirs());
+        applyChangeList(migration, MigrationActionType.MODIFIED);
+        applyChangeList(migration, MigrationActionType.ADD);
+    }
+
+    /**
+     * Applies a list of changes specified in the migration object to the workspace based on the given action type.
+     * This involves creating, modifying, or deleting files as dictated by the migration changes.
+     *
+     * @param migration the migration object containing the changes to be applied
+     * @param action    the type of migration action (e.g., CREATE, UPDATE, DELETE) that determines how changes are applied
+     * @throws IOException              if an I/O error occurs during file operations
+     * @throws NoSuchAlgorithmException if a required cryptographic algorithm is not available
+     */
+    private void applyChangeList(Migration migration, MigrationActionType action) throws IOException, NoSuchAlgorithmException {
+
+        Database database = Database.getInstance();
+        for (MigrationChange change : migration.getChanges().get(action.toString())) {
+            Path path = rootPath.resolve(change.getPath());
+            Files.deleteIfExists(path);
+            if (action == MigrationActionType.DELETE) {
+                continue;
+            }
+            TreeEntry changeEntry = change.getPair().getNewEntry();
+            Blob blob = (Blob) database.loadObject(changeEntry.getOid(), ObjectType.BLOB);
+            Files.write(
+                    path,
+                    blob.getContent(),
+                    WRITE, CREATE_NEW
+            );
+
+            applyMode(changeEntry, path);
+        }
+    }
+
+    /**
+     * Applies the POSIX file permissions of a {@code TreeEntry} to a specified path if the file system
+     * at the given path supports POSIX file attribute view. This method retrieves the permissions from
+     * the entry and sets them on the specified path.
+     *
+     * @param entry the {@code TreeEntry} object that contains the permissions to be applied
+     * @param path  the {@code Path} where the permissions will be applied
+     * @throws IOException if an I/O error occurs while setting the permissions
+     */
+    private void applyMode(TreeEntry entry, Path path) throws IOException {
+        if (Files.getFileStore(path).supportsFileAttributeView("posix")) {
+            Set<PosixFilePermission> perms = entry.getMode().getPosixPermissions();
+            Files.setPosixFilePermissions(path, perms);
+        }
+    }
+
+    /**
+     * Removes the specified directories from the file system. The removal process resolves
+     * each directory against the root path of the workspace and attempts to delete the directories
+     * in reverse order of their sorting. If any directory cannot be deleted due to being non-existent,
+     * not a directory, or not empty, it is silently ignored. In case of an unexpected I/O error,
+     * a runtime exception is thrown.
+     *
+     * @param dirs a set of {@code Path} objects representing the directories to be removed
+     */
+    private void removeDirectories(Set<Path> dirs) {
+        dirs.stream()
+                .sorted(Comparator.reverseOrder())
+                .forEach(dir -> {
+                    Path path = rootPath.resolve(dir);
+                    try {
+                        Files.delete(path);
+                    } catch (NoSuchFileException | NotDirectoryException |
+                             DirectoryNotEmptyException ignored) {
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    /**
+     * Creates directories for the specified set of paths. If a path already exists
+     * as a regular file, it is deleted before creating the directory. If a directory
+     * already exists at the path, it is left unchanged.
+     *
+     * @param dirs a set of {@code Path} objects representing the directories to be created
+     * @throws IOException if an I/O error occurs while creating the directories
+     */
+    private void createDirectories(Set<Path> dirs) throws IOException {
+        dirs.stream()
+                .sorted()
+                .forEach(dir -> {
+                    Path path = rootPath.resolve(dir);
+                    try {
+                        if (Files.exists(path) && Files.isRegularFile(path)) {
+                            Files.delete(path);
+                        }
+                        Files.createDirectory(path);
+                    } catch (FileAlreadyExistsException ignored) {
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     /**

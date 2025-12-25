@@ -1,24 +1,50 @@
 package duongtran.vctrl.storage;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public enum FileMode {
 
-    REGULAR_FILE("100644", 100644),
-    EXECUTABLE_FILE("100755", 100755),
-    SYMBOLIC_LINK("120000", 120000),
-    DIRECTORY("040000", 040000),
-    GIT_LINK("160000", 160000);
+    REGULAR_FILE("100644", 100644, EnumSet.of(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_WRITE,
+            PosixFilePermission.GROUP_READ,
+            PosixFilePermission.OTHERS_READ
+    )),
+    EXECUTABLE_FILE("100755", 100755, EnumSet.of(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_WRITE,
+            PosixFilePermission.OWNER_EXECUTE,
+            PosixFilePermission.GROUP_READ,
+            PosixFilePermission.GROUP_EXECUTE,
+            PosixFilePermission.OTHERS_READ,
+            PosixFilePermission.OTHERS_EXECUTE
+    )),
+    SYMBOLIC_LINK("120000", 120000, null),
+    DIRECTORY("040000", 040000, EnumSet.of(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_WRITE,
+            PosixFilePermission.OWNER_EXECUTE,
+            PosixFilePermission.GROUP_READ,
+            PosixFilePermission.GROUP_EXECUTE,
+            PosixFilePermission.OTHERS_READ,
+            PosixFilePermission.OTHERS_EXECUTE
+    )),
+    GIT_LINK("160000", 160000, null);
 
     private final String value;
     private final int intValue;
+    private final Set<PosixFilePermission> posixPermissions;
 
-    FileMode(String value, int intValue) {
+    FileMode(String value, int intValue, Set<PosixFilePermission> posixPermissions) {
         this.value = value;
         this.intValue = intValue;
+        this.posixPermissions = posixPermissions;
     }
 
     /**
@@ -43,6 +69,10 @@ public enum FileMode {
 
     public int getIntValue() {
         return intValue;
+    }
+
+    public Set<PosixFilePermission> getPosixPermissions() {
+        return posixPermissions;
     }
 
     /**

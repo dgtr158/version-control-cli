@@ -58,7 +58,7 @@ public class Tree extends ObjectStorage {
      * @throws RuntimeException if an I/O error occurs during the conversion process.
      */
     @Override
-    protected byte[] getContent() {
+    public byte[] getContent() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             for (Map.Entry<String, TreeEntry> entryMap : storedEntries.entrySet()) {

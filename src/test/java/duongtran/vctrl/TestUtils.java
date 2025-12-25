@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileTime;
@@ -200,6 +202,76 @@ public class TestUtils {
      */
     public static FileStat getFileStat(Path path) throws IOException {
         return FileUtil.isWindows() ? new WindowFileStat(path) : new UnixFileStat(path);
+    }
+
+    public static String readFileContents(Path path) throws IOException {
+        if (Files.isDirectory(path)) return null;
+        return Files.readString(path, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Executes a private method of the specified target object using reflection.
+     * The method is identified by its name and the provided arguments.
+     * The method searches for a matching private method in the class hierarchy, starting
+     * from the class of the target object and proceeding up to its superclasses.
+     *
+     * @param <T>           the type of the arguments supplied to the method
+     * @param <E>           the return type of the method
+     * @param targetObject   the object whose private method is to be invoked. Must not be null.
+     * @param methodName     the name of the private method to execute. Must not be null.
+     * @param args           the arguments to pass to the method. Can be null or empty if the method has no parameters.
+     * @return               the result of executing the private method
+     * @throws Exception     if the method invocation fails, such as if the method is not found,
+     *                       cannot be accessed, or if the method throws an exception during execution
+     */
+    @SuppressWarnings("unchecked")
+    public static <T, E> E executePrivateMethod(Object targetObject, String methodName, T...args) throws Exception {
+        // Get the test class
+        Class<?> clazz = targetObject.getClass();
+        Object[] callArgs = { null };
+        if (args != null) {
+            callArgs = args;
+        }
+
+        while (true) {
+            Method[] methods = clazz.getDeclaredMethods();
+            for (Method method : methods) {
+                if (!method.getName().equals(methodName)) {
+                    continue;
+                }
+
+                boolean isMatch = false;
+                Class<?>[] params = method.getParameterTypes();
+                if (params.length == callArgs.length) {
+                    for (int i = 0; i < callArgs.length; i++) {
+                        if (callArgs[i] != null && !params[i].isAssignableFrom(callArgs[i].getClass())) {
+                            isMatch = false;
+                            break;
+                        }
+                    }
+                    isMatch = true;
+                }
+
+                // If matched method, execute it
+                if (isMatch) {
+                    try {
+                        return (E) method.invoke(targetObject, callArgs);
+                    } catch (InvocationTargetException e) {
+                        throw (Exception) e.getCause();
+                    }
+                }
+            }
+
+            if (clazz == Object.class) break;
+            clazz = clazz.getSuperclass();
+        }
+
+        String paramStr = "";
+        StringBuilder buf = new StringBuilder();
+        for (Object arg : args) buf.append(",").append(arg != null ? arg.getClass().getName() : Object.class.getName());
+        if (!buf.isEmpty()) paramStr = buf.substring(1);
+        throw new NoSuchMethodException(String.format("%s,%s(%s)", targetObject.getClass().getName(), methodName, paramStr));
+
     }
 
 }

@@ -44,7 +44,7 @@ public class Commit extends ObjectStorage {
     }
 
     @Override
-    protected byte[] getContent() {
+    public byte[] getContent() {
         StringBuilder bodyBuilder = new StringBuilder();
         bodyBuilder.append("tree ").append(treeOid.getValue()).append("\n");
         if (parentId != null) {

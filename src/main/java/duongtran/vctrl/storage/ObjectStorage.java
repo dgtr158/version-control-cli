@@ -73,7 +73,7 @@ public abstract class ObjectStorage {
      *
      * @return a byte array representing the content of the object.
      */
-    protected abstract byte[] getContent();
+    public abstract byte[] getContent();
 
     /**
      * Retrieves the type of the object as an {@code ObjectType}.
