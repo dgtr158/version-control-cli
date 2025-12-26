@@ -2,7 +2,9 @@ package duongtran.vctrl.branches.migration;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.Index;
+import duongtran.vctrl.index.IndexEntry;
 import duongtran.vctrl.index.IndexUpdater;
+import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.ObjectID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,8 @@ public class Migration {
     private final Set<Path> makeDirs = new HashSet<>();
     // List of directories that will be removed if it's empty
     private final Set<Path> removeDirs = new HashSet<>();
+    // Conflicted table that maps the conflict type with its file
+    private final Map<String, List<DataEntry>> conflicts;
 
     public Migration(ObjectID fromCommitId, ObjectID toCommitId, Map<Path, TreeChanges> treeDiffMap) {
         this.fromCommitId = fromCommitId;
@@ -44,6 +48,10 @@ public class Migration {
         this.changes = new HashMap<>();
         for (MigrationActionType actionType : MigrationActionType.values()) {
             changes.put(actionType.toString(), new ArrayList<>());
+        }
+        this.conflicts = new HashMap<>();
+        for (ConflictType conflictType : ConflictType.values()) {
+            conflicts.put(conflictType.toString(), new ArrayList<>());
         }
     }
 
@@ -112,28 +120,43 @@ public class Migration {
      * as part of the migration process.
      *
      */
-    private void planChanges() {
+    private void planChanges() throws IOException, NoSuchAlgorithmException {
+        Index index = Index.loadFromDisk();
         for (Map.Entry<Path, TreeChanges> treeDiffEntry : treeDiffMap.entrySet()) {
             Path path = treeDiffEntry.getKey();
             TreeChanges treeChangePair = treeDiffEntry.getValue();
 
-            MigrationActionType actionType;
-            if (treeChangePair.isAdded()) {
-                collectParentDirs(path, makeDirs);
-                actionType = MigrationActionType.ADD;
-            } else if (treeChangePair.isModified()) {
-                collectParentDirs(path, makeDirs);
-                actionType = MigrationActionType.MODIFIED;
-            } else if (treeChangePair.isDeleted()) {
-                collectParentDirs(path, removeDirs);
-                actionType = MigrationActionType.DELETE;
-            } else {
-                continue;
-            }
-
-            addChangeEntry(actionType, new MigrationChange(path, treeChangePair));
+            // Check if there's any conflict
+            checkConflict(index, path, treeChangePair);
+            // Record the changes
+            recordChanges(path, treeChangePair);
         }
     }
+
+    private void recordChanges(Path path, TreeChanges treeChangePair) {
+
+        MigrationActionType actionType;
+        if (treeChangePair.isAdded()) {
+            collectParentDirs(path, makeDirs);
+            actionType = MigrationActionType.ADD;
+        } else if (treeChangePair.isModified()) {
+            collectParentDirs(path, makeDirs);
+            actionType = MigrationActionType.MODIFIED;
+        } else if (treeChangePair.isDeleted()) {
+            collectParentDirs(path, removeDirs);
+            actionType = MigrationActionType.DELETE;
+        } else {
+            return;
+        }
+
+        addChangeEntry(actionType, new MigrationChange(path, treeChangePair));
+    }
+
+    private void checkConflict(Index index, Path path, TreeChanges treeChangePair) {
+        IndexEntry indexEntry = index.getEntryMap().get(path);
+    }
+
+
 
     /**
      * Updates the current workspace by applying necessary migration changes.

@@ -40,7 +40,7 @@ public enum MigrationActionType {
 
         MigrationActionType result = LOOKUP.get(type);
         if (result == null) {
-            throw new IllegalArgumentException("Unknown object type: " + type);
+            throw new IllegalArgumentException("Unknown migration type: " + type);
         }
 
         return result;
