@@ -49,9 +49,8 @@ public class CheckoutAction {
         Map<Path, TreeChanges> treeDiffMap = treeDiff.detectTreeDiff(headCommitId, targetCommitId);
 
         // Applies changes to the workspace
-        Migration migration = new Migration(treeDiffMap);
+        Migration migration = new Migration(headCommitId, targetCommitId, treeDiffMap);
         migration.applyChanges();
-
     }
 
 }

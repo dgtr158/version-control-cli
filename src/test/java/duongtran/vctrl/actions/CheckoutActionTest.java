@@ -2,20 +2,29 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.index.Index;
 import duongtran.vctrl.storage.Database;
+import duongtran.vctrl.storage.objects.Blob;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CheckoutActionTest {
 
+    private static final Logger log = LoggerFactory.getLogger(CheckoutActionTest.class);
 
     // Vctrl instances
     Workspace workspace;
@@ -152,9 +161,36 @@ public class CheckoutActionTest {
             assertTrue(Files.exists(testFile22));
             assertTrue(Files.exists(testFile112));
 
+            // The index must reflect the current workspace
+            Index actualIndex = Index.loadFromDisk();
+            Index expectedIndex = new Index();
+            updateIndexEntries(expectedIndex, new ArrayList<>(List.of(
+                    testFile11, testFile12, testFile21, testFile22, testFile111, testFile112
+            )));
+            assertEquals(expectedIndex, actualIndex);
+
         } catch (Exception ex) {
             fail();
         }
+    }
+
+    private void updateIndexEntries(Index index, List<Path> paths) {
+        try {
+            for (Path path : paths) {
+                byte[] fileBytes = Files.readAllBytes(path);
+                Blob blob = new Blob(fileBytes);
+                blob.calculateOid(blob.toBytes());
+                index.addEntry(path, blob.getOid().getValue());
+            }
+            byte[] bytes = new byte[index.getSizeInBytes()];
+            ByteBuffer buf = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
+            // Trigger to compute index's checksum
+            index.toBytes(buf);
+        } catch (Exception ex) {
+            log.error("Cannot update index: {}", ex.getMessage());
+        }
+
+
     }
 
 }

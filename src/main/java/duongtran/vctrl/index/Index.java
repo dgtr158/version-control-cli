@@ -46,9 +46,9 @@ public class Index implements Serializable {
     private transient final Path indexPath;
     private transient int sizeInBytes;
     private transient boolean isChanged;
-    private final transient Set<Path> trackedDirs; // Set of tracked directories
+    private transient Set<Path> trackedDirs; // Set of tracked directories
 
-    private final IndexHeader header;
+    private IndexHeader header;
     private Map<Path, IndexEntry> entryMap;
     private ObjectID indexId;
 
@@ -108,8 +108,7 @@ public class Index implements Serializable {
      * Adds an entry to the index.
      * If the entry does not already exist, it is created.
      * If the entry exists but has changed, it is updated with the new data.
-     * The method also updates the index
-     * size and marks the index as changed if any modifications occur.
+     * The method also updates the index's size and marks the index as changed if any modifications occur.
      *
      * @param path   The file path of the entry to be added.
      * @param blobId The identifier of the blob associated with the entry.
@@ -369,6 +368,15 @@ public class Index implements Serializable {
             entryMap.remove(removePath, entryMap.get(removePath));
             header.decrementEntryCount();
         }
+    }
+
+    public void clear() {
+        this.header = new IndexHeader(VERSION, 0);
+        this.entryMap = new TreeMap<>();
+        this.sizeInBytes = IndexHeader.HEADER_SIZE + ObjectStorage.OID_SIZE;
+        this.isChanged = false;
+        this.trackedDirs = new HashSet<>();
+        this.indexId = null;
     }
 
     /**

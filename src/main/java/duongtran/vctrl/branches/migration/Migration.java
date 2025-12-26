@@ -1,10 +1,15 @@
 package duongtran.vctrl.branches.migration;
 
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.index.Index;
+import duongtran.vctrl.index.IndexUpdater;
+import duongtran.vctrl.storage.ObjectID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
@@ -22,6 +27,8 @@ public class Migration {
     private static final Logger log = LoggerFactory.getLogger(Migration.class);
 
     private final Map<Path, TreeChanges> treeDiffMap;
+    private final ObjectID fromCommitId;
+    private final ObjectID toCommitId;
 
     // Map change actions with a list of changed files
     Map<String, List<MigrationChange>> changes;
@@ -30,7 +37,9 @@ public class Migration {
     // List of directories that will be removed if it's empty
     private final Set<Path> removeDirs = new HashSet<>();
 
-    public Migration(Map<Path, TreeChanges> treeDiffMap) {
+    public Migration(ObjectID fromCommitId, ObjectID toCommitId, Map<Path, TreeChanges> treeDiffMap) {
+        this.fromCommitId = fromCommitId;
+        this.toCommitId = toCommitId;
         this.treeDiffMap = treeDiffMap;
         this.changes = new HashMap<>();
         for (MigrationActionType actionType : MigrationActionType.values()) {
@@ -53,10 +62,17 @@ public class Migration {
      * the failure.
      */
     public void applyChanges() {
-        // Build changes map, list of added directories, and list of removable directories
-        planChanges();
-        // Apply those changes to the workspace
-        updateWorkspace();
+        try {
+            // Build changes map, list of added directories, and list of removable directories
+            planChanges();
+            // Apply those changes to the workspace
+            updateWorkspace();
+            // Update the index
+            updateIndex();
+        } catch (Exception e) {
+            log.error("Failed to apply changes to the workspace: {}", e.getMessage());
+        }
+
     }
 
     /**
@@ -127,12 +143,18 @@ public class Migration {
      * If an exception occurs during this process, it logs an error message.
      *
      */
-    private void updateWorkspace() {
-        try {
-            Workspace.getInstance().applyMigration(this);
-        } catch (Exception ex) {
-            log.error("Failed to apply changes to the workspace: {}", ex.getMessage());
+    private void updateWorkspace() throws IOException, NoSuchAlgorithmException {
+        Workspace.getInstance().applyMigration(this);
+    }
+
+    private void updateIndex() throws IOException, NoSuchAlgorithmException {
+        Index index = Index.loadFromDisk();
+        if (index == null) {
+            return;
         }
+        IndexUpdater indexUpdater = new IndexUpdater(index);
+        indexUpdater.updateFromCommitId(this.toCommitId);
+
     }
 
     /**
