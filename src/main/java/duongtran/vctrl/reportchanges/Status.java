@@ -4,6 +4,8 @@ import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.utils.Utils;
 
 import java.nio.file.Path;
+import java.util.EnumMap;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.TreeMap;
 
@@ -13,6 +15,8 @@ import java.util.TreeMap;
  * It operates by storing file status information in separate maps based on the file's state.
  */
 public class Status {
+
+    private final EnumMap<StatusType, NavigableMap<Path, StatusEntry>> entryMap;
 
     private final TreeMap<Path, StatusEntry> entries;
 
@@ -33,6 +37,11 @@ public class Status {
 
 
     public Status() {
+        this.entryMap = new EnumMap<>(StatusType.class);
+        for (StatusType type: StatusType.values()) {
+            entryMap.put(type, new TreeMap<>());
+        }
+
         this.entries = new TreeMap<>();
         this.trackedFiles = new TreeMap<>();
         this.untrackedMap = new TreeMap<>();
@@ -41,6 +50,22 @@ public class Status {
         this.workspaceDeletedMap = new TreeMap<>();
         this.indexDeletedMap = new TreeMap<>();
         this.addedMap = new TreeMap<>();
+    }
+
+    public void add(StatusEntry entry) {
+        entryMap.get(entry.getType()).put(entry.getPath(), entry);
+    }
+
+    public NavigableMap<Path, StatusEntry> get(StatusType type) {
+        return entryMap.get(type);
+    }
+
+    public boolean isEmpty(StatusType type) {
+        return entryMap.get(type).isEmpty();
+    }
+
+    public EnumMap<StatusType, NavigableMap<Path, StatusEntry>> getAll() {
+        return entryMap;
     }
 
     public void addEntry(StatusEntry entry) {

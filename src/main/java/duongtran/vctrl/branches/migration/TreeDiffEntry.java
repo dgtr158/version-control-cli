@@ -4,12 +4,12 @@ import duongtran.vctrl.storage.objects.TreeEntry;
 
 import java.util.Objects;
 
-public final class TreeChanges {
+public final class TreeDiffEntry {
 
     private final TreeEntry oldEntry;
     private final TreeEntry newEntry;
 
-    public TreeChanges(TreeEntry oldEntry, TreeEntry newEntry) {
+    public TreeDiffEntry(TreeEntry oldEntry, TreeEntry newEntry) {
         this.oldEntry = oldEntry;
         this.newEntry = newEntry;
     }
@@ -23,7 +23,7 @@ public final class TreeChanges {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof TreeChanges that)) return false;
+        if (!(o instanceof TreeDiffEntry that)) return false;
         return Objects.equals(oldEntry, that.oldEntry) && Objects.equals(newEntry, that.newEntry);
     }
 

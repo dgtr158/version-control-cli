@@ -11,9 +11,9 @@ import java.nio.file.Path;
  */
 public final class MigrationChange {
     private final Path path;
-    private final TreeChanges pair;
+    private final TreeDiffEntry pair;
 
-    public MigrationChange(Path path, TreeChanges pair) {
+    public MigrationChange(Path path, TreeDiffEntry pair) {
         this.path = path;
         this.pair = pair;
     }
@@ -22,7 +22,7 @@ public final class MigrationChange {
         return path;
     }
 
-    public TreeChanges getPair() {
+    public TreeDiffEntry getPair() {
         return pair;
     }
 }

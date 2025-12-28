@@ -2,7 +2,7 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.branches.Revision;
 import duongtran.vctrl.branches.migration.Migration;
-import duongtran.vctrl.branches.migration.TreeChanges;
+import duongtran.vctrl.branches.migration.TreeDiffEntry;
 import duongtran.vctrl.branches.migration.TreeDiff;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.ObjectID;
@@ -46,7 +46,7 @@ public class CheckoutAction {
 
         // Detect changes between target commit and HEAD commit
         TreeDiff treeDiff = new TreeDiff();
-        Map<Path, TreeChanges> treeDiffMap = treeDiff.detectTreeDiff(headCommitId, targetCommitId);
+        Map<Path, TreeDiffEntry> treeDiffMap = treeDiff.detectTreeDiff(headCommitId, targetCommitId);
 
         // Applies changes to the workspace
         Migration migration = new Migration(headCommitId, targetCommitId, treeDiffMap);

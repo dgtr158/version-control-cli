@@ -1,11 +1,14 @@
 package duongtran.vctrl.branches.migration;
 
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
 import duongtran.vctrl.index.IndexUpdater;
 import duongtran.vctrl.storage.DataEntry;
+import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.storage.ObjectID;
+import duongtran.vctrl.storage.objects.TreeEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +31,7 @@ import java.util.*;
 public class Migration {
     private static final Logger log = LoggerFactory.getLogger(Migration.class);
 
-    private final Map<Path, TreeChanges> treeDiffMap;
+    private final Map<Path, TreeDiffEntry> treeDiffMap;
     private final ObjectID fromCommitId;
     private final ObjectID toCommitId;
 
@@ -41,7 +44,7 @@ public class Migration {
     // Conflicted table that maps the conflict type with its file
     private final Map<String, List<DataEntry>> conflicts;
 
-    public Migration(ObjectID fromCommitId, ObjectID toCommitId, Map<Path, TreeChanges> treeDiffMap) {
+    public Migration(ObjectID fromCommitId, ObjectID toCommitId, Map<Path, TreeDiffEntry> treeDiffMap) {
         this.fromCommitId = fromCommitId;
         this.toCommitId = toCommitId;
         this.treeDiffMap = treeDiffMap;
@@ -122,9 +125,9 @@ public class Migration {
      */
     private void planChanges() throws IOException, NoSuchAlgorithmException {
         Index index = Index.loadFromDisk();
-        for (Map.Entry<Path, TreeChanges> treeDiffEntry : treeDiffMap.entrySet()) {
+        for (Map.Entry<Path, TreeDiffEntry> treeDiffEntry : treeDiffMap.entrySet()) {
             Path path = treeDiffEntry.getKey();
-            TreeChanges treeChangePair = treeDiffEntry.getValue();
+            TreeDiffEntry treeChangePair = treeDiffEntry.getValue();
 
             // Check if there's any conflict
             checkConflict(index, path, treeChangePair);
@@ -133,7 +136,7 @@ public class Migration {
         }
     }
 
-    private void recordChanges(Path path, TreeChanges treeChangePair) {
+    private void recordChanges(Path path, TreeDiffEntry treeChangePair) {
 
         MigrationActionType actionType;
         if (treeChangePair.isAdded()) {
@@ -152,8 +155,52 @@ public class Migration {
         addChangeEntry(actionType, new MigrationChange(path, treeChangePair));
     }
 
-    private void checkConflict(Index index, Path path, TreeChanges treeChangePair) {
+    private void checkConflict(Index index, Path path, TreeDiffEntry treeChangePair) {
         IndexEntry indexEntry = index.getEntryMap().get(path);
+        TreeEntry oldEntry = treeChangePair.getOldEntry();
+        TreeEntry newEntry = treeChangePair.getNewEntry();
+        if (isIndexDiffersFromTrees(indexEntry, oldEntry, newEntry)) {
+            addConflictEntry(ConflictType.STALE_FILE, new DataEntry(
+                    FileMode.fromString(String.valueOf(indexEntry.getMode()))
+                    , new ObjectID(indexEntry.getOid())
+                    , Path.of(indexEntry.getPath())));
+            return;
+        }
+
+//        FileStat stat = Workspace.getInstance().toFileStat(path);
+//        ConflictType errorType = determineErrorType(stat, indexEntry, newEntry);
+//
+//        if (stat == null) {
+//            Path parent = untrackedParent(path);
+//            if (parent != null) {
+//                conflicts.get(errorType.toString())
+//                        .add(indexEntry != null ? path : parent);
+//            }
+//            return;
+//        }
+//
+//        if (!stat.isDirectory()) {
+//            DiffStatus status =
+//                    inspector.compareIndexToWorkspace(indexEntry, stat);
+//
+//            if (status != null) {
+//                conflicts.get(errorType).add(path);
+//            }
+//            return;
+//        }
+//
+//        if (stat.isDirectory()) {
+//            if (inspector.trackableFile(path, stat)) {
+//                conflicts.get(errorType).add(path);
+//            }
+//        }
+
+
+    }
+
+    // TODO
+    private boolean isIndexDiffersFromTrees(IndexEntry indexEntry, TreeEntry oldTreeEntry, TreeEntry newTreeEntry) {
+        return false;
     }
 
 
@@ -206,5 +253,13 @@ public class Migration {
         List<MigrationChange> actionChangeList = this.changes.get(actionTypeValue);
         actionChangeList.add(entry);
     }
+
+    private void addConflictEntry(ConflictType conflictType, DataEntry entry) {
+        String conflictTypeValue = conflictType.toString();
+        if (!this.conflicts.containsKey(conflictTypeValue)) return;
+        List<DataEntry> actionConflictList = this.conflicts.get(conflictTypeValue);
+        actionConflictList.add(entry);
+    }
+
 
 }

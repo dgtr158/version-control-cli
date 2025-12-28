@@ -19,13 +19,13 @@ import java.util.TreeMap;
 public final class TreeDiff {
 
     private final Database database;
-    private final Map<Path, TreeChanges> changes = new HashMap<>();
+    private final Map<Path, TreeDiffEntry> changes = new HashMap<>();
 
     public TreeDiff() {
         this.database = Database.getInstance();
     }
 
-    public Map<Path, TreeChanges> detectTreeDiff(ObjectID leftCommitOid, ObjectID rightCommitOid) throws IOException, NoSuchAlgorithmException {
+    public Map<Path, TreeDiffEntry> detectTreeDiff(ObjectID leftCommitOid, ObjectID rightCommitOid) throws IOException, NoSuchAlgorithmException {
         ObjectID leftTreeOid = commitToTree(leftCommitOid);
         ObjectID rightTreeOid = commitToTree(rightCommitOid);
         compareTrees(leftTreeOid, rightTreeOid, Paths.get(""));
@@ -87,7 +87,7 @@ public final class TreeDiff {
             TreeEntry rightChangeEntry = (rightTreeEntry != null && rightTreeEntry.isTree()) ? null : rightTreeEntry;
 
             if (leftChangeEntry != null || rightChangeEntry != null) {
-                changes.put(path, new TreeChanges(leftChangeEntry, rightChangeEntry));
+                changes.put(path, new TreeDiffEntry(leftChangeEntry, rightChangeEntry));
             }
         }
     }
@@ -144,7 +144,7 @@ public final class TreeDiff {
             if (rightTreeEntry.isTree()) {
                 compareTrees(null, rightTreeEntry.getOid(), path);
             } else {
-                changes.put(path, new TreeChanges(null, rightTreeEntry));
+                changes.put(path, new TreeDiffEntry(null, rightTreeEntry));
             }
         }
     }

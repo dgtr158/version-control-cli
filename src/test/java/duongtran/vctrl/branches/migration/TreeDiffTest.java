@@ -118,8 +118,8 @@ public class TreeDiffTest {
 
             // Assert Tree Diff first time: testFile12, testFile111, testFile112 were added
             TreeDiff firstTreeDiff = new TreeDiff();
-            Map<Path, TreeChanges> firstActualTreeDiff = firstTreeDiff.detectTreeDiff(firstCommit.getOid(), secondCommit.getOid());
-            Map<Path, TreeChanges> firstExpectedTreeDiff = buildExpectedTreeDiffNewBlob(new ArrayList<>(List.of(
+            Map<Path, TreeDiffEntry> firstActualTreeDiff = firstTreeDiff.detectTreeDiff(firstCommit.getOid(), secondCommit.getOid());
+            Map<Path, TreeDiffEntry> firstExpectedTreeDiff = buildExpectedTreeDiffNewBlob(new ArrayList<>(List.of(
                     testFile12, testFile111, testFile112
             )));
             assertTrue(Utils.mapsEqual(firstExpectedTreeDiff, firstActualTreeDiff));
@@ -159,21 +159,21 @@ public class TreeDiffTest {
 
             // Assert Tree Diff the second time: testFile11, testFile112, were deleted
             TreeDiff secondTreeDiff = new TreeDiff();
-            Map<Path, TreeChanges> secondActualTreeDiff = secondTreeDiff.detectTreeDiff(secondCommit.getOid(), thirdCommit.getOid());
-            Map<Path, TreeChanges> secondExpectedTreeDiff = new TreeMap<>();
+            Map<Path, TreeDiffEntry> secondActualTreeDiff = secondTreeDiff.detectTreeDiff(secondCommit.getOid(), thirdCommit.getOid());
+            Map<Path, TreeDiffEntry> secondExpectedTreeDiff = new TreeMap<>();
             secondExpectedTreeDiff.put(
                     rootPath.relativize(testFile11)
-                    , new TreeChanges(testFile11EntryBefore, testFile11EntryAfter)
+                    , new TreeDiffEntry(testFile11EntryBefore, testFile11EntryAfter)
             );
             secondExpectedTreeDiff.put(
                     rootPath.relativize(testFile112)
-                    , new TreeChanges(testFile112EntryBefore, testFile112EntryAfter)
+                    , new TreeDiffEntry(testFile112EntryBefore, testFile112EntryAfter)
             );
             assertTrue(Utils.mapsEqual(secondExpectedTreeDiff, secondActualTreeDiff));
 
 
             // Build the third expected map before deleting files
-            Map<Path, TreeChanges> thirdExpectedTreeDiff = buildExpectedTreeDiffDeletedBlob(new ArrayList<>(List.of(
+            Map<Path, TreeDiffEntry> thirdExpectedTreeDiff = buildExpectedTreeDiffDeletedBlob(new ArrayList<>(List.of(
                     testFile11, testFile112
             )));
 
@@ -188,7 +188,7 @@ public class TreeDiffTest {
 
             // Assert Tree Diff the third time: testFile11, testFile112, were deleted
             TreeDiff thirdTreeDiff = new TreeDiff();
-            Map<Path, TreeChanges> thirdActualTreeDiff = thirdTreeDiff.detectTreeDiff(thirdCommit.getOid(), fourthCommit.getOid());
+            Map<Path, TreeDiffEntry> thirdActualTreeDiff = thirdTreeDiff.detectTreeDiff(thirdCommit.getOid(), fourthCommit.getOid());
             assertTrue(Utils.mapsEqual(thirdExpectedTreeDiff, thirdActualTreeDiff));
 
         } catch (Exception ex) {
@@ -198,13 +198,13 @@ public class TreeDiffTest {
 
     }
 
-    private Map<Path, TreeChanges> buildExpectedTreeDiffNewBlob(List<Path> paths) throws IOException, NoSuchAlgorithmException {
-        Map<Path, TreeChanges> added = new TreeMap<>();
+    private Map<Path, TreeDiffEntry> buildExpectedTreeDiffNewBlob(List<Path> paths) throws IOException, NoSuchAlgorithmException {
+        Map<Path, TreeDiffEntry> added = new TreeMap<>();
         for (Path path : paths) {
             Path relativePath = rootPath.relativize(path);
             added.put(
                     relativePath
-                    , new TreeChanges(null, new TreeEntry(
+                    , new TreeDiffEntry(null, new TreeEntry(
                             relativePath.getFileName().toString()
                             , getBlobOid(path)
                             , FileMode.REGULAR_FILE
@@ -213,13 +213,13 @@ public class TreeDiffTest {
         return added;
     }
 
-    private Map<Path, TreeChanges> buildExpectedTreeDiffDeletedBlob(List<Path> paths) throws IOException, NoSuchAlgorithmException {
-        Map<Path, TreeChanges> deleted = new TreeMap<>();
+    private Map<Path, TreeDiffEntry> buildExpectedTreeDiffDeletedBlob(List<Path> paths) throws IOException, NoSuchAlgorithmException {
+        Map<Path, TreeDiffEntry> deleted = new TreeMap<>();
         for (Path path : paths) {
             Path relativePath = rootPath.relativize(path);
             deleted.put(
                     relativePath
-                    , new TreeChanges(new TreeEntry(
+                    , new TreeDiffEntry(new TreeEntry(
                             relativePath.getFileName().toString()
                             , getBlobOid(path)
                             , FileMode.REGULAR_FILE

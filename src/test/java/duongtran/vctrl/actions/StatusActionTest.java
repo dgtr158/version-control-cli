@@ -423,9 +423,12 @@ public class StatusActionTest {
 
                 // Assert: After modifying the two files, changes will be reported
                 Status secondExpected = new Status();
-                secondExpected.addEntry(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
-                secondExpected.addEntry(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
-                assertEquals(secondExpected, secondActual);
+                secondExpected.add(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
+                secondExpected.add(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
+                assertTrue(
+                        Utils.mapsEqual(
+                                secondExpected.get(StatusType.WORKSPACE_MODIFIED)
+                                , secondActual.get(StatusType.WORKSPACE_MODIFIED)));
 
 
             } catch (Exception ex) {

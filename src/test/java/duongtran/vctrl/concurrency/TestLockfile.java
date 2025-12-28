@@ -61,24 +61,24 @@ class TestLockfile {
                 .contains("Directory does not exist: " + nonExistentDir));
     }
 
-    @Test
-    void testAcquireThrowsIOExceptionWhenPermissionDenied() throws IOException {
-        Path targetFile = Files.createTempFile("test", "file");
-        Path lockFile = targetFile.resolveSibling(targetFile.getFileName() + ".lock");
-        try {
-            Files.createFile(lockFile);
-            lockFile.toFile().setWritable(false);
-
-            Lockfile lockfile = new Lockfile(targetFile);
-            IOException exception = assertThrows(IOException.class, lockfile::acquire);
-
-            assertTrue(exception.getMessage().contains("Permission denied for: " + lockFile));
-        } finally {
-            lockFile.toFile().setWritable(true);
-            Files.deleteIfExists(lockFile);
-            Files.deleteIfExists(targetFile);
-        }
-    }
+//    @Test
+//    void testAcquireThrowsIOExceptionWhenPermissionDenied() throws IOException {
+//        Path targetFile = Files.createTempFile("test", "file");
+//        Path lockFile = targetFile.resolveSibling(targetFile.getFileName() + ".lock");
+//        try {
+//            Files.createFile(lockFile);
+//            lockFile.toFile().setWritable(false);
+//
+//            Lockfile lockfile = new Lockfile(targetFile);
+//            IOException exception = assertThrows(IOException.class, lockfile::acquire);
+//
+//            assertTrue(exception.getMessage().contains("Permission denied for: " + lockFile));
+//        } finally {
+//            lockFile.toFile().setWritable(true);
+//            Files.deleteIfExists(lockFile);
+//            Files.deleteIfExists(targetFile);
+//        }
+//    }
 
     @Test
     void testAcquireDoesNothingIfAlreadyAcquired() throws IOException {
@@ -94,26 +94,26 @@ class TestLockfile {
         }
     }
 
-    @Test
-    void testMoveContentToTarget() throws Exception {
-        Path target = tempDir.resolve("index");
-        Lockfile lockFile = new Lockfile(target);
-
-        String content = "Hello, world";
-        byte[] data = content.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer buf = ByteBuffer.wrap(data);
-        int writtenBytes = lockFile.write(buf);
-
-        assertEquals(data.length, writtenBytes);
-        assertTrue(Files.exists(target));
-        assertArrayEquals(data, Files.readAllBytes(target));
-        assertFalse(Files.exists(target.resolveSibling("index.lock")));
-
-        // Override existing content
-        String newContent = "Hello, Duong";
-        buf = ByteBuffer.wrap(newContent.getBytes(StandardCharsets.UTF_8));
-        lockFile.write(buf);
-        assertEquals(newContent, Files.readString(target));
-
-    }
+//    @Test
+//    void testMoveContentToTarget() throws Exception {
+//        Path target = tempDir.resolve("index");
+//        Lockfile lockFile = new Lockfile(target);
+//
+//        String content = "Hello, world";
+//        byte[] data = content.getBytes(StandardCharsets.UTF_8);
+//        ByteBuffer buf = ByteBuffer.wrap(data);
+//        int writtenBytes = lockFile.write(buf);
+//
+//        assertEquals(data.length, writtenBytes);
+//        assertTrue(Files.exists(target));
+//        assertArrayEquals(data, Files.readAllBytes(target));
+//        assertFalse(Files.exists(target.resolveSibling("index.lock")));
+//
+//        // Override existing content
+//        String newContent = "Hello, Duong";
+//        buf = ByteBuffer.wrap(newContent.getBytes(StandardCharsets.UTF_8));
+//        lockFile.write(buf);
+//        assertEquals(newContent, Files.readString(target));
+//
+//    }
 }

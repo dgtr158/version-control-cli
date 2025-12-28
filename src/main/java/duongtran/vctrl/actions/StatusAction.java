@@ -4,9 +4,7 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
-import duongtran.vctrl.reportchanges.Status;
-import duongtran.vctrl.reportchanges.StatusEntry;
-import duongtran.vctrl.reportchanges.StatusType;
+import duongtran.vctrl.reportchanges.*;
 import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;
@@ -33,9 +31,14 @@ public class StatusAction {
     private static final Logger log = LoggerFactory.getLogger(StatusAction.class);
 
     private final Path rootPath;
+    private final Inspector inspector;
 
     public StatusAction() {
-        this.rootPath = Workspace.getInstance().getRootPath();
+        Workspace workspace = Workspace.getInstance();
+        Database database = Database.getInstance();
+
+        this.rootPath = workspace.getRootPath();
+        this.inspector = new Inspector(workspace, database);
     }
 
     /**
@@ -87,37 +90,13 @@ public class StatusAction {
             if (index.isTracked(path)) {
                 if (fileStat.isDirectory()) scanWorkspace(status, path, index);
                 else status.addTrackedFiles(fileStat);
-            } else if (isTrackableFile(fileStat, index)) {
+            } else if (inspector.trackableFile(fileStat, index)) {
                 StatusEntry statusEntry = new StatusEntry(path, StatusType.UNTRACKED);
                 status.addUntrackedMapEntry(statusEntry);
                 status.addEntry(statusEntry);
+                status.add(statusEntry);
             }
         }
-    }
-
-    /**
-     * Determines if the given file or directory is trackable. A file is considered trackable
-     * if it is not already tracked in the index and isn't a directory. If the file is a directory,
-     * it is trackable if any file or directory within it is trackable.
-     *
-     * @param fileStat the {@code FileStat} object representing the file or directory whose
-     *                 trackability needs to be determined
-     * @param index    the {@code Index} object used to determine whether a file or directory
-     *                 is already tracked
-     * @return {@code true} if the file or directory is trackable, {@code false} otherwise
-     */
-    private boolean isTrackableFile(FileStat fileStat, Index index) {
-        Path path = fileStat.getPath();
-        if (!fileStat.isDirectory()) return !index.isTracked(fileStat.getPath());
-
-        // Considers all files and directories inside the current directory
-        // If there's any trackable file in those, the current directory is trackable
-        List<FileStat> allFiles = Workspace.getInstance().listDir(path);
-        for (FileStat sub : allFiles) {
-            if (isTrackableFile(sub, index)) return true;
-        }
-
-        return false;
     }
 
     /**
@@ -174,41 +153,30 @@ public class StatusAction {
      */
     private void checkIndexAgainstWorkspace(Map.Entry<Path, IndexEntry> entryMap, Map<Path, FileStat> trackedFiles, Status status, Index index) throws IOException, NoSuchAlgorithmException {
 
-        FileStat trackedFile = trackedFiles.get(entryMap.getKey());
+        FileStat wsStatFile = trackedFiles.get(entryMap.getKey());
         IndexEntry indexEntry = entryMap.getValue();
+        Path indexPath = entryMap.getKey();
 
-        // Consider a file as deleted if it's in index and not in the tracked list
-        if (trackedFile == null) {
-            StatusEntry statusEntry = new StatusEntry(entryMap.getKey(), StatusType.WORKSPACE_DELETED);
-            status.addWorkspaceDeletedMapEntry(statusEntry);
-            status.addEntry(statusEntry);
-            return;
-        }
+        WorkspaceComparison result =
+                inspector.compareIndexToWorkspace(indexEntry, wsStatFile);
 
-        // Compare file size and file mode
-        if (!indexEntry.statMatch(trackedFile)) {
-            StatusEntry statusEntry = new StatusEntry(entryMap.getKey(), StatusType.WORKSPACE_MODIFIED);
-            status.addWorkspaceModifiedMap(statusEntry);
-            status.addEntry(statusEntry);
-            return;
-        }
-
-        // Compare created time and modified time
-        if (indexEntry.timeMatch(trackedFile)) {
-            return;
-        }
-
-        // Read the blob by the entry's path
-        // Calculate the objectID then compare with the entry's objectID
-        Blob blob = new Blob(Files.readAllBytes(Path.of(indexEntry.getPath())));
-        blob.calculateOid(blob.toBytes());
-        if (Objects.equals(indexEntry.getOid(), blob.getOid().getValue())) {
-            indexEntry.updateStat(trackedFile);
-            index.setChanged();
-        } else {
-            StatusEntry statusEntry = new StatusEntry(entryMap.getKey(), StatusType.WORKSPACE_MODIFIED);
-            status.addWorkspaceModifiedMap(statusEntry);
-            status.addEntry(statusEntry);
+        switch (result) {
+            case UNTRACKED, DELETED -> {
+                StatusEntry entry =
+                        new StatusEntry(indexPath, StatusType.WORKSPACE_DELETED);
+                status.add(entry);
+            }
+            case MODIFIED -> {
+                StatusEntry entry =
+                        new StatusEntry(indexPath, StatusType.WORKSPACE_MODIFIED);
+                status.add(entry);
+            }
+            case CLEAN -> {
+                if (wsStatFile != null) {
+                    indexEntry.updateStat(wsStatFile);
+                    index.setChanged();
+                }
+            }
         }
 
     }

@@ -12,6 +12,8 @@ import duongtran.vctrl.storage.objects.Blob;
 import duongtran.vctrl.storage.objects.TreeEntry;
 import duongtran.vctrl.utils.DirectoryNames;
 import duongtran.vctrl.utils.FileUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +36,9 @@ import static java.nio.file.StandardOpenOption.WRITE;
  * utility methods to handle files and directories within the workspace.
  */
 public class Workspace {
+
+    private static final Logger log = LoggerFactory.getLogger(Workspace.class);
+
     private static Workspace instance;
     private Path rootPath;
     private Path vctrlPath;
@@ -320,9 +325,8 @@ public class Workspace {
      * already exists at the path, it is left unchanged.
      *
      * @param dirs a set of {@code Path} objects representing the directories to be created
-     * @throws IOException if an I/O error occurs while creating the directories
      */
-    private void createDirectories(Set<Path> dirs) throws IOException {
+    private void createDirectories(Set<Path> dirs) {
         dirs.stream()
                 .sorted()
                 .forEach(dir -> {
@@ -349,13 +353,14 @@ public class Workspace {
      * @return a {@code FileStat} object corresponding to the given path
      * @throws UncheckedIOException if an I/O error occurs during the operation
      */
-    private FileStat toFileStat(Path path) {
+    public FileStat toFileStat(Path path) {
         try {
             return FileUtil.isWindows()
                     ? new WindowFileStat(path)
                     : new UnixFileStat(path);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to stat file: " + path, e);
+            log.error("Failed to stat file: {}", path);
+            return null;
         }
     }
 
