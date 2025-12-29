@@ -157,10 +157,8 @@ public class DiffActionTest {
 
             // Assert: After modifying the two files, changes will be reported
             Status secondExpected = new Status();
-            secondExpected.addEntry(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
-            secondExpected.addWorkspaceModifiedMap(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
+            secondExpected.add(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
             assertEquals(secondExpected, secondActual);
-            assertTrue(Utils.mapsEqual(secondExpected.getWorkspaceModifiedMap(), secondActual.getWorkspaceModifiedMap()));
 
             // Assert: Spot the differences between Index/Workspace
             DiffResult actualDiffResult = diffAction.execute(false);
@@ -296,10 +294,8 @@ public class DiffActionTest {
 
             // Assert: After modifying the two files, changes will be reported
             Status secondExpected = new Status();
-            secondExpected.addEntry(new StatusEntry(testFile11, StatusType.INDEX_MODIFIED));
-            secondExpected.addIndexModifiedMap(new StatusEntry(testFile11, StatusType.INDEX_MODIFIED));
+            secondExpected.add(new StatusEntry(testFile11, StatusType.INDEX_MODIFIED));
             assertEquals(secondExpected, secondActual);
-            assertTrue(Utils.mapsEqual(secondExpected.getIndexModifiedMap(), secondActual.getIndexModifiedMap()));
 
             // Assert: Spot the differences between Index/Workspace
             DiffResult actualDiffResult = diffAction.execute(true);

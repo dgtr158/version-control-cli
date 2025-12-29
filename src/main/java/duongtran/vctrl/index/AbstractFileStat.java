@@ -83,5 +83,17 @@ public abstract class AbstractFileStat implements FileStat {
         if (path == null) return false;
         return Files.isDirectory(path);
     }
+    
+    @Override
+    public boolean isFile() {
+        if (path == null) return false;
+
+        try {
+            FileMode mode = getMode();
+            return mode == FileMode.REGULAR_FILE || mode == FileMode.EXECUTABLE_FILE;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
 
 }

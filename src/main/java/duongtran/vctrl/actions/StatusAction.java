@@ -35,10 +35,9 @@ public class StatusAction {
 
     public StatusAction() {
         Workspace workspace = Workspace.getInstance();
-        Database database = Database.getInstance();
 
         this.rootPath = workspace.getRootPath();
-        this.inspector = new Inspector(workspace, database);
+        this.inspector = new Inspector();
     }
 
     /**
@@ -92,8 +91,6 @@ public class StatusAction {
                 else status.addTrackedFiles(fileStat);
             } else if (inspector.trackableFile(fileStat, index)) {
                 StatusEntry statusEntry = new StatusEntry(path, StatusType.UNTRACKED);
-                status.addUntrackedMapEntry(statusEntry);
-                status.addEntry(statusEntry);
                 status.add(statusEntry);
             }
         }
@@ -131,8 +128,7 @@ public class StatusAction {
         for (Map.Entry<Path, DataEntry> dataEntryMap : allHeadFiles.entrySet()) {
             if (!index.contains(dataEntryMap.getKey())) {
                 StatusEntry statusEntry = new StatusEntry(dataEntryMap.getKey(), StatusType.INDEX_DELETED);
-                status.addIndexDeletedMapEntry(statusEntry);
-                status.addEntry(statusEntry);
+                status.add(statusEntry);
             }
         }
     }
@@ -194,23 +190,19 @@ public class StatusAction {
     private void checkIndexAgainstHead(Map.Entry<Path, IndexEntry> entryMap, Map<Path, DataEntry> allHeadFiles, Status status) throws IOException {
         Path indexEntryPath = entryMap.getKey();
         IndexEntry indexEntry = entryMap.getValue();
-        DataEntry matchedHeadFile = allHeadFiles.get(indexEntryPath);
+        DataEntry headEntry = allHeadFiles.get(indexEntryPath);
 
-        // Added files
-        if (matchedHeadFile == null) {
-            StatusEntry statusEntry = new StatusEntry(indexEntryPath, StatusType.ADDED);
-            status.addAddedMap(statusEntry);
-            status.addEntry(statusEntry);
-            return;
-        }
+        HeadComparison result =
+                inspector.compareIndexToHead(indexEntry, headEntry);
 
-        // Modified files
-        if (indexEntry.getMode() != matchedHeadFile.getMode().getIntValue()
-                || !Objects.equals(new ObjectID(indexEntry.getOid()), matchedHeadFile.getObjectID())) {
-            StatusEntry statusEntry = new StatusEntry(indexEntryPath, StatusType.INDEX_MODIFIED);
-            status.addIndexModifiedMap(statusEntry);
-            status.addEntry(statusEntry);
-            return;
+        switch (result) {
+            case ADDED -> status.add(
+                    new StatusEntry(indexEntryPath, StatusType.ADDED)
+            );
+            case MODIFIED -> status.add(
+                    new StatusEntry(indexEntryPath, StatusType.INDEX_MODIFIED)
+            );
+            case CLEAN -> { /* no-op */ }
         }
 
     }

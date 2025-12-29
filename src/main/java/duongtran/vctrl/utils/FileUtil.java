@@ -58,4 +58,10 @@ public class FileUtil {
         }
     }
 
+    public static boolean isDeeplyContained(Path parent, Path child) throws IOException {
+        Path parentReal = parent.toRealPath();
+        Path childReal = child.toRealPath();
+        return childReal.startsWith(parentReal);
+    }
+
 }

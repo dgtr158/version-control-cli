@@ -1,5 +1,6 @@
 package duongtran.vctrl.branches.migration;
 
+import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.storage.ObjectType;
@@ -87,7 +88,10 @@ public final class TreeDiff {
             TreeEntry rightChangeEntry = (rightTreeEntry != null && rightTreeEntry.isTree()) ? null : rightTreeEntry;
 
             if (leftChangeEntry != null || rightChangeEntry != null) {
-                changes.put(path, new TreeDiffEntry(leftChangeEntry, rightChangeEntry));
+                changes.put(path, new TreeDiffEntry(
+                        toDataEntry(leftChangeEntry, path)
+                        , toDataEntry(rightChangeEntry, path)
+                ));
             }
         }
     }
@@ -144,7 +148,10 @@ public final class TreeDiff {
             if (rightTreeEntry.isTree()) {
                 compareTrees(null, rightTreeEntry.getOid(), path);
             } else {
-                changes.put(path, new TreeDiffEntry(null, rightTreeEntry));
+                changes.put(path, new TreeDiffEntry(
+                        null
+                        , toDataEntry(rightTreeEntry, path)
+                ));
             }
         }
     }
@@ -164,5 +171,23 @@ public final class TreeDiff {
         Commit commit = (Commit) database.loadObject(commitOid, ObjectType.COMMIT);
         if (commit == null) return null;
         return commit.getTreeOid();
+    }
+
+    /**
+     * Converts a {@code TreeEntry} object and a {@code Path} into a {@code DataEntry}.
+     * If the provided {@code TreeEntry} is null, returns null.
+     *
+     * @param treeEntry the {@code TreeEntry} object containing information about the file or directory.
+     * @param path the {@code Path} object representing the relative path to the file or directory.
+     * @return a {@code DataEntry} constructed from the provided {@code TreeEntry} and {@code Path},
+     * or {@code null} if the {@code TreeEntry} is null.
+     */
+    private DataEntry toDataEntry(TreeEntry treeEntry, Path path) {
+        if (treeEntry == null) return null;
+        return new DataEntry(
+                treeEntry.getMode()
+                , treeEntry.getOid()
+                , path
+        );
     }
 }

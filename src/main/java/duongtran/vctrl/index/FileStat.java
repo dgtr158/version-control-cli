@@ -19,4 +19,5 @@ public interface FileStat {
     int getSize();
     Path getPath();
     boolean isDirectory();
+    boolean isFile();
 }

@@ -19,18 +19,20 @@ import java.util.Objects;
 
 public class Inspector {
 
-    private final Workspace workspace;
-    private final Database database;
-
-    public Inspector(Workspace workspace, Database database) {
-        this.workspace = workspace;
-        this.database = database;
-    }
-
-    /* =========================
-       INDEX ↔ WORKSPACE
-       ========================= */
-
+    /**
+     * Compares the given index entry with the corresponding file's status in the workspace
+     * and determines their synchronization state.
+     *
+     * @param indexEntry the {@code IndexEntry} representing the file details stored in the index
+     * @param wsFileStat the {@code FileStat} representing the file's current metadata of the file in the workspace
+     * @return a {@code WorkspaceComparison} enum value indicating the comparison result:
+     * {@code UNTRACKED} if the file is not in the index,
+     * {@code DELETED} if the file is missing in the workspace,
+     * {@code MODIFIED} if the file has been changed,
+     * or {@code CLEAN} if the file is unchanged.
+     * @throws IOException              if an I/O error occurs while reading the file
+     * @throws NoSuchAlgorithmException if the algorithm used to compute the file's hash is not available
+     */
     public WorkspaceComparison compareIndexToWorkspace(IndexEntry indexEntry, FileStat wsFileStat)
             throws IOException, NoSuchAlgorithmException {
 
@@ -54,10 +56,17 @@ public class Inspector {
                 : WorkspaceComparison.MODIFIED;
     }
 
-    /* =========================
-       INDEX ↔ TREE (HEAD)
-       ========================= */
 
+    /**
+     * Compares the given index entry to the corresponding head entry to determine their synchronization state.
+     *
+     * @param indexEntry the {@code IndexEntry} representing the file details stored in the index
+     * @param headEntry  the {@code DataEntry} representing the file details stored in the head
+     * @return a {@code HeadComparison} enum value indicating the comparison result:
+     * {@code ADDED} if the entry exists in the index but not in the head,
+     * {@code MODIFIED} if the entry exists in both but differs in content or mode,
+     * or {@code CLEAN} if the entry exists in both and is identical.
+     */
     public HeadComparison compareIndexToHead(
             IndexEntry indexEntry,
             DataEntry headEntry
@@ -67,18 +76,13 @@ public class Inspector {
         }
 
         if (indexEntry.getMode() != headEntry.getMode().getIntValue()
-                || !Objects.equals(
-                new ObjectID(indexEntry.getOid()),
-                headEntry.getObjectID())) {
+                || !Objects.equals(new ObjectID(indexEntry.getOid()), headEntry.getObjectID())
+        ) {
             return HeadComparison.MODIFIED;
         }
 
         return HeadComparison.CLEAN;
     }
-
-    /* =========================
-       DIRECTORY SAFETY
-       ========================= */
 
     /**
      * Determines if the given file or directory is trackable. A file is considered trackable

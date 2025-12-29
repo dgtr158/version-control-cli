@@ -6,10 +6,10 @@ import duongtran.vctrl.branches.migration.MigrationChange;
 import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.index.UnixFileStat;
 import duongtran.vctrl.index.WindowFileStat;
+import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectType;
 import duongtran.vctrl.storage.objects.Blob;
-import duongtran.vctrl.storage.objects.TreeEntry;
 import duongtran.vctrl.utils.DirectoryNames;
 import duongtran.vctrl.utils.FileUtil;
 import org.slf4j.Logger;
@@ -267,8 +267,8 @@ public class Workspace {
             if (action == MigrationActionType.DELETE) {
                 continue;
             }
-            TreeEntry changeEntry = change.getPair().getNewEntry();
-            Blob blob = (Blob) database.loadObject(changeEntry.getOid(), ObjectType.BLOB);
+            DataEntry changeEntry = change.getPair().getNewEntry();
+            Blob blob = (Blob) database.loadObject(changeEntry.getObjectID(), ObjectType.BLOB);
             Files.write(
                     path,
                     blob.getContent(),
@@ -280,15 +280,15 @@ public class Workspace {
     }
 
     /**
-     * Applies the POSIX file permissions of a {@code TreeEntry} to a specified path if the file system
+     * Applies the POSIX file permissions of a {@code DataEntry} to a specified path if the file system
      * at the given path supports POSIX file attribute view. This method retrieves the permissions from
      * the entry and sets them on the specified path.
      *
-     * @param entry the {@code TreeEntry} object that contains the permissions to be applied
+     * @param entry the {@code DataEntry} object that contains the permissions to be applied
      * @param path  the {@code Path} where the permissions will be applied
      * @throws IOException if an I/O error occurs while setting the permissions
      */
-    private void applyMode(TreeEntry entry, Path path) throws IOException {
+    private void applyMode(DataEntry entry, Path path) throws IOException {
         if (Files.getFileStore(path).supportsFileAttributeView("posix")) {
             Set<PosixFilePermission> perms = entry.getMode().getPosixPermissions();
             Files.setPosixFilePermissions(path, perms);
@@ -361,6 +361,14 @@ public class Workspace {
         } catch (IOException e) {
             log.error("Failed to stat file: {}", path);
             return null;
+        }
+    }
+
+    public boolean exists(Path path) {
+        try {
+            return FileUtil.isDeeplyContained(rootPath, path);
+        } catch (IOException ex) {
+            return false;
         }
     }
 

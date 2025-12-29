@@ -4,6 +4,7 @@ import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.AddAction;
 import duongtran.vctrl.actions.CommitAction;
+import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.storage.ObjectID;
@@ -125,30 +126,30 @@ public class TreeDiffTest {
             assertTrue(Utils.mapsEqual(firstExpectedTreeDiff, firstActualTreeDiff));
 
             // Build the second expected map before changing files
-            TreeEntry testFile11EntryBefore = new TreeEntry(
-                    rootPath.relativize(testFile11).getFileName().toString()
+            DataEntry testFile11EntryBefore = new DataEntry(
+                    FileMode.REGULAR_FILE
                     , getBlobOid(testFile11)
-                    , FileMode.REGULAR_FILE
+                    ,rootPath.relativize(testFile11)
             );
-            TreeEntry testFile112EntryBefore = new TreeEntry(
-                    rootPath.relativize(testFile112).getFileName().toString()
+            DataEntry testFile112EntryBefore = new DataEntry(
+                    FileMode.REGULAR_FILE
                     , getBlobOid(testFile112)
-                    , FileMode.REGULAR_FILE
+                    , rootPath.relativize(testFile112)
             );
 
             // Change contents of testFile11 and testFile112
             TestUtils.writeText(testFile11, "Test content 11 modified");
             TestUtils.writeText(testFile112, "Test content 112 modified");
 
-            TreeEntry testFile11EntryAfter = new TreeEntry(
-                    rootPath.relativize(testFile11).getFileName().toString()
+            DataEntry testFile11EntryAfter = new DataEntry(
+                    FileMode.REGULAR_FILE
                     , getBlobOid(testFile11)
-                    , FileMode.REGULAR_FILE
+                    , rootPath.relativize(testFile11)
             );
-            TreeEntry testFile112EntryAfter = new TreeEntry(
-                    rootPath.relativize(testFile112).getFileName().toString()
+            DataEntry testFile112EntryAfter = new DataEntry(
+                    FileMode.REGULAR_FILE
                     , getBlobOid(testFile112)
-                    , FileMode.REGULAR_FILE
+                    , rootPath.relativize(testFile112)
             );
 
 
@@ -192,6 +193,7 @@ public class TreeDiffTest {
             assertTrue(Utils.mapsEqual(thirdExpectedTreeDiff, thirdActualTreeDiff));
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             fail();
         }
 
@@ -204,10 +206,10 @@ public class TreeDiffTest {
             Path relativePath = rootPath.relativize(path);
             added.put(
                     relativePath
-                    , new TreeDiffEntry(null, new TreeEntry(
-                            relativePath.getFileName().toString()
+                    , new TreeDiffEntry(null, new DataEntry(
+                            FileMode.REGULAR_FILE
                             , getBlobOid(path)
-                            , FileMode.REGULAR_FILE
+                            , relativePath
                     )));
         }
         return added;
@@ -219,10 +221,10 @@ public class TreeDiffTest {
             Path relativePath = rootPath.relativize(path);
             deleted.put(
                     relativePath
-                    , new TreeDiffEntry(new TreeEntry(
-                            relativePath.getFileName().toString()
+                    , new TreeDiffEntry(new DataEntry(
+                            FileMode.REGULAR_FILE
                             , getBlobOid(path)
-                            , FileMode.REGULAR_FILE
+                            , relativePath
                     ), null));
         }
         return deleted;

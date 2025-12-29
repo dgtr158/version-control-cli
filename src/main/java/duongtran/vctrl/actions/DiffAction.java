@@ -6,6 +6,7 @@ import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.reportchanges.StatusEntry;
+import duongtran.vctrl.reportchanges.StatusType;
 import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;
@@ -15,6 +16,7 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.TreeMap;
 
 /**
@@ -86,7 +88,7 @@ public class DiffAction {
      * @throws NoSuchAlgorithmException if the hashing algorithm used for blob comparisons is invalid.
      */
     private DiffResult spotIndexHeadDifferences(Index index, Status status) throws IOException, NoSuchAlgorithmException {
-        TreeMap<Path, StatusEntry> indexModifiedMap = status.getIndexModifiedMap();
+        NavigableMap<Path, StatusEntry> indexModifiedMap = status.get(StatusType.INDEX_MODIFIED);
         Map<Path, IndexEntry> indexEntryMap = index.getEntryMap();
         Map<Path, DataEntry> headFiles = Database.listFileInHead();
 
@@ -122,7 +124,7 @@ public class DiffAction {
      * workspace files and their corresponding entries in the index.
      */
     private DiffResult spotIndexWorkspaceDifferences(Index index, Status status) {
-        TreeMap<Path, StatusEntry> workspaceModifiedMap = status.getWorkspaceModifiedMap();
+        NavigableMap<Path, StatusEntry> workspaceModifiedMap = status.get(StatusType.WORKSPACE_MODIFIED);
         Map<Path, IndexEntry> indexEntryMap = index.getEntryMap();
 
         TreeMap<Path, List<Hunk>> hunkMap = new TreeMap<>();

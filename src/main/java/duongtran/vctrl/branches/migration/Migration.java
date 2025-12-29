@@ -5,6 +5,7 @@ import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
 import duongtran.vctrl.index.IndexUpdater;
+import duongtran.vctrl.reportchanges.*;
 import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.storage.ObjectID;
@@ -31,6 +32,9 @@ import java.util.*;
 public class Migration {
     private static final Logger log = LoggerFactory.getLogger(Migration.class);
 
+    private final Inspector inspector;
+    private final Workspace workspace;
+
     private final Map<Path, TreeDiffEntry> treeDiffMap;
     private final ObjectID fromCommitId;
     private final ObjectID toCommitId;
@@ -42,19 +46,27 @@ public class Migration {
     // List of directories that will be removed if it's empty
     private final Set<Path> removeDirs = new HashSet<>();
     // Conflicted table that maps the conflict type with its file
-    private final Map<String, List<DataEntry>> conflicts;
+    private final EnumMap<ConflictType, List<Path>> conflicts;
+
 
     public Migration(ObjectID fromCommitId, ObjectID toCommitId, Map<Path, TreeDiffEntry> treeDiffMap) {
+        this.inspector = new Inspector();
+        this.workspace = Workspace.getInstance();
+
         this.fromCommitId = fromCommitId;
         this.toCommitId = toCommitId;
         this.treeDiffMap = treeDiffMap;
+
+        // Change table
         this.changes = new HashMap<>();
         for (MigrationActionType actionType : MigrationActionType.values()) {
             changes.put(actionType.toString(), new ArrayList<>());
         }
-        this.conflicts = new HashMap<>();
-        for (ConflictType conflictType : ConflictType.values()) {
-            conflicts.put(conflictType.toString(), new ArrayList<>());
+
+        // Conflicts table
+        this.conflicts = new EnumMap<>(ConflictType.class);
+        for (ConflictType type: ConflictType.values()) {
+            conflicts.put(type, new ArrayList<>());
         }
     }
 
@@ -155,55 +167,70 @@ public class Migration {
         addChangeEntry(actionType, new MigrationChange(path, treeChangePair));
     }
 
-    private void checkConflict(Index index, Path path, TreeDiffEntry treeChangePair) {
+    private void checkConflict(Index index, Path path, TreeDiffEntry treeChangePair) throws IOException, NoSuchAlgorithmException {
         IndexEntry indexEntry = index.getEntryMap().get(path);
-        TreeEntry oldEntry = treeChangePair.getOldEntry();
-        TreeEntry newEntry = treeChangePair.getNewEntry();
+        DataEntry oldEntry = treeChangePair.getOldEntry();
+        DataEntry newEntry = treeChangePair.getNewEntry();
         if (isIndexDiffersFromTrees(indexEntry, oldEntry, newEntry)) {
-            addConflictEntry(ConflictType.STALE_FILE, new DataEntry(
-                    FileMode.fromString(String.valueOf(indexEntry.getMode()))
-                    , new ObjectID(indexEntry.getOid())
-                    , Path.of(indexEntry.getPath())));
+            addConflictEntry(ConflictType.STALE_FILE, Path.of(indexEntry.getPath()));
             return;
         }
 
-//        FileStat stat = Workspace.getInstance().toFileStat(path);
-//        ConflictType errorType = determineErrorType(stat, indexEntry, newEntry);
-//
-//        if (stat == null) {
-//            Path parent = untrackedParent(path);
-//            if (parent != null) {
-//                conflicts.get(errorType.toString())
-//                        .add(indexEntry != null ? path : parent);
-//            }
-//            return;
-//        }
-//
-//        if (!stat.isDirectory()) {
-//            DiffStatus status =
-//                    inspector.compareIndexToWorkspace(indexEntry, stat);
-//
-//            if (status != null) {
-//                conflicts.get(errorType).add(path);
-//            }
-//            return;
-//        }
-//
-//        if (stat.isDirectory()) {
-//            if (inspector.trackableFile(path, stat)) {
-//                conflicts.get(errorType).add(path);
-//            }
-//        }
+        FileStat stat = Workspace.getInstance().toFileStat(path);
+        ConflictType conflictType = getErrorType(stat, indexEntry, newEntry);
 
+        if (stat == null) {
+            Path parent = untrackedParent(index, path);
+            if (parent != null) {
+                addConflictEntry(conflictType, indexEntry != null ? path : parent);
+            }
+            return;
+        }
+
+        if (stat.isFile()) {
+            WorkspaceComparison wsComparison =
+                    this.inspector.compareIndexToWorkspace(indexEntry, stat);
+
+            if (wsComparison != null) {
+                conflicts.get(conflictType).add(path);
+            }
+            return;
+        }
+
+        if (stat.isDirectory()) {
+            if (inspector.trackableFile(stat, index)) {
+                conflicts.get(conflictType).add(path);
+            }
+        }
 
     }
 
-    // TODO
-    private boolean isIndexDiffersFromTrees(IndexEntry indexEntry, TreeEntry oldTreeEntry, TreeEntry newTreeEntry) {
-        return false;
+    /**
+     * Determines whether the index entry differs from the two provided tree entries.
+     *
+     * @param indexEntry    the index entry to be compared
+     * @param oldTreeEntry  the data entry representing the old tree state
+     * @param newTreeEntry  the data entry representing the new tree state
+     * @return {@code true} if the index entry does not differ from both the old tree entry and new tree entry
+     *         with a "CLEAN" comparison result; {@code false} otherwise
+     */
+    private boolean isIndexDiffersFromTrees(IndexEntry indexEntry, DataEntry oldTreeEntry, DataEntry newTreeEntry) {
+        boolean isDiffFromOld = inspector.compareIndexToHead(indexEntry, oldTreeEntry) == HeadComparison.CLEAN || inspector.compareIndexToHead(indexEntry, oldTreeEntry) == HeadComparison.ADDED;
+        boolean isDiffFromNew = inspector.compareIndexToHead(indexEntry, newTreeEntry) == HeadComparison.CLEAN || inspector.compareIndexToHead(indexEntry, newTreeEntry) == HeadComparison.ADDED;
+        return !isDiffFromOld && !isDiffFromNew;
     }
 
-
+    private Path untrackedParent(Index index, Path path) {
+        Path parent = path.getParent();
+        while (parent != null) {
+            if (index.contains(parent)
+                    && workspace.exists(parent)) {
+                return parent;
+            }
+            parent = parent.getParent();
+        }
+        return null;
+    }
 
     /**
      * Updates the current workspace by applying necessary migration changes.
@@ -254,12 +281,16 @@ public class Migration {
         actionChangeList.add(entry);
     }
 
-    private void addConflictEntry(ConflictType conflictType, DataEntry entry) {
-        String conflictTypeValue = conflictType.toString();
-        if (!this.conflicts.containsKey(conflictTypeValue)) return;
-        List<DataEntry> actionConflictList = this.conflicts.get(conflictTypeValue);
-        actionConflictList.add(entry);
+
+    private void addConflictEntry(ConflictType type, Path path) {
+        conflicts.get(type).add(path);
     }
 
+    public ConflictType getErrorType(FileStat stat, IndexEntry indexEntry, DataEntry newDataEntry) {
+        if (indexEntry != null) return ConflictType.STALE_FILE;
+        if (stat.isDirectory()) return ConflictType.STALE_DIRECTORY;
+        if (newDataEntry != null) return ConflictType.UNTRACKED_OVERWRITTEN;
+        return ConflictType.UNTRACKED_REMOVED;
+    }
 
 }

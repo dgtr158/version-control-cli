@@ -138,7 +138,7 @@ public class StatusActionTest {
 
                 // Assert
                 Status expected = new Status();
-                expected.addEntry(new StatusEntry(firstDir, StatusType.UNTRACKED));
+                expected.add(new StatusEntry(firstDir, StatusType.UNTRACKED));
                 assertEquals(expected, actual);
 
             } catch (Exception ex) {
@@ -170,7 +170,7 @@ public class StatusActionTest {
 
                 // Assert
                 Status expected = new Status();
-                expected.addEntry(new StatusEntry(testFile12, StatusType.UNTRACKED));
+                expected.add(new StatusEntry(testFile12, StatusType.UNTRACKED));
 
 
                 assertEquals(expected, actual);
@@ -216,9 +216,9 @@ public class StatusActionTest {
 
                 // Assert
                 Status expected = new Status();
-                expected.addEntry(new StatusEntry(testFile12, StatusType.UNTRACKED));
-                expected.addEntry(new StatusEntry(subFirstDir, StatusType.UNTRACKED));
-                expected.addEntry(new StatusEntry(secondDir, StatusType.UNTRACKED));
+                expected.add(new StatusEntry(testFile12, StatusType.UNTRACKED));
+                expected.add(new StatusEntry(subFirstDir, StatusType.UNTRACKED));
+                expected.add(new StatusEntry(secondDir, StatusType.UNTRACKED));
                 assertEquals(expected, actual);
 
             } catch (Exception ex) {
@@ -260,8 +260,8 @@ public class StatusActionTest {
 
                 // Assert
                 Status expected = new Status();
-                expected.addEntry(new StatusEntry(testFile12, StatusType.UNTRACKED));
-                expected.addEntry(new StatusEntry(subFirstDir, StatusType.UNTRACKED));
+                expected.add(new StatusEntry(testFile12, StatusType.UNTRACKED));
+                expected.add(new StatusEntry(subFirstDir, StatusType.UNTRACKED));
                 assertEquals(expected, actual);
 
             } catch (Exception ex) {
@@ -309,8 +309,8 @@ public class StatusActionTest {
 
                 // Assert: After modifying the two files, changes will be reported
                 Status secondExpected = new Status();
-                secondExpected.addEntry(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
-                secondExpected.addEntry(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
+                secondExpected.add(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
+                secondExpected.add(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
                 assertEquals(secondExpected, secondActual);
 
                 // Add testFile11 and testFile112 to staging and commit
@@ -373,11 +373,10 @@ public class StatusActionTest {
                 // Assert: After modifying the two files, changes will be reported
                 Status secondExpected = new Status();
                 if (FileUtil.isUnix()) {
-                    secondExpected.addEntry(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
-                    secondExpected.addEntry(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
+                    secondExpected.add(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
+                    secondExpected.add(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
                 }
                 assertEquals(secondExpected, secondActual);
-
 
             } catch (Exception ex) {
                 fail();
@@ -425,11 +424,7 @@ public class StatusActionTest {
                 Status secondExpected = new Status();
                 secondExpected.add(new StatusEntry(testFile11, StatusType.WORKSPACE_MODIFIED));
                 secondExpected.add(new StatusEntry(testFile112, StatusType.WORKSPACE_MODIFIED));
-                assertTrue(
-                        Utils.mapsEqual(
-                                secondExpected.get(StatusType.WORKSPACE_MODIFIED)
-                                , secondActual.get(StatusType.WORKSPACE_MODIFIED)));
-
+                assertEquals(secondExpected, secondActual);
 
             } catch (Exception ex) {
                 fail();
@@ -473,7 +468,6 @@ public class StatusActionTest {
                 Instant time = Instant.parse("2099-01-01T00:00:00Z");
                 TestUtils.setMTime(testFile11, time);
                 TestUtils.setMTime(testFile112, time);
-
 
                 // Execute status command a second time
                 Status secondActual = statusAction.execute();
@@ -520,8 +514,8 @@ public class StatusActionTest {
 
                 // Assert: After the first time, nothing changed
                 Status firstExpected = new Status();
-                firstExpected.addEntry(new StatusEntry(firstDir, StatusType.UNTRACKED));
-                firstExpected.addEntry(new StatusEntry(secondDir, StatusType.UNTRACKED));
+                firstExpected.add(new StatusEntry(firstDir, StatusType.UNTRACKED));
+                firstExpected.add(new StatusEntry(secondDir, StatusType.UNTRACKED));
                 assertEquals(firstExpected, firstActual);
 
                 // Add firstDir to staging and commit
@@ -539,9 +533,9 @@ public class StatusActionTest {
 
                 // Assert: Report deleted files
                 Status secondExpected = new Status();
-                secondExpected.addEntry(new StatusEntry(testFile111, StatusType.WORKSPACE_DELETED));
-                secondExpected.addEntry(new StatusEntry(testFile112, StatusType.WORKSPACE_DELETED));
-                secondExpected.addEntry(new StatusEntry(testFile21, StatusType.WORKSPACE_DELETED));
+                secondExpected.add(new StatusEntry(testFile111, StatusType.WORKSPACE_DELETED));
+                secondExpected.add(new StatusEntry(testFile112, StatusType.WORKSPACE_DELETED));
+                secondExpected.add(new StatusEntry(testFile21, StatusType.WORKSPACE_DELETED));
                 assertEquals(secondExpected, secondActual);
 
             } catch (Exception ex) {
@@ -592,7 +586,7 @@ public class StatusActionTest {
 
                 // Assert: contains testFile112 as ADDED
                 Status firstExpected = new Status();
-                firstExpected.addEntry(new StatusEntry(testFile112, StatusType.ADDED));
+                firstExpected.add(new StatusEntry(testFile112, StatusType.ADDED));
                 assertEquals(firstExpected, firstActual);
 
                 // Commit 2nd
@@ -609,8 +603,8 @@ public class StatusActionTest {
 
                 // Assert: contains testFile21, testFile22 as ADDED
                 Status secondExpected = new Status();
-                secondExpected.addEntry(new StatusEntry(testFile21, StatusType.ADDED));
-                secondExpected.addEntry(new StatusEntry(testFile22, StatusType.ADDED));
+                secondExpected.add(new StatusEntry(testFile21, StatusType.ADDED));
+                secondExpected.add(new StatusEntry(testFile22, StatusType.ADDED));
                 assertEquals(secondExpected, secondActual);
 
                 // Commit 3rd
@@ -672,16 +666,12 @@ public class StatusActionTest {
 
                 // Assert: contains testFile111, testFile21 as MODIFIED
                 Status firstExpected = new Status();
-
                 if (FileUtil.isUnix()) {
-                    firstExpected.addEntry(new StatusEntry(testFile111, StatusType.INDEX_MODIFIED));
+                    firstExpected.add(new StatusEntry(testFile111, StatusType.INDEX_MODIFIED));
                     TestUtils.changeMode(testFile111, FileMode.EXECUTABLE_FILE);
-                    firstExpected.addIndexModifiedMap(new StatusEntry(testFile111, StatusType.INDEX_MODIFIED));
                 }
-                firstExpected.addEntry(new StatusEntry(testFile21, StatusType.INDEX_MODIFIED));
-                firstExpected.addIndexModifiedMap(new StatusEntry(testFile21, StatusType.INDEX_MODIFIED));
+                firstExpected.add(new StatusEntry(testFile21, StatusType.INDEX_MODIFIED));
                 assertEquals(firstExpected, firstActual);
-                assertTrue(Utils.mapsEqual(firstExpected.getIndexModifiedMap(), firstActual.getIndexModifiedMap()));
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -728,9 +718,9 @@ public class StatusActionTest {
 
                 // Assert: contains testFile112, testFile21, testFile22 as DELETED
                 Status firstExpected = new Status();
-                firstExpected.addEntry(new StatusEntry(testFile112, StatusType.INDEX_DELETED));
-                firstExpected.addEntry(new StatusEntry(testFile21, StatusType.INDEX_DELETED));
-                firstExpected.addEntry(new StatusEntry(testFile22, StatusType.INDEX_DELETED));
+                firstExpected.add(new StatusEntry(testFile112, StatusType.INDEX_DELETED));
+                firstExpected.add(new StatusEntry(testFile21, StatusType.INDEX_DELETED));
+                firstExpected.add(new StatusEntry(testFile22, StatusType.INDEX_DELETED));
                 assertEquals(firstExpected, firstActual);
 
             } catch (Exception ex) {

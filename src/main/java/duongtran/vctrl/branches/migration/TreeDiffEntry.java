@@ -1,21 +1,22 @@
 package duongtran.vctrl.branches.migration;
 
+import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.objects.TreeEntry;
 
 import java.util.Objects;
 
 public final class TreeDiffEntry {
 
-    private final TreeEntry oldEntry;
-    private final TreeEntry newEntry;
+    private final DataEntry oldEntry;
+    private final DataEntry newEntry;
 
-    public TreeDiffEntry(TreeEntry oldEntry, TreeEntry newEntry) {
+    public TreeDiffEntry(DataEntry oldEntry, DataEntry newEntry) {
         this.oldEntry = oldEntry;
         this.newEntry = newEntry;
     }
 
-    public TreeEntry getOldEntry() { return oldEntry; }
-    public TreeEntry getNewEntry() { return newEntry; }
+    public DataEntry getOldEntry() { return oldEntry; }
+    public DataEntry getNewEntry() { return newEntry; }
 
     public boolean isAdded()    { return oldEntry == null && newEntry != null; }
     public boolean isDeleted()  { return oldEntry != null && newEntry == null; }

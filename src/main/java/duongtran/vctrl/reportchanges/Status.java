@@ -16,72 +16,34 @@ import java.util.TreeMap;
  */
 public class Status {
 
-    private final EnumMap<StatusType, NavigableMap<Path, StatusEntry>> entryMap;
-
-    private final TreeMap<Path, StatusEntry> entries;
+    private final EnumMap<StatusType, NavigableMap<Path, StatusEntry>> entries;
 
     // Paths are tracked
     private final TreeMap<Path, FileStat> trackedFiles;
-    // Paths are not in the index
-    private final TreeMap<Path, StatusEntry> untrackedMap;
-    // Paths where the workspace content differs from what's in the index
-    private final TreeMap<Path, StatusEntry> workspaceModifiedMap;
-    // Paths where the HEAD content differs from what's in the index
-    private final TreeMap<Path, StatusEntry> indexModifiedMap;
-    // Paths that deleted from workspace (right now files in the index)
-    private final TreeMap<Path, StatusEntry> workspaceDeletedMap;
-    // Paths that deleted from index (file in index but not in HEAD)
-    private final TreeMap<Path, StatusEntry> indexDeletedMap;
-    // Paths that in the index but not in HEAD
-    private final TreeMap<Path, StatusEntry> addedMap;
 
 
     public Status() {
-        this.entryMap = new EnumMap<>(StatusType.class);
+        this.entries = new EnumMap<>(StatusType.class);
         for (StatusType type: StatusType.values()) {
-            entryMap.put(type, new TreeMap<>());
+            entries.put(type, new TreeMap<>());
         }
-
-        this.entries = new TreeMap<>();
         this.trackedFiles = new TreeMap<>();
-        this.untrackedMap = new TreeMap<>();
-        this.workspaceModifiedMap = new TreeMap<>();
-        this.indexModifiedMap = new TreeMap<>();
-        this.workspaceDeletedMap = new TreeMap<>();
-        this.indexDeletedMap = new TreeMap<>();
-        this.addedMap = new TreeMap<>();
     }
 
     public void add(StatusEntry entry) {
-        entryMap.get(entry.getType()).put(entry.getPath(), entry);
+        entries.get(entry.getType()).put(entry.getPath(), entry);
     }
 
     public NavigableMap<Path, StatusEntry> get(StatusType type) {
-        return entryMap.get(type);
+        return entries.get(type);
     }
 
     public boolean isEmpty(StatusType type) {
-        return entryMap.get(type).isEmpty();
+        return entries.get(type).isEmpty();
     }
 
     public EnumMap<StatusType, NavigableMap<Path, StatusEntry>> getAll() {
-        return entryMap;
-    }
-
-    public void addEntry(StatusEntry entry) {
-        this.entries.put(entry.getPath(), entry);
-    }
-
-    public TreeMap<Path, StatusEntry> getEntries() {
         return entries;
-    }
-
-    public void addUntrackedMapEntry(StatusEntry entry) {
-        untrackedMap.put(entry.getPath(), entry);
-    }
-
-    public TreeMap<Path, StatusEntry> getUntrackedMap() {
-        return untrackedMap;
     }
 
     public void addTrackedFiles(FileStat fileStat) {
@@ -92,57 +54,26 @@ public class Status {
         return trackedFiles;
     }
 
-    public void addWorkspaceModifiedMap(StatusEntry entry) {
-        workspaceModifiedMap.put(entry.getPath(), entry);
-    }
-
-    public TreeMap<Path, StatusEntry> getWorkspaceModifiedMap() {
-        return workspaceModifiedMap;
-    }
-
-    public void addIndexModifiedMap(StatusEntry entry) {
-        indexModifiedMap.put(entry.getPath(), entry);
-    }
-
-    public TreeMap<Path, StatusEntry> getIndexModifiedMap() {
-        return indexModifiedMap;
-    }
-
-    public void addWorkspaceDeletedMapEntry(StatusEntry entry) {
-        workspaceDeletedMap.put(entry.getPath(), entry);
-    }
-
-    public TreeMap<Path, StatusEntry> getWorkspaceDeletedMap() {
-        return workspaceDeletedMap;
-    }
-
-    public void addIndexDeletedMapEntry(StatusEntry entry) {
-        indexDeletedMap.put(entry.getPath(), entry);
-    }
-
-    public TreeMap<Path, StatusEntry> getIndexDeletedMap() {
-        return indexDeletedMap;
-    }
-
-    public void addAddedMap(StatusEntry entry) {
-        addedMap.put(entry.getPath(), entry);
-    }
-
-    public TreeMap<Path, StatusEntry> getAddedMap() {
-        return addedMap;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Status other)) return false;
-        if (this.entries.size() != other.getEntries().size()) return false;
 
-        return Utils.mapsEqual(this.entries, other.getEntries());
+        EnumMap<StatusType, NavigableMap<Path, StatusEntry>> otherEntryMap = other.getAll();
+        if (this.entries.size() != otherEntryMap.size()) return false;
+
+        for (StatusType type: StatusType.values()) {
+            if (!Utils.mapsEqual(this.entries.get(type), otherEntryMap.get(type))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(entries);
+        return Objects.hash(entries);
     }
+
 }
