@@ -2,6 +2,7 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.branches.migration.CheckoutConflictException;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Blob;
@@ -13,10 +14,12 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -170,7 +173,102 @@ public class CheckoutActionTest {
             assertEquals(expectedIndex, actualIndex);
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             fail();
+        }
+    }
+
+    @Test
+    void testCheckoutHasConflict() throws IOException, NoSuchAlgorithmException {
+
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        Index indexBeforeCheckout = null;
+
+        try {
+
+            // Create files and its contents in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+
+            // Add firstDir to staging and commit
+            addAction.execute(firstDir);
+            Commit firstCommit = commitAction.execute();
+
+            // Create files and its contents in the subFirstDir
+            TestUtils.writeText(testFile12, "Test content 12");
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+
+            // Add testFile12, subFirstDir to staging and commit
+            addAction.execute(testFile12);
+            addAction.execute(subFirstDir);
+            Commit secondCommit = commitAction.execute();
+
+            // Create files and its contents in the secondDir
+            Files.createDirectories(secondDir);
+            TestUtils.writeText(testFile21, "Test content 21");
+            TestUtils.writeText(testFile22, "Test content 22");
+
+            // Add the secondDir, testFile11, testFile112 to staging and commit
+            addAction.execute(secondDir);
+            addAction.execute(testFile11);
+            addAction.execute(testFile112);
+            Commit thirdCommit = commitAction.execute();
+
+            // Add testFile1, and testFile13
+            TestUtils.writeText(testFile1, "Test content 1");
+            TestUtils.writeText(testFile13, "Test content 13");
+
+            // Change contents of testFile11 and testFile21
+            TestUtils.writeText(testFile11, "Test content 11 modified first time");
+            TestUtils.writeText(testFile21, "Test content 21 modified first time");
+
+            // Delete testFile22 and testFile112
+            TestUtils.deleteRecursively(testFile22);
+            TestUtils.deleteRecursively(testFile112);
+
+            // Add changes to staging and commit
+            addAction.execute(testFile1);
+            addAction.execute(testFile13);
+            addAction.execute(testFile11);
+            addAction.execute(testFile21);
+            addAction.execute(testFile22);
+            addAction.execute(testFile112);
+            indexBeforeCheckout = Index.loadFromDisk();
+            Commit fourthCommit = commitAction.execute();
+
+            // Change contents of testFile11 and testFile21
+            TestUtils.writeText(testFile11, "Test content 11 modified second time");
+
+            // Check out from the fourth commit to the third commit
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 1);
+
+            // After executed checkout, need to go to the exception block
+            fail();
+
+        } catch (CheckoutConflictException ex) {
+            log.debug("Conflict Error messages: {}", ex.getMessage());
+            assertFalse(ex.getMessage().isEmpty());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            fail();
+        } finally {
+            // Assert the contents
+            String testFile11Content = TestUtils.readFileContents(testFile11);
+            String testFile21Content = TestUtils.readFileContents(testFile21);
+            assertEquals("Test content 11 modified second time", testFile11Content);
+            assertEquals("Test content 21 modified first time", testFile21Content);
+            assertTrue(Files.exists(testFile1));
+            assertTrue(Files.exists(testFile13));
+            assertFalse(Files.exists(testFile22));
+            assertFalse(Files.exists(testFile112));
+
+            // The index must reflect the current workspace
+            Index actualIndex = Index.loadFromDisk();
+            assertEquals(indexBeforeCheckout, actualIndex);
         }
     }
 

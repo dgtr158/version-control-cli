@@ -16,7 +16,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Objects;
 
-
+/**
+ * The Inspector class provides functionality to compare file statuses between
+ * the index, workspace, and head, as well as determine the trackability of files
+ * and directories.
+ */
 public class Inspector {
 
     /**
@@ -72,9 +76,11 @@ public class Inspector {
             DataEntry headEntry
     ) {
         if (headEntry == null) {
+            if (indexEntry == null) return HeadComparison.CLEAN;
             return HeadComparison.ADDED;
         }
 
+        if (indexEntry == null) return HeadComparison.DELETED;
         if (indexEntry.getMode() != headEntry.getMode().getIntValue()
                 || !Objects.equals(new ObjectID(indexEntry.getOid()), headEntry.getObjectID())
         ) {

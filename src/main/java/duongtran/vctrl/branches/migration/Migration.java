@@ -5,11 +5,11 @@ import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
 import duongtran.vctrl.index.IndexUpdater;
-import duongtran.vctrl.reportchanges.*;
+import duongtran.vctrl.reportchanges.HeadComparison;
+import duongtran.vctrl.reportchanges.Inspector;
+import duongtran.vctrl.reportchanges.WorkspaceComparison;
 import duongtran.vctrl.storage.DataEntry;
-import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.storage.ObjectID;
-import duongtran.vctrl.storage.objects.TreeEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +47,10 @@ public class Migration {
     private final Set<Path> removeDirs = new HashSet<>();
     // Conflicted table that maps the conflict type with its file
     private final EnumMap<ConflictType, List<Path>> conflicts;
-
+    // Conflict's message table
+    private final EnumMap<ConflictType, List<String>> conflictMessages;
+    // Conflict error list
+    private final List<String> errorMessages;
 
     public Migration(ObjectID fromCommitId, ObjectID toCommitId, Map<Path, TreeDiffEntry> treeDiffMap) {
         this.inspector = new Inspector();
@@ -65,9 +68,15 @@ public class Migration {
 
         // Conflicts table
         this.conflicts = new EnumMap<>(ConflictType.class);
-        for (ConflictType type: ConflictType.values()) {
+
+        for (ConflictType type : ConflictType.values()) {
             conflicts.put(type, new ArrayList<>());
         }
+
+        // Conflicts and its messages
+        this.conflictMessages = new EnumMap<>(ConflictType.class);
+        buildConflictMessages(this.conflictMessages);
+        this.errorMessages = new ArrayList<>();
     }
 
     /**
@@ -84,7 +93,7 @@ public class Migration {
      * If an exception occurs during the update process, it logs an error message to indicate
      * the failure.
      */
-    public void applyChanges() {
+    public void applyChanges() throws CheckoutConflictException {
         try {
             // Build changes map, list of added directories, and list of removable directories
             planChanges();
@@ -92,6 +101,8 @@ public class Migration {
             updateWorkspace();
             // Update the index
             updateIndex();
+        } catch (CheckoutConflictException e) {
+            throw new CheckoutConflictException(e.getMessage());
         } catch (Exception e) {
             log.error("Failed to apply changes to the workspace: {}", e.getMessage());
         }
@@ -126,6 +137,10 @@ public class Migration {
         return removeDirs;
     }
 
+    public List<Path> getConflicts(ConflictType type) {
+        return conflicts.get(type);
+    }
+
     /**
      * Plans the changes for the migration process based on the differences provided in the {@code treeDiffMap}.
      * <p>
@@ -135,8 +150,9 @@ public class Migration {
      * as part of the migration process.
      *
      */
-    private void planChanges() throws IOException, NoSuchAlgorithmException {
+    private void planChanges() throws IOException, NoSuchAlgorithmException, CheckoutConflictException {
         Index index = Index.loadFromDisk();
+        if (index == null) index = new Index();
         for (Map.Entry<Path, TreeDiffEntry> treeDiffEntry : treeDiffMap.entrySet()) {
             Path path = treeDiffEntry.getKey();
             TreeDiffEntry treeChangePair = treeDiffEntry.getValue();
@@ -146,8 +162,21 @@ public class Migration {
             // Record the changes
             recordChanges(path, treeChangePair);
         }
+
+        collectErrors();
+
     }
 
+    /**
+     * Records changes by analyzing the given path and tree change pair, determining
+     * the type of action required (add, modify, or delete), and updating the migration
+     * plan accordingly. Additionally, it ensures that the appropriate parent directories
+     * are collected based on the action type.
+     *
+     * @param path           the file or directory path that is subject to the change
+     * @param treeChangePair the {@link TreeDiffEntry} representing the difference
+     *                       between the old and new tree states for the given path
+     */
     private void recordChanges(Path path, TreeDiffEntry treeChangePair) {
 
         MigrationActionType actionType;
@@ -167,8 +196,24 @@ public class Migration {
         addChangeEntry(actionType, new MigrationChange(path, treeChangePair));
     }
 
+    /**
+     * Checks for potential conflicts during a migration operation by comparing the state of
+     * a given path between the index, workspace, and tree entries.
+     * <p>
+     * This method inspects the differences between the index, workspace file state,
+     * and old/new tree state to identify various types of conflicts. It handles scenarios such as
+     * deletion of untracked directories, overwriting of untracked or modified files, and replacement
+     * of directories with files. Identified conflicts are added to the list for further processing.
+     *
+     * @param index          the {@link Index} containing the current index state of the repository
+     * @param path           the file or directory {@link Path} being analyzed for conflicts
+     * @param treeChangePair the {@link TreeDiffEntry} representing the difference
+     *                       between the old and new tree states for the given path
+     * @throws IOException              if an I/O error occurs during file state retrieval
+     * @throws NoSuchAlgorithmException if a required cryptographic algorithm is not available
+     */
     private void checkConflict(Index index, Path path, TreeDiffEntry treeChangePair) throws IOException, NoSuchAlgorithmException {
-        IndexEntry indexEntry = index.getEntryMap().get(path);
+        IndexEntry indexEntry = index.getEntryMap().get(workspace.getRootPath().resolve(path));
         DataEntry oldEntry = treeChangePair.getOldEntry();
         DataEntry newEntry = treeChangePair.getNewEntry();
         if (isIndexDiffersFromTrees(indexEntry, oldEntry, newEntry)) {
@@ -176,9 +221,10 @@ public class Migration {
             return;
         }
 
-        FileStat stat = Workspace.getInstance().toFileStat(path);
+        FileStat stat = Workspace.getInstance().toFileStat(workspace.getRootPath().resolve(path));
         ConflictType conflictType = getErrorType(stat, indexEntry, newEntry);
 
+        // Checkout danger: delete a directory that contains untracked files
         if (stat == null) {
             Path parent = untrackedParent(index, path);
             if (parent != null) {
@@ -187,16 +233,20 @@ public class Migration {
             return;
         }
 
+        // Checkout danger: overwriting a modified or untracked file
         if (stat.isFile()) {
             WorkspaceComparison wsComparison =
                     this.inspector.compareIndexToWorkspace(indexEntry, stat);
 
-            if (wsComparison != null) {
+            if (wsComparison != WorkspaceComparison.CLEAN) {
                 conflicts.get(conflictType).add(path);
             }
             return;
         }
 
+        // Checkout danger:
+        //  1. replacing a directory with a file
+        //  2. deleting a directory that contains untracked files
         if (stat.isDirectory()) {
             if (inspector.trackableFile(stat, index)) {
                 conflicts.get(conflictType).add(path);
@@ -208,22 +258,31 @@ public class Migration {
     /**
      * Determines whether the index entry differs from the two provided tree entries.
      *
-     * @param indexEntry    the index entry to be compared
-     * @param oldTreeEntry  the data entry representing the old tree state
-     * @param newTreeEntry  the data entry representing the new tree state
+     * @param indexEntry   the index entry to be compared
+     * @param oldTreeEntry the data entry representing the old tree state
+     * @param newTreeEntry the data entry representing the new tree state
      * @return {@code true} if the index entry does not differ from both the old tree entry and new tree entry
-     *         with a "CLEAN" comparison result; {@code false} otherwise
+     * with a "CLEAN" comparison result; {@code false} otherwise
      */
     private boolean isIndexDiffersFromTrees(IndexEntry indexEntry, DataEntry oldTreeEntry, DataEntry newTreeEntry) {
-        boolean isDiffFromOld = inspector.compareIndexToHead(indexEntry, oldTreeEntry) == HeadComparison.CLEAN || inspector.compareIndexToHead(indexEntry, oldTreeEntry) == HeadComparison.ADDED;
-        boolean isDiffFromNew = inspector.compareIndexToHead(indexEntry, newTreeEntry) == HeadComparison.CLEAN || inspector.compareIndexToHead(indexEntry, newTreeEntry) == HeadComparison.ADDED;
-        return !isDiffFromOld && !isDiffFromNew;
+        boolean isDiffFromOld = inspector.compareIndexToHead(indexEntry, oldTreeEntry) != HeadComparison.CLEAN;
+        boolean isDiffFromNew = inspector.compareIndexToHead(indexEntry, newTreeEntry) != HeadComparison.CLEAN;
+        return isDiffFromOld && isDiffFromNew;
     }
 
+    /**
+     * Finds the nearest parent directory of the given path that is both tracked in the index
+     * and exists in the workspace. If no such parent directory is found, returns null.
+     *
+     * @param index the {@link Index} object used to check if a path is tracked
+     * @param path  the {@link Path} whose untracked parent directory is to be located
+     * @return the nearest parent {@link Path} that is tracked and exists in the workspace,
+     * or {@code null} if no such parent exists
+     */
     private Path untrackedParent(Index index, Path path) {
         Path parent = path.getParent();
         while (parent != null) {
-            if (index.contains(parent)
+            if (index.isTracked(parent)
                     && workspace.exists(parent)) {
                 return parent;
             }
@@ -244,6 +303,19 @@ public class Migration {
         Workspace.getInstance().applyMigration(this);
     }
 
+    /**
+     * Updates the repository index by loading it from disk and updating its state
+     * based on the current migration's target commit ID.
+     * <p>
+     * If the index cannot be loaded from disk, the method returns immediately
+     * without performing any updates.
+     * <p>
+     * This method initializes an {@link IndexUpdater} instance using the loaded index
+     * and applies the necessary updates to align the index with the target commit ID.
+     *
+     * @throws IOException              if an I/O error occurs while accessing the index or updating it
+     * @throws NoSuchAlgorithmException if a required cryptographic algorithm is not available
+     */
     private void updateIndex() throws IOException, NoSuchAlgorithmException {
         Index index = Index.loadFromDisk();
         if (index == null) {
@@ -282,15 +354,100 @@ public class Migration {
     }
 
 
+    /**
+     * Adds a conflict entry to the specified conflict type.
+     *
+     * @param type the type of conflict to which the entry will be added
+     * @param path the path associated with the conflict
+     */
     private void addConflictEntry(ConflictType type, Path path) {
         conflicts.get(type).add(path);
     }
 
+    /**
+     * Processes a collection of conflicts, constructs error messages for each conflict type,
+     * and throws a {@link CheckoutConflictException} if there are any errors.
+     * <p>
+     * This method iterates through the map of conflicts categorized by {@code ConflictType},
+     * retrieves the corresponding file paths and conflict-specific message templates,
+     * and generates error messages. If any conflicts are detected, it aggregates the error
+     * messages and raises an exception.
+     *
+     * @throws CheckoutConflictException if there are any conflicts present in the collection.
+     */
+    private void collectErrors() throws CheckoutConflictException {
+        for (Map.Entry<ConflictType, List<Path>> entry : conflicts.entrySet()) {
+
+            List<Path> paths = entry.getValue();
+            if (paths.isEmpty()) {
+                continue;
+            }
+
+            List<String> template = conflictMessages.get(entry.getKey());
+            StringBuilder sb = new StringBuilder();
+
+            sb.append(template.get(0)).append('\n');
+
+            for (Path path : paths) {
+                sb.append('\t').append(path).append('\n');
+            }
+            sb.append(template.get(1));
+            errorMessages.add(sb.toString());
+        }
+
+        if (!errorMessages.isEmpty()) {
+            throw new CheckoutConflictException(String.join("\n", errorMessages));
+        }
+    }
+
+    /**
+     * Determines the type of error or conflict based on the provided file status, index entry,
+     * and new data entry.
+     *
+     * @param stat the file status information, which may indicate if the file is a directory
+     * @param indexEntry the index entry of the file, which may indicate it is stale
+     * @param newDataEntry the new data entry of the file, which may indicate it is untracked
+     * @return the type of conflict, either STALE_FILE, STALE_DIRECTORY, UNTRACKED_OVERWRITTEN, or UNTRACKED_REMOVED
+     */
     public ConflictType getErrorType(FileStat stat, IndexEntry indexEntry, DataEntry newDataEntry) {
         if (indexEntry != null) return ConflictType.STALE_FILE;
-        if (stat.isDirectory()) return ConflictType.STALE_DIRECTORY;
+        if (stat != null && stat.isDirectory()) return ConflictType.STALE_DIRECTORY;
         if (newDataEntry != null) return ConflictType.UNTRACKED_OVERWRITTEN;
         return ConflictType.UNTRACKED_REMOVED;
+    }
+
+    /**
+     * Builds and populates conflict messages for specific conflict types into the provided EnumMap.
+     * This method maps each {@link ConflictType} to its corresponding list of conflict messages.
+     *
+     * @param conflictMessages an {@link EnumMap} where the keys are {@link ConflictType} enums
+     *                         and the values are lists of corresponding messages. If the map
+     *                         is null, the method does nothing.
+     */
+    private void buildConflictMessages(EnumMap<ConflictType, List<String>> conflictMessages) {
+        if (conflictMessages == null) return;
+        for (ConflictType conflictType : ConflictType.values()) {
+            switch (conflictType) {
+                case STALE_FILE -> conflictMessages.put(ConflictType.STALE_FILE, new ArrayList<>(List.of(
+                        "Your local changes to the following files would be overwritten by checkout:",
+                        "Please commit your changes or stash them before you switch branches."
+                )));
+                case STALE_DIRECTORY -> conflictMessages.put(ConflictType.STALE_DIRECTORY, new ArrayList<>(List.of(
+                        "Updating the following directories would lose untracked files in them:",
+                        "\n"
+                )));
+                case UNTRACKED_OVERWRITTEN ->
+                        conflictMessages.put(ConflictType.UNTRACKED_OVERWRITTEN, new ArrayList<>(List.of(
+                                "The following untracked working tree files would be overwritten by checkout:",
+                                "Please move or remove them before you switch branches."
+                        )));
+                case UNTRACKED_REMOVED -> conflictMessages.put(ConflictType.UNTRACKED_REMOVED, new ArrayList<>(List.of(
+                        "The following untracked working tree files would be removed by checkout:",
+                        "Please move or remove them before you switch branches."
+                )));
+                default -> { /* Do nothing */}
+            }
+        }
     }
 
 }

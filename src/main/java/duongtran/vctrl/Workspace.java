@@ -242,11 +242,16 @@ public class Workspace {
      * @throws NoSuchAlgorithmException if a required cryptographic algorithm is not available.
      */
     public void applyMigration(Migration migration) throws IOException, NoSuchAlgorithmException {
-        applyChangeList(migration, MigrationActionType.DELETE);
-        removeDirectories(migration.getRemoveDirs());
-        createDirectories(migration.getMakeDirs());
-        applyChangeList(migration, MigrationActionType.MODIFIED);
-        applyChangeList(migration, MigrationActionType.ADD);
+        try {
+            applyChangeList(migration, MigrationActionType.DELETE);
+            removeDirectories(migration.getRemoveDirs());
+            createDirectories(migration.getMakeDirs());
+            applyChangeList(migration, MigrationActionType.MODIFIED);
+            applyChangeList(migration, MigrationActionType.ADD);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
     }
 
     /**
@@ -364,6 +369,13 @@ public class Workspace {
         }
     }
 
+    /**
+     * Checks if a given path exists within a specified root directory,
+     * validating if the path is deeply contained within the root.
+     *
+     * @param path the path to check for existence within the root directory
+     * @return true if the path is deeply contained within the root directory, false otherwise or in case of an IOException
+     */
     public boolean exists(Path path) {
         try {
             return FileUtil.isDeeplyContained(rootPath, path);

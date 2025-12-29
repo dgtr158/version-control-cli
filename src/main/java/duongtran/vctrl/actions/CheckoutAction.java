@@ -1,11 +1,14 @@
 package duongtran.vctrl.actions;
 
 import duongtran.vctrl.branches.Revision;
+import duongtran.vctrl.branches.migration.CheckoutConflictException;
 import duongtran.vctrl.branches.migration.Migration;
-import duongtran.vctrl.branches.migration.TreeDiffEntry;
 import duongtran.vctrl.branches.migration.TreeDiff;
+import duongtran.vctrl.branches.migration.TreeDiffEntry;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.ObjectID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -23,6 +26,8 @@ import java.util.Map;
  */
 public class CheckoutAction {
 
+    private static final Logger log = LoggerFactory.getLogger(CheckoutAction.class);
+
     /**
      * Executes the checkout operation to synchronize the workspace with a specified commit
      * in the targeted branch. This involves resolving the HEAD commit, determining the
@@ -34,7 +39,7 @@ public class CheckoutAction {
      * @throws IOException              if an I/O error occurs during the execution
      * @throws NoSuchAlgorithmException if a required cryptographic algorithm is not available
      */
-    public void execute(String branchName, int revision) throws IOException, NoSuchAlgorithmException {
+    public void execute(String branchName, int revision) throws IOException, NoSuchAlgorithmException, CheckoutConflictException {
         Refs ref = new Refs();
 
         // Resolve HEAD commit
@@ -49,8 +54,13 @@ public class CheckoutAction {
         Map<Path, TreeDiffEntry> treeDiffMap = treeDiff.detectTreeDiff(headCommitId, targetCommitId);
 
         // Applies changes to the workspace
-        Migration migration = new Migration(headCommitId, targetCommitId, treeDiffMap);
-        migration.applyChanges();
+        try {
+            Migration migration = new Migration(headCommitId, targetCommitId, treeDiffMap);
+            migration.applyChanges();
+        } catch (CheckoutConflictException e) {
+            throw new CheckoutConflictException(e.getMessage());
+        }
+
     }
 
 }
