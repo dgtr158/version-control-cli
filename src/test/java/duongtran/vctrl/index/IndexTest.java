@@ -223,12 +223,11 @@ public class IndexTest {
             index = addAction.execute(testFile11);
             assertFalse(index.isChanged());
 
-            // Add a new index entry n times
+            // Add testFile11 n times
             int n = 10;
             for (int i = 0; i < n; i++) {
-                TestUtils.writeText(testFile12, "Test content 12");
-                index = addAction.execute(testFile12);
-                assertTrue(index.isChanged());
+                index = addAction.execute(testFile11);
+                assertFalse(index.isChanged());
             }
 
             // Modify a file, then add again

@@ -365,8 +365,10 @@ public class Index implements Serializable {
      */
     public void removeEntry(Path removePath) {
         if (contains(removePath)) {
-            entryMap.remove(removePath, entryMap.get(removePath));
+            IndexEntry removedEntry = entryMap.get(removePath);
+            entryMap.remove(removePath, removedEntry);
             header.decrementEntryCount();
+            setSizeInBytes(getSizeInBytes() - removedEntry.getSize());
         }
     }
 

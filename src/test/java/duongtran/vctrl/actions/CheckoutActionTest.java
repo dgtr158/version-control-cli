@@ -236,8 +236,7 @@ public class CheckoutActionTest {
             addAction.execute(testFile11);
             addAction.execute(testFile21);
             addAction.execute(testFile22);
-            addAction.execute(testFile112);
-            indexBeforeCheckout = Index.loadFromDisk();
+            indexBeforeCheckout = addAction.execute(testFile112);
             Commit fourthCommit = commitAction.execute();
 
             // Change contents of testFile11 and testFile21
