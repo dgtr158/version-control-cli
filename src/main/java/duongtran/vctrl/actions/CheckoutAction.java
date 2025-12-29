@@ -61,6 +61,9 @@ public class CheckoutAction {
             throw new CheckoutConflictException(e.getMessage());
         }
 
+        // Update the HEAD
+        ref.setHead(branchName, targetCommitId);
+
     }
 
 }

@@ -3,6 +3,7 @@ package duongtran.vctrl.references;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.concurrency.Lockfile;
+import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,6 +108,27 @@ public class Refs {
             }
         }
         return null;
+    }
+
+    /**
+     * Sets the HEAD reference of the repository. This method updates the HEAD to either
+     * point to a branch (symbolic reference) or directly to a commit (using the provided ObjectID).
+     *
+     * @param branchName the name of the branch to set as the HEAD reference. If the branch exists,
+     *                   the HEAD will be updated as a symbolic reference to this branch.
+     * @param objectID   the commit identifier (ObjectID) used to update the HEAD if the branch does not exist.
+     *                   The HEAD will directly reference this specific commit.
+     */
+    public void setHead(String branchName, ObjectID objectID) {
+        Path branchPath = refHead.getReafHeadPath().resolve(branchName);
+        // If the branch exists, update the HEAD as a sym ref to that branch
+        if (Files.exists(branchPath)) {
+            Path vctrlPath = Workspace.getInstance().getVctrlPath();
+            String headContent = String.format("ref: %s", vctrlPath.relativize(branchPath));
+            this.updateHeadRef(headContent);
+        } else { // Update the HEAD with the objectID
+            this.updateHeadRef(objectID.getValue());
+        }
     }
 
 }
