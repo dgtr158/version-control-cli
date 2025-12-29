@@ -23,11 +23,12 @@ public class Refs {
 
     private Path refsPath;
     private RefHead refHead;
+    private Path vctrlPath;
 
     public Refs() {
         try {
             Workspace workspace = Workspace.getInstance();
-            Path vctrlPath = workspace.getVctrlPath();
+            this.vctrlPath = workspace.getVctrlPath();
             refsPath = vctrlPath.resolve(DirectoryNames.REF_DIR_NAME);
             refHead = new RefHead(vctrlPath.resolve(DirectoryNames.REF_DIR_NAME));
 
@@ -53,7 +54,7 @@ public class Refs {
      * @param content the new content to write into the HEAD reference file. This is typically
      *                a reference or pointer to the current branch or commit.
      */
-    public void updateHeadRef(String content) {
+    public void setHead(String content) {
         Path headPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.HEAD);
         try (Lockfile lockfile = new Lockfile(headPath)) {
             lockfile.acquire();
@@ -73,19 +74,24 @@ public class Refs {
      * @return the content of the HEAD file as a UTF-8 encoded string if the file exists and
      * is successfully read; otherwise, returns {@code null}
      */
-    public String readHeadCommitId() {
+    public String readHead() {
         Path headPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.HEAD);
+        String headContent = null;
         if (Files.exists(headPath)) {
             try {
-                String relativeRefPath = Files.readString(headPath, StandardCharsets.UTF_8).strip();
-                Path branchHeadPath = Workspace.getInstance().getVctrlPath().resolve(relativeRefPath);
-                return Files.readString(branchHeadPath, StandardCharsets.UTF_8).strip();
+                headContent = Files.readString(headPath, StandardCharsets.UTF_8).strip();
+                if (headContent.startsWith("ref: ")) {
+                    String headRef = headContent.substring(5).trim();
+                    Path branchHeadPath = this.vctrlPath.resolve(vctrlPath.resolve(headRef));
+                    headContent = Files.readString(branchHeadPath, StandardCharsets.UTF_8).strip();
+                }
+
             } catch (IOException e) {
                 log.error("Failed to read HEAD: {}", e.getMessage());
                 return null;
             }
         }
-        return null;
+        return headContent;
     }
 
     /**
@@ -125,9 +131,9 @@ public class Refs {
         if (Files.exists(branchPath)) {
             Path vctrlPath = Workspace.getInstance().getVctrlPath();
             String headContent = String.format("ref: %s", vctrlPath.relativize(branchPath));
-            this.updateHeadRef(headContent);
+            this.setHead(headContent);
         } else { // Update the HEAD with the objectID
-            this.updateHeadRef(objectID.getValue());
+            this.setHead(objectID.getValue());
         }
     }
 

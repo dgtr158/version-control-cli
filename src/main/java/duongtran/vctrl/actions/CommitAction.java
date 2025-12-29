@@ -93,7 +93,7 @@ public class CommitAction {
         String authorName = getEnvOrDefault(Constants.ENV_AUTHOR_KEY, DEFAULT_AUTHOR);
         String authorEmail = getEnvOrDefault(Constants.ENV_EMAIL_KEY, DEFAULT_EMAIL);
         CommitAuthor author = new CommitAuthor(authorName, authorEmail, Instant.now());
-        String parentId = refs.readHeadCommitId();
+        String parentId = refs.readHead();
 //        System.out.println("Enter the commit messages:");
 //        String message = getCommitMsg();
         // TODO: get commit message from terminal
@@ -103,7 +103,7 @@ public class CommitAction {
 
         // 4. Update HEAD
         Path vctrlPath = Workspace.getInstance().getVctrlPath();
-        String headBranch = refs.readHeadRef();
+        String headBranch = refs.readHead();
 
         // If commit the first time, create a new branch with the default name
         RefHead refHead = refs.getRefHead();
@@ -111,7 +111,7 @@ public class CommitAction {
             Files.createDirectories(refHead.getReafHeadPath());
             Path defaultBranch = refHead.createBranch(DirectoryNames.DEFAULT_BRANCH_NAME);
             headBranch = vctrlPath.relativize(defaultBranch).toString();
-            refs.updateHeadRef(headBranch);
+            refs.setHead(headBranch);
         }
         refHead.updateBranchHeadValue(vctrlPath.resolve(headBranch), commit.getOid().getValue());
 

@@ -43,7 +43,7 @@ public class CheckoutAction {
         Refs ref = new Refs();
 
         // Resolve HEAD commit
-        ObjectID headCommitId = new ObjectID(ref.readHeadCommitId());
+        ObjectID headCommitId = new ObjectID(ref.readHead());
 
         // Resolve target commit
         Revision revisionResolvers = new Revision(ref);

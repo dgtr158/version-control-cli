@@ -107,7 +107,7 @@ public class BranchActionTest {
             // Assert first time HEAD
             String firstHeadRef = ref.readHeadRef();
             assertEquals(Path.of("refs", "heads", "master").toString(), firstHeadRef);
-            ObjectID firstHeadObjectID = new ObjectID(ref.readHeadCommitId());
+            ObjectID firstHeadObjectID = new ObjectID(ref.readHead());
             assertEquals(firstCommit.getOid(), firstHeadObjectID);
             ObjectID refHeadMaster = new ObjectID(refHead.getBranchHeadContent("master"));
             assertEquals(firstCommit.getOid(), refHeadMaster);
@@ -118,7 +118,7 @@ public class BranchActionTest {
             // Assert second time HEAD
             String secondHeadRef = ref.readHeadRef();
             assertEquals(Path.of("refs", "heads", "storing-changes").toString(), secondHeadRef);
-            ObjectID secondHeadObjectID = new ObjectID(ref.readHeadCommitId());
+            ObjectID secondHeadObjectID = new ObjectID(ref.readHead());
             assertEquals(firstCommit.getOid(), secondHeadObjectID);
 
             refHeadMaster = new ObjectID(refHead.getBranchHeadContent("master"));
@@ -138,7 +138,7 @@ public class BranchActionTest {
             // Assert third time HEAD
             String thirdHeadRef = ref.readHeadRef();
             assertEquals(Path.of("refs", "heads", "storing-changes").toString(), thirdHeadRef);
-            ObjectID thirdHeadObjectID = new ObjectID(ref.readHeadCommitId());
+            ObjectID thirdHeadObjectID = new ObjectID(ref.readHead());
             assertEquals(secondCommit.getOid(), thirdHeadObjectID);
 
             refHeadMaster = new ObjectID(refHead.getBranchHeadContent("master"));
@@ -176,7 +176,7 @@ public class BranchActionTest {
             // Assert first time HEAD
             String firstHeadRef = ref.readHeadRef();
             assertEquals(Path.of("refs", "heads", "master").toString(), firstHeadRef);
-            ObjectID firstHeadObjectID = new ObjectID(ref.readHeadCommitId());
+            ObjectID firstHeadObjectID = new ObjectID(ref.readHead());
             assertEquals(firstCommit.getOid(), firstHeadObjectID);
             ObjectID headCommitID1 = new ObjectID(refHead.getBranchHeadContent("master"));
             assertEquals(firstCommit.getOid(), headCommitID1);
@@ -193,7 +193,7 @@ public class BranchActionTest {
             // Assert second time HEAD
             String secondHeadRef = ref.readHeadRef();
             assertEquals(Path.of("refs", "heads", "master").toString(), secondHeadRef);
-            ObjectID secondHeadObjectID = new ObjectID(ref.readHeadCommitId());
+            ObjectID secondHeadObjectID = new ObjectID(ref.readHead());
             assertEquals(secondCommit.getOid(), secondHeadObjectID);
             ObjectID headCommitID2 = new ObjectID(refHead.getBranchHeadContent("master"));
             assertEquals(secondCommit.getOid(), headCommitID2);
@@ -211,7 +211,7 @@ public class BranchActionTest {
             // Assert third time HEAD
             String thirdHeadRef = ref.readHeadRef();
             assertEquals(Path.of("refs", "heads", "master").toString(), thirdHeadRef);
-            ObjectID thirdHeadObjectID = new ObjectID(ref.readHeadCommitId());
+            ObjectID thirdHeadObjectID = new ObjectID(ref.readHead());
             assertEquals(thirdCommit.getOid(), thirdHeadObjectID);
             ObjectID headCommitID3 = new ObjectID(refHead.getBranchHeadContent("master"));
             assertEquals(thirdCommit.getOid(), headCommitID3);
@@ -222,7 +222,7 @@ public class BranchActionTest {
             // Assert HEAD a fourth time
             String fourthHeadRef = ref.readHeadRef();
             assertEquals(Path.of("refs", "heads", "second-to-last").toString(), fourthHeadRef);
-            ObjectID fourthHeadObjectID = new ObjectID(ref.readHeadCommitId());
+            ObjectID fourthHeadObjectID = new ObjectID(ref.readHead());
             assertEquals(secondCommit.getOid(), fourthHeadObjectID);
 
             // Create a new branch from the third-to-last commit
@@ -231,7 +231,7 @@ public class BranchActionTest {
             // Assert HEAD a fifth time
             String fifthHeadRef = ref.readHeadRef();
             assertEquals(Path.of("refs", "heads", "third-to-last").toString(), fifthHeadRef);
-            ObjectID fifthHeadObjectID = new ObjectID(ref.readHeadCommitId());
+            ObjectID fifthHeadObjectID = new ObjectID(ref.readHead());
             assertEquals(firstCommit.getOid(), fifthHeadObjectID);
 
         } catch (Exception ex) {

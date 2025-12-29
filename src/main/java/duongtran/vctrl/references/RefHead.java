@@ -54,7 +54,7 @@ public class RefHead {
         Path branchHeadPath = reafHeadPath.resolve(branchName);
         Path vctrlPath = Workspace.getInstance().getVctrlPath();
         String headContent = vctrlPath.relativize(branchHeadPath).toString();
-        refs.updateHeadRef(headContent);
+        refs.setHead(headContent);
         return branchHeadPath;
     }
 

@@ -178,7 +178,7 @@ public class Database {
      */
     public static Map<Path, DataEntry> listFileInHead() throws IOException, NoSuchAlgorithmException {
         Refs refs = new Refs();
-        String headCommitID = refs.readHeadCommitId();
+        String headCommitID = refs.readHead();
         if (headCommitID == null) {
             return new TreeMap<>();
         }

@@ -31,7 +31,7 @@ public final class Revision {
      * @return commit id
      */
     public String resolveAncestor(int revision) throws IOException, NoSuchAlgorithmException {
-        ObjectID headCommit = new ObjectID(refs.readHeadCommitId());
+        ObjectID headCommit = new ObjectID(refs.readHead());
         return walkAncestors(headCommit, revision);
     }
 
