@@ -4,7 +4,9 @@ import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.branches.migration.CheckoutConflictException;
 import duongtran.vctrl.index.Index;
+import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
+import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.storage.objects.Blob;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -41,6 +43,7 @@ public class CheckoutActionTest {
     Path subFirstDir;
     Path secondDir;
     Path subSecondDir;
+    Path thirdDir;
 
     // Mock files
     Path testFile1;
@@ -53,6 +56,8 @@ public class CheckoutActionTest {
     Path testFile22;
     Path testFile211;
     Path testFile212;
+    Path testFile31;
+    Path testFile32;
 
 
     @BeforeEach
@@ -71,6 +76,7 @@ public class CheckoutActionTest {
         subFirstDir = firstDir.resolve("subFirstDir");
         secondDir = rootPath.resolve("secondDir");
         subSecondDir = secondDir.resolve("subSecondDir");
+        thirdDir = rootPath.resolve("thirdDir");
 
         testFile1 = rootPath.resolve("file1.txt");
         testFile11 = firstDir.resolve("file11.txt");
@@ -82,6 +88,8 @@ public class CheckoutActionTest {
         testFile22 = secondDir.resolve("file22.txt");
         testFile211 = subSecondDir.resolve("file211.txt");
         testFile212 = subSecondDir.resolve("file212.txt");
+        testFile31 = thirdDir.resolve("file31.txt");
+        testFile32 = thirdDir.resolve("file32.txt");
 
     }
 
@@ -97,6 +105,8 @@ public class CheckoutActionTest {
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
         CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+        Refs refs = new Refs();
 
         try {
 
@@ -130,6 +140,18 @@ public class CheckoutActionTest {
             addAction.execute(testFile112);
             Commit thirdCommit = commitAction.execute();
 
+            // Assert the current HEAD
+            String headAfterThirdCommit = refs.readHead();
+            assertEquals(thirdCommit.getOid().getValue(), headAfterThirdCommit);
+
+            // Create a new branch
+            String checkoutBranchName = "firstBranch";
+            branchAction.execute(checkoutBranchName, 0);
+
+            // Assert the firstBranch's head content
+            String firstBranchContent = refs.getRefHead().getBranchHeadContent(checkoutBranchName);
+            assertEquals(thirdCommit.getOid().getValue(), firstBranchContent);
+
             // Add testFile1, and testFile13
             TestUtils.writeText(testFile1, "Test content 1");
             TestUtils.writeText(testFile13, "Test content 13");
@@ -152,7 +174,7 @@ public class CheckoutActionTest {
             Commit fourthCommit = commitAction.execute();
 
             // Check out from the fourth commit to the third commit
-            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 1);
+            checkoutAction.execute(checkoutBranchName, 0);
 
             // Assert the contents of testFile11 and testFile112
             String testFile11Content = TestUtils.readFileContents(testFile11);
@@ -171,6 +193,33 @@ public class CheckoutActionTest {
                     testFile11, testFile12, testFile21, testFile22, testFile111, testFile112
             )));
             assertEquals(expectedIndex, actualIndex);
+
+            // HEAD must point to the checkout branch
+            String headRawContent = refs.readRawHeadContent();
+            assertEquals("ref: " + Path.of("refs", "heads", checkoutBranchName), headRawContent);
+            String headContent = refs.readHead();
+            assertEquals(thirdCommit.getOid().getValue(), headContent);
+            assertEquals(firstBranchContent, headContent);
+
+            // Commit after checkout, the checkout branch and head need to point to the same
+            // Create files and its contents in the secondDir
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile31, "Test content 31");
+            TestUtils.writeText(testFile31, "Test content 32");
+
+            // Add the thirdDir to staging and commit
+            addAction.execute(thirdDir);
+            Commit fifthCommit = commitAction.execute();
+            String headRawContent2 = refs.readRawHeadContent();
+            assertEquals("ref: " + Path.of("refs", "heads", checkoutBranchName), headRawContent2);
+            String headContent2 = refs.readHead();
+            assertEquals(fifthCommit.getOid().getValue(), headContent2);
+            String firstBranchContent2 = refs.getRefHead().getBranchHeadContent(checkoutBranchName);
+            assertEquals(fifthCommit.getOid().getValue(), firstBranchContent2);
+
+            // master branch point to the fourth commit
+            String masterBranchContentAfterCheckout = refs.getRefHead().getBranchHeadContent(DirectoryNames.DEFAULT_BRANCH_NAME);
+            assertEquals(fourthCommit.getOid().getValue(), masterBranchContentAfterCheckout);
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -268,6 +317,7 @@ public class CheckoutActionTest {
             // The index must reflect the current workspace
             Index actualIndex = Index.loadFromDisk();
             assertEquals(indexBeforeCheckout, actualIndex);
+
         }
     }
 

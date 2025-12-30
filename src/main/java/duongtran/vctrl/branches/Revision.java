@@ -17,10 +17,13 @@ import java.security.NoSuchAlgorithmException;
 public final class Revision {
 
     private final Refs refs;
+    private final String branchName;
     private final Database database;
 
-    public Revision(Refs refs) {
+
+    public Revision(Refs refs, String branchName) {
         this.refs = refs;
+        this.branchName = branchName;
         this.database = Database.getInstance();
     }
 
@@ -31,8 +34,13 @@ public final class Revision {
      * @return commit id
      */
     public String resolveAncestor(int revision) throws IOException, NoSuchAlgorithmException {
-        ObjectID headCommit = new ObjectID(refs.readHead());
-        return walkAncestors(headCommit, revision);
+        ObjectID branchHeadCommit;
+        if (branchName == null) {
+            branchHeadCommit = new ObjectID(refs.readHead());
+        } else {
+            branchHeadCommit = new ObjectID(refs.getRefHead().getBranchHeadContent(branchName));
+        }
+        return walkAncestors(branchHeadCommit, revision);
     }
 
 

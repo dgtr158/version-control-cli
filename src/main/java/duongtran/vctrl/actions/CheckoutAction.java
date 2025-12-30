@@ -46,7 +46,7 @@ public class CheckoutAction {
         ObjectID headCommitId = new ObjectID(ref.readHead());
 
         // Resolve target commit
-        Revision revisionResolvers = new Revision(ref);
+        Revision revisionResolvers = new Revision(ref, branchName);
         ObjectID targetCommitId = new ObjectID(revisionResolvers.resolveAncestor(revision));
 
         // Detect changes between target commit and HEAD commit

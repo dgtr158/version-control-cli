@@ -103,7 +103,7 @@ public class Refs {
      * @return the content of the HEAD file as a UTF-8 encoded string if the file exists and is successfully read;
      * otherwise, returns null
      */
-    public String readHeadRef() {
+    public String readRawHeadContent() {
         Path headPath = Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.HEAD);
         if (Files.exists(headPath)) {
             try {
@@ -132,7 +132,7 @@ public class Refs {
             Path vctrlPath = Workspace.getInstance().getVctrlPath();
             String headContent = String.format("ref: %s", vctrlPath.relativize(branchPath));
             this.setHead(headContent);
-        } else { // Update the HEAD with the objectID
+        } else if (objectID != null) { // Update the HEAD with the objectID
             this.setHead(objectID.getValue());
         }
     }

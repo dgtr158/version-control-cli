@@ -102,24 +102,62 @@ public class CommitAction {
         database.store(commit);
 
         // 4. Update HEAD
-        Path vctrlPath = Workspace.getInstance().getVctrlPath();
-        String headBranch = refs.readHead();
-
-        // If commit the first time, create a new branch with the default name
-        RefHead refHead = refs.getRefHead();
-        if (headBranch == null) {
-            Files.createDirectories(refHead.getReafHeadPath());
-            Path defaultBranch = refHead.createBranch(DirectoryNames.DEFAULT_BRANCH_NAME);
-            headBranch = vctrlPath.relativize(defaultBranch).toString();
-            refs.setHead(headBranch);
-        }
-        refHead.updateBranchHeadValue(vctrlPath.resolve(headBranch), commit.getOid().getValue());
+        updateHeadAfterCommit(refs, commit);
 
         // 5. Display the commit confirmation message
         String firstLine = getFirstLine(message);
         System.out.printf("[(root-commit) %s] %s\n", commit.getOid(), firstLine);
 
         return commit;
+
+    }
+
+    /**
+     * Updates the HEAD reference and branch head values after a commit is made.
+     * This method handles three scenarios:
+     * 1. On the first commit, it initializes the HEAD and creates the default branch.
+     * 2. When HEAD points to a branch, updates the branch's head value with the new commit's OID.
+     * 3. If HEAD contains a detached OID, it updates it directly with the new OID.
+     *
+     * @param refs   the {@code Refs} object that manages repository references, such as HEAD
+     *               and branch references
+     * @param commit the {@code Commit} object containing information about the new commit,
+     *               including its object ID (OID)
+     * @throws IOException if there is an issue reading/writing to the file system or
+     *                     repository structure during the update process
+     */
+    private void updateHeadAfterCommit(Refs refs, Commit commit) throws IOException {
+
+        Path vctrlPath = Workspace.getInstance().getVctrlPath();
+        RefHead refHead = refs.getRefHead();
+
+        // If commit the first time, create a new branch with the default name
+        String headContent = refs.readRawHeadContent();
+        if (headContent == null) {
+            // Initialize HEAD and refs/heads on first commit
+            Files.createFile(vctrlPath.resolve(DirectoryNames.HEAD));
+            Files.createDirectories(refHead.getReafHeadPath());
+
+            Path defaultBranchPath = refHead.createBranch(DirectoryNames.DEFAULT_BRANCH_NAME);
+            String relativeBranchRef = vctrlPath.relativize(defaultBranchPath).toString();
+
+            Path resolvedBranchRefPath = vctrlPath.resolve(relativeBranchRef);
+            refHead.updateBranchHeadValue(resolvedBranchRefPath, commit.getOid().getValue());
+
+            refs.setHead(resolvedBranchRefPath.getFileName().toString(), commit.getOid());
+            return;
+        }
+
+        // When HEAD already exists and points to a branch, update that branch's head value
+        if (headContent.startsWith("ref: ")) {
+            String branchRelRef = headContent.substring(5).trim();
+            Path branchPath = vctrlPath.resolve(branchRelRef);
+            refHead.updateBranchHeadValue(branchPath, commit.getOid().getValue());
+            return;
+        }
+
+        // If HEAD contains a detached OID, keep it simple: fast-forward by writing the new OID directly.
+        refs.setHead(commit.getOid().getValue());
 
     }
 

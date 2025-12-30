@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * The RefHead class is responsible for managing branch references in a version
@@ -49,13 +50,16 @@ public class RefHead {
             );
         }
 
-        // Update
-        Refs refs = new Refs();
-        Path branchHeadPath = reafHeadPath.resolve(branchName);
-        Path vctrlPath = Workspace.getInstance().getVctrlPath();
-        String headContent = vctrlPath.relativize(branchHeadPath).toString();
-        refs.setHead(headContent);
-        return branchHeadPath;
+        // Create a new branch ref
+        try {
+            Path branchHeadPath = reafHeadPath.resolve(branchName);
+            Files.createFile(branchHeadPath);
+            return branchHeadPath;
+        } catch (IOException ex) {
+            log.error("Failed to create branch: {}", ex.getMessage());
+            return null;
+        }
+
     }
 
     /**
@@ -93,7 +97,7 @@ public class RefHead {
      *
      * @param branchName the name of the branch whose HEAD reference content is to be retrieved
      * @return the content of the branch's HEAD reference file as a string, or {@code null} if
-     *         the file does not exist or an error occurs during reading
+     * the file does not exist or an error occurs during reading
      */
     public String getBranchHeadContent(String branchName) {
         Path branchHeadPath = reafHeadPath.resolve(branchName);
@@ -106,6 +110,37 @@ public class RefHead {
             }
         }
         return null;
+    }
+
+    /**
+     * Lists all branch files under the reference head path of the workspace.
+     *
+     * @return a list of {@code Path} objects representing all branches available
+     * in the reference head directory
+     */
+    public List<Path> listAllBranches() {
+        return Workspace.getInstance().listFiles(reafHeadPath);
+    }
+
+    public void deleteBranch(String branchName) throws IOException, IllegalArgumentException {
+        // The branch does not exist
+        Path branchPath = reafHeadPath.resolve(branchName);
+        if (!Files.exists(branchPath)) {
+            throw new IllegalArgumentException("The branch [" + branchName + "] does not exist");
+        }
+
+        // Do not delete it if the branch is in the current HEAD
+        Refs ref = new Refs();
+        String headContent = ref.readRawHeadContent();
+        if (headContent != null && headContent.startsWith("ref: ")) {
+            String currentHeadBranch = Path.of(headContent.substring(5).trim()).getFileName().toString();
+            if (branchName.equals(currentHeadBranch)) {
+                throw new IllegalArgumentException("The branch [" + branchName + "] is in current HEAD");
+            }
+        }
+
+        // Perform delete
+        Files.delete(branchPath);
     }
 
 

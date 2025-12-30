@@ -17,7 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RefsTest {
 
@@ -51,9 +51,6 @@ public class RefsTest {
         // Create the refHeadPath directory
         Files.createDirectories(refHeadPath);
 
-        // Create HEAD
-        Files.createDirectories(headPath);
-
     }
 
     @AfterEach
@@ -77,7 +74,7 @@ public class RefsTest {
             String hashId = Utils.bytesToHex(digest.digest(contentBytes));
 
             // Write the content to HEAD
-            refs.setHead(hashId);
+            TestUtils.writeText(headPath, hashId + "\n");
 
             // Read back the head content
             String readHeadContent = refs.readHead();
