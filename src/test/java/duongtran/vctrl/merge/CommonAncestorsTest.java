@@ -3,7 +3,6 @@ package duongtran.vctrl.merge;
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.*;
-import duongtran.vctrl.index.Index;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;
@@ -17,15 +16,13 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class TestCommonAncestors {
+public class CommonAncestorsTest {
 
     private static final Logger log = LoggerFactory.getLogger(CheckoutActionTest.class);
 

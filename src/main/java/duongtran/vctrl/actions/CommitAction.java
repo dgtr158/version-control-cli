@@ -22,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import static duongtran.vctrl.utils.Constants.DEFAULT_AUTHOR;
 import static duongtran.vctrl.utils.Constants.DEFAULT_EMAIL;
@@ -84,6 +86,9 @@ public class CommitAction {
 
         // 1. Build new trees from index's entries
         Index index = Index.loadFromDisk();
+        if (index == null) {
+            throw new IOException("The index is not exist");
+        }
         Tree tree = Tree.buildTree(index.getEntryMap());
 
         // 2. Store the tree
@@ -93,12 +98,17 @@ public class CommitAction {
         String authorName = getEnvOrDefault(Constants.ENV_AUTHOR_KEY, DEFAULT_AUTHOR);
         String authorEmail = getEnvOrDefault(Constants.ENV_EMAIL_KEY, DEFAULT_EMAIL);
         CommitAuthor author = new CommitAuthor(authorName, authorEmail, Instant.now());
-        String parentId = refs.readHead();
+
+        List<ObjectID> parentIds = new ArrayList<>();
+        String headContent = refs.readHead();
+        if (headContent != null) {
+            parentIds.add(new ObjectID(headContent));
+        }
 //        System.out.println("Enter the commit messages:");
 //        String message = getCommitMsg();
         // TODO: get commit message from terminal
         String message = "Dummy commit message";
-        Commit commit = new Commit(author, treeObjectId, message, parentId);
+        Commit commit = new Commit(author, treeObjectId, message, parentIds);
         database.store(commit);
 
         // 4. Update HEAD

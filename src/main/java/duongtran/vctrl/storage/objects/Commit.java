@@ -1,11 +1,14 @@
 package duongtran.vctrl.storage.objects;
 
 import duongtran.vctrl.storage.*;
+import duongtran.vctrl.utils.Utils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -18,13 +21,13 @@ public class Commit extends ObjectStorage {
     private final CommitAuthor author;
     private final ObjectID treeOid;
     private final String message;
-    private final String parentId;
+    private final List<ObjectID> parentIds;
 
-    public Commit(CommitAuthor author, ObjectID treeOid, String message, String parentId) {
+    public Commit(CommitAuthor author, ObjectID treeOid, String message, List<ObjectID> parentIds) {
         this.author = author;
         this.treeOid = treeOid;
         this.message = message;
-        this.parentId = parentId;
+        this.parentIds = parentIds;
     }
 
     public CommitAuthor getAuthor() {
@@ -39,16 +42,16 @@ public class Commit extends ObjectStorage {
         return message;
     }
 
-    public String getParentId() {
-        return parentId;
+    public List<ObjectID> getParentIds() {
+        return parentIds;
     }
 
     @Override
     public byte[] getContent() {
         StringBuilder bodyBuilder = new StringBuilder();
         bodyBuilder.append("tree ").append(treeOid.getValue()).append("\n");
-        if (parentId != null) {
-            bodyBuilder.append("parent ").append(parentId).append("\n");
+        for (ObjectID parentId : parentIds) {
+            bodyBuilder.append("parent ").append(parentId.getValue()).append("\n");
         }
         bodyBuilder.append("author ").append(author.toString()).append("\n");
         bodyBuilder.append("committer ").append(author.toString()).append("\n");
@@ -106,7 +109,7 @@ public class Commit extends ObjectStorage {
         String message = parts[1];
 
         String treeOid = null;
-        String parentId = null;
+        List<ObjectID> parentIds = new ArrayList<>();
         CommitAuthor author = null;
 
         // 4. Parse header lines
@@ -114,7 +117,8 @@ public class Commit extends ObjectStorage {
             if (line.startsWith("tree ")) {
                 treeOid = line.substring(5);
             } else if (line.startsWith("parent ")) {
-                parentId = line.substring(7);
+                ObjectID parentId = new ObjectID(line.substring(7));
+                parentIds.add(parentId);
             } else if (line.startsWith("author ")) {
                 author = CommitAuthor.fromString(line.substring(7));
             }
@@ -128,7 +132,7 @@ public class Commit extends ObjectStorage {
                 author,
                 new ObjectID(treeOid),
                 message,
-                parentId
+                parentIds
         );
     }
 
@@ -140,11 +144,11 @@ public class Commit extends ObjectStorage {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Commit commit)) return false;
-        return Objects.equals(author, commit.author) && Objects.equals(treeOid, commit.treeOid) && Objects.equals(message, commit.message) && Objects.equals(parentId, commit.parentId);
+        return Objects.equals(author, commit.author) && Objects.equals(treeOid, commit.treeOid) && Objects.equals(message, commit.message) && Utils.listsEqual(parentIds, commit.parentIds);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(author, treeOid, message, parentId);
+        return Objects.hash(author, treeOid, message, parentIds);
     }
 }

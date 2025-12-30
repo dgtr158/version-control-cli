@@ -13,7 +13,6 @@ import duongtran.vctrl.reportchanges.StatusType;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
-import duongtran.vctrl.utils.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -340,7 +339,8 @@ public class DiffActionTest {
 
             // Commit the second time
             Commit secondCommit = commitAction.execute();
-            assertEquals(firstCommit.getOid().getValue(), secondCommit.getParentId());
+            assertEquals(1, secondCommit.getParentIds().size());
+            assertEquals(firstCommit.getOid(), secondCommit.getParentIds().get(0));
 
             // Execute status command a third time
             Status thirdActual = statusAction.execute();

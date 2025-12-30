@@ -90,16 +90,18 @@ public class CommonAncestors {
      * @throws NoSuchAlgorithmException if the required cryptographic algorithm is unavailable
      */
     private void addParent(Commit commit, EnumSet<Flag> inheritedFlags) throws IOException, NoSuchAlgorithmException {
-        if (commit.getParentId() == null) return;
-        ObjectID parentObjectId = new ObjectID(commit.getParentId());
-        Commit parentCommit = (Commit) database.loadObject(parentObjectId, ObjectType.COMMIT);
-        EnumSet<Flag> parentFlags =
-                flags.computeIfAbsent(parentCommit.getOid(), k -> EnumSet.noneOf(Flag.class));
+        if (commit.getParentIds() == null) return;
+        for (ObjectID parentId : commit.getParentIds()) {
+            Commit parentCommit = (Commit) database.loadObject(parentId, ObjectType.COMMIT);
+            EnumSet<Flag> parentFlags =
+                    flags.computeIfAbsent(parentCommit.getOid(), k -> EnumSet.noneOf(Flag.class));
 
-        if (parentFlags.containsAll(inheritedFlags)) return;
+            if (parentFlags.containsAll(inheritedFlags)) return;
 
-        parentFlags.addAll(inheritedFlags);
-        queue.add(parentCommit);
+            parentFlags.addAll(inheritedFlags);
+            queue.add(parentCommit);
+        }
+
     }
 
     /**

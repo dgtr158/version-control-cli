@@ -63,12 +63,12 @@ public final class Revision {
 
         for (int i = 0; i < depth; i++) {
             Commit commit = (Commit) this.database.loadObject(currentCommitId, ObjectType.COMMIT);
-            if (commit.getParentId() == null) {
+            if (commit.getParentIds() == null) {
                 throw new IllegalArgumentException(
                         "Not enough ancestors for revision: " + depth
                 );
             }
-            currentCommitId = new ObjectID(commit.getParentId());
+            currentCommitId = commit.getParentIds().get(0);
         }
 
         return currentCommitId.getValue();
