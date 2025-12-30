@@ -1,7 +1,7 @@
 package duongtran.vctrl.actions;
 
 import duongtran.vctrl.branches.Revision;
-import duongtran.vctrl.branches.migration.CheckoutConflictException;
+import duongtran.vctrl.branches.migration.ConflictException;
 import duongtran.vctrl.branches.migration.Migration;
 import duongtran.vctrl.branches.migration.TreeDiff;
 import duongtran.vctrl.branches.migration.TreeDiffEntry;
@@ -39,7 +39,7 @@ public class CheckoutAction {
      * @throws IOException              if an I/O error occurs during the execution
      * @throws NoSuchAlgorithmException if a required cryptographic algorithm is not available
      */
-    public void execute(String branchName, int revision) throws IOException, NoSuchAlgorithmException, CheckoutConflictException {
+    public void execute(String branchName, int revision) throws IOException, NoSuchAlgorithmException, ConflictException {
         Refs ref = new Refs();
 
         // Resolve HEAD commit
@@ -57,8 +57,8 @@ public class CheckoutAction {
         try {
             Migration migration = new Migration(headCommitId, targetCommitId, treeDiffMap);
             migration.applyChanges();
-        } catch (CheckoutConflictException e) {
-            throw new CheckoutConflictException(e.getMessage());
+        } catch (ConflictException e) {
+            throw new ConflictException(e.getMessage());
         }
 
         // Update the HEAD

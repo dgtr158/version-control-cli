@@ -1,8 +1,9 @@
-package duongtran.vctrl.merge;
+package duongtran.vctrl.branches.merge;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.*;
+import duongtran.vctrl.branches.merge.CommonAncestors;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;

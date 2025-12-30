@@ -93,7 +93,7 @@ public class Migration {
      * If an exception occurs during the update process, it logs an error message to indicate
      * the failure.
      */
-    public void applyChanges() throws CheckoutConflictException {
+    public void applyChanges() throws ConflictException {
         try {
             // Build changes map, list of added directories, and list of removable directories
             planChanges();
@@ -101,8 +101,8 @@ public class Migration {
             updateWorkspace();
             // Update the index
             updateIndex();
-        } catch (CheckoutConflictException e) {
-            throw new CheckoutConflictException(e.getMessage());
+        } catch (ConflictException e) {
+            throw new ConflictException(e.getMessage());
         } catch (Exception e) {
             log.error("Failed to apply changes to the workspace: {}", e.getMessage());
         }
@@ -150,7 +150,7 @@ public class Migration {
      * as part of the migration process.
      *
      */
-    private void planChanges() throws IOException, NoSuchAlgorithmException, CheckoutConflictException {
+    private void planChanges() throws IOException, NoSuchAlgorithmException, ConflictException {
         Index index = Index.loadFromDisk();
         if (index == null) index = new Index();
         for (Map.Entry<Path, TreeDiffEntry> treeDiffEntry : treeDiffMap.entrySet()) {
@@ -366,16 +366,16 @@ public class Migration {
 
     /**
      * Processes a collection of conflicts, constructs error messages for each conflict type,
-     * and throws a {@link CheckoutConflictException} if there are any errors.
+     * and throws a {@link ConflictException} if there are any errors.
      * <p>
      * This method iterates through the map of conflicts categorized by {@code ConflictType},
      * retrieves the corresponding file paths and conflict-specific message templates,
      * and generates error messages. If any conflicts are detected, it aggregates the error
      * messages and raises an exception.
      *
-     * @throws CheckoutConflictException if there are any conflicts present in the collection.
+     * @throws ConflictException if there are any conflicts present in the collection.
      */
-    private void collectErrors() throws CheckoutConflictException {
+    private void collectErrors() throws ConflictException {
         for (Map.Entry<ConflictType, List<Path>> entry : conflicts.entrySet()) {
 
             List<Path> paths = entry.getValue();
@@ -396,7 +396,7 @@ public class Migration {
         }
 
         if (!errorMessages.isEmpty()) {
-            throw new CheckoutConflictException(String.join("\n", errorMessages));
+            throw new ConflictException(String.join("\n", errorMessages));
         }
     }
 

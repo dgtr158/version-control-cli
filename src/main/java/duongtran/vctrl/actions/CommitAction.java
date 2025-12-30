@@ -60,7 +60,11 @@ public class CommitAction {
      */
     public Commit execute() throws IOException {
         try {
-            return saveCommit();
+//        System.out.println("Enter the commit messages:");
+//        String message = getCommitMsg();
+            // TODO: get commit message from terminal
+            String message = "Dummy commit message";
+            return saveCommit(null, message);
         } catch (IOException | NoSuchAlgorithmException e) {
             throw new IOException("Failed to commit changes", e);
         }
@@ -80,7 +84,7 @@ public class CommitAction {
      * @throws NoSuchAlgorithmException if a required hashing algorithm is unavailable
      *                                  during the blob storage process.
      */
-    private Commit saveCommit() throws IOException, NoSuchAlgorithmException {
+    public Commit saveCommit(List<ObjectID> parentIds, String message) throws IOException, NoSuchAlgorithmException {
 
         Refs refs = new Refs();
 
@@ -99,15 +103,14 @@ public class CommitAction {
         String authorEmail = getEnvOrDefault(Constants.ENV_EMAIL_KEY, DEFAULT_EMAIL);
         CommitAuthor author = new CommitAuthor(authorName, authorEmail, Instant.now());
 
-        List<ObjectID> parentIds = new ArrayList<>();
-        String headContent = refs.readHead();
-        if (headContent != null) {
-            parentIds.add(new ObjectID(headContent));
+        if (parentIds == null) {
+            parentIds = new ArrayList<>();
+            String headContent = refs.readHead();
+            if (headContent != null) {
+                parentIds.add(new ObjectID(headContent));
+            }
         }
-//        System.out.println("Enter the commit messages:");
-//        String message = getCommitMsg();
-        // TODO: get commit message from terminal
-        String message = "Dummy commit message";
+
         Commit commit = new Commit(author, treeObjectId, message, parentIds);
         database.store(commit);
 

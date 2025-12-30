@@ -2,33 +2,29 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
-import duongtran.vctrl.branches.migration.ConflictException;
-import duongtran.vctrl.index.Index;
+import duongtran.vctrl.branches.merge.CommonAncestors;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
-import duongtran.vctrl.storage.objects.Blob;
+import duongtran.vctrl.storage.ObjectID;
+import duongtran.vctrl.storage.ObjectType;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-public class CheckoutActionTest {
-
-    private static final Logger log = LoggerFactory.getLogger(CheckoutActionTest.class);
+public class MergeActionTest {
 
     // Vctrl instances
     Workspace workspace;
@@ -43,6 +39,7 @@ public class CheckoutActionTest {
     Path secondDir;
     Path subSecondDir;
     Path thirdDir;
+    Path fourthDir;
 
     // Mock files
     Path testFile1;
@@ -57,6 +54,8 @@ public class CheckoutActionTest {
     Path testFile212;
     Path testFile31;
     Path testFile32;
+    Path testFile41;
+    Path testFile42;
 
 
     @BeforeEach
@@ -76,6 +75,7 @@ public class CheckoutActionTest {
         secondDir = rootPath.resolve("secondDir");
         subSecondDir = secondDir.resolve("subSecondDir");
         thirdDir = rootPath.resolve("thirdDir");
+        fourthDir = rootPath.resolve("fourthDir");
 
         testFile1 = rootPath.resolve("file1.txt");
         testFile11 = firstDir.resolve("file11.txt");
@@ -89,6 +89,8 @@ public class CheckoutActionTest {
         testFile212 = subSecondDir.resolve("file212.txt");
         testFile31 = thirdDir.resolve("file31.txt");
         testFile32 = thirdDir.resolve("file32.txt");
+        testFile41 = fourthDir.resolve("file41.txt");
+        testFile42 = fourthDir.resolve("file42.txt");
 
     }
 
@@ -99,12 +101,13 @@ public class CheckoutActionTest {
     }
 
     @Test
-    void testCheckoutSameBranch() {
+    void testMerge() {
 
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
         CheckoutAction checkoutAction = new CheckoutAction();
         BranchAction branchAction = new BranchAction();
+        MergeAction mergeAction = new MergeAction();
         Refs refs = new Refs();
 
         try {
@@ -175,7 +178,7 @@ public class CheckoutActionTest {
             // Check out from the fourth commit to the third commit
             checkoutAction.execute(checkoutBranchName, 0);
 
-            // Assert the contents of testFile11 and testFile112
+            // Assert the contents after checkout to another branch
             String testFile11Content = TestUtils.readFileContents(testFile11);
             String testFile21Content = TestUtils.readFileContents(testFile21);
             assertEquals("Test content 11", testFile11Content);
@@ -185,14 +188,6 @@ public class CheckoutActionTest {
             assertTrue(Files.exists(testFile22));
             assertTrue(Files.exists(testFile112));
 
-            // The index must reflect the current workspace
-            Index actualIndex = Index.loadFromDisk();
-            Index expectedIndex = new Index();
-            updateIndexEntries(expectedIndex, new ArrayList<>(List.of(
-                    testFile11, testFile12, testFile21, testFile22, testFile111, testFile112
-            )));
-            assertEquals(expectedIndex, actualIndex);
-
             // HEAD must point to the checkout branch
             String headRawContent = refs.readRawHeadContent();
             assertEquals("ref: " + Path.of("refs", "heads", checkoutBranchName), headRawContent);
@@ -201,14 +196,15 @@ public class CheckoutActionTest {
             assertEquals(firstBranchContent, headContent);
 
             // Commit after checkout, the checkout branch and head need to point to the same
-            // Create files and its contents in the secondDir
+            // Create files and its contents in the thirdDir
             Files.createDirectories(thirdDir);
             TestUtils.writeText(testFile31, "Test content 31");
-            TestUtils.writeText(testFile31, "Test content 32");
 
             // Add the thirdDir to staging and commit
-            addAction.execute(thirdDir);
+            addAction.execute(testFile31);
             Commit fifthCommit = commitAction.execute();
+
+            // Assert
             String headRawContent2 = refs.readRawHeadContent();
             assertEquals("ref: " + Path.of("refs", "heads", checkoutBranchName), headRawContent2);
             String headContent2 = refs.readHead();
@@ -220,122 +216,93 @@ public class CheckoutActionTest {
             String masterBranchContentAfterCheckout = refs.getRefHead().getBranchHeadContent(DirectoryNames.DEFAULT_BRANCH_NAME);
             assertEquals(fourthCommit.getOid().getValue(), masterBranchContentAfterCheckout);
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            fail();
-        }
-    }
+            // Check out to master branch
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
 
-    @Test
-    void testCheckoutHasConflict() throws IOException, NoSuchAlgorithmException {
-
-        AddAction addAction = new AddAction();
-        CommitAction commitAction = new CommitAction();
-        CheckoutAction checkoutAction = new CheckoutAction();
-        Index indexBeforeCheckout = null;
-
-        try {
-
-            // Create files and its contents in the firstDir
-            Files.createDirectories(firstDir);
-            TestUtils.writeText(testFile11, "Test content 11");
-
-            // Add firstDir to staging and commit
-            addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
-
-            // Create files and its contents in the subFirstDir
-            TestUtils.writeText(testFile12, "Test content 12");
-            Files.createDirectories(subFirstDir);
-            TestUtils.writeText(testFile111, "Test content 111");
-            TestUtils.writeText(testFile112, "Test content 112");
-
-            // Add testFile12, subFirstDir to staging and commit
-            addAction.execute(testFile12);
-            addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute();
-
-            // Create files and its contents in the secondDir
-            Files.createDirectories(secondDir);
-            TestUtils.writeText(testFile21, "Test content 21");
-            TestUtils.writeText(testFile22, "Test content 22");
-
-            // Add the secondDir, testFile11, testFile112 to staging and commit
-            addAction.execute(secondDir);
-            addAction.execute(testFile11);
-            addAction.execute(testFile112);
-            Commit thirdCommit = commitAction.execute();
-
-            // Add testFile1, and testFile13
-            TestUtils.writeText(testFile1, "Test content 1");
-            TestUtils.writeText(testFile13, "Test content 13");
-
-            // Change contents of testFile11 and testFile21
-            TestUtils.writeText(testFile11, "Test content 11 modified first time");
-            TestUtils.writeText(testFile21, "Test content 21 modified first time");
-
-            // Delete testFile22 and testFile112
-            TestUtils.deleteRecursively(testFile22);
-            TestUtils.deleteRecursively(testFile112);
-
-            // Add changes to staging and commit
-            addAction.execute(testFile1);
-            addAction.execute(testFile13);
-            addAction.execute(testFile11);
-            addAction.execute(testFile21);
-            addAction.execute(testFile22);
-            indexBeforeCheckout = addAction.execute(testFile112);
-            Commit fourthCommit = commitAction.execute();
-
-            // Change contents of testFile11 and testFile21
-            TestUtils.writeText(testFile11, "Test content 11 modified second time");
-
-            // Check out from the fourth commit to the third commit
-            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 1);
-
-            // After executed checkout, need to go to the exception block
-            fail();
-
-        } catch (ConflictException ex) {
-            log.debug("Conflict Error messages: {}", ex.getMessage());
-            assertFalse(ex.getMessage().isEmpty());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            fail();
-        } finally {
-            // Assert the contents
-            String testFile11Content = TestUtils.readFileContents(testFile11);
-            String testFile21Content = TestUtils.readFileContents(testFile21);
-            assertEquals("Test content 11 modified second time", testFile11Content);
-            assertEquals("Test content 21 modified first time", testFile21Content);
+            // Assert the contents after checkout to the master branch
+            testFile11Content = TestUtils.readFileContents(testFile11);
+            testFile21Content = TestUtils.readFileContents(testFile21);
+            assertEquals("Test content 11 modified", testFile11Content);
+            assertEquals("Test content 21 modified", testFile21Content);
             assertTrue(Files.exists(testFile1));
             assertTrue(Files.exists(testFile13));
             assertFalse(Files.exists(testFile22));
             assertFalse(Files.exists(testFile112));
+            assertFalse(Files.exists(thirdDir));
+            assertFalse(Files.exists(testFile31));
 
-            // The index must reflect the current workspace
-            Index actualIndex = Index.loadFromDisk();
-            assertEquals(indexBeforeCheckout, actualIndex);
+            // HEAD must point to the master branch
+            String headRawContent3 = refs.readRawHeadContent();
+            assertEquals("ref: " + Path.of("refs", "heads", "master"), headRawContent3);
+            String headContent3 = refs.readHead();
+            assertEquals(fourthCommit.getOid().getValue(), headContent3);
 
-        }
-    }
+            // Create files and its contents in the fourthDir
+            Files.createDirectories(fourthDir);
+            TestUtils.writeText(testFile41, "Test content 41");
 
-    private void updateIndexEntries(Index index, List<Path> paths) {
-        try {
-            for (Path path : paths) {
-                byte[] fileBytes = Files.readAllBytes(path);
-                Blob blob = new Blob(fileBytes);
-                blob.calculateOid(blob.toBytes());
-                index.addEntry(path, blob.getOid().getValue());
-            }
-            byte[] bytes = new byte[index.getSizeInBytes()];
-            ByteBuffer buf = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
-            // Trigger to compute index's checksum
-            index.toBytes(buf);
+            // Add and commit
+            addAction.execute(fourthDir);
+            Commit sixthCommit = commitAction.execute();
+
+            // Merge firstBranch into master
+            mergeAction.execute(checkoutBranchName, 0);
+
+            // Assertion after merged
+            // HEAD must point to the master branch
+            String headRawContent4 = refs.readRawHeadContent();
+            assertEquals("ref: " + Path.of("refs", "heads", "master"), headRawContent4);
+
+            // HEAD content is the seventh commit
+            String headContent4 = refs.readHead();
+            Commit seventhCommit = (Commit) database.loadObject(new ObjectID(headContent4), ObjectType.COMMIT);
+
+            // seventhCommit's parents are fifthCommit (current firstBranch) and sixthCommit (old master branch)
+            // the sixthCommit will go first (Because it's the HEAD commit)
+            List<ObjectID> seventhCommitParentIds = seventhCommit.getParentIds();
+            assertEquals(2, seventhCommitParentIds.size());
+            assertEquals(sixthCommit.getOid(), seventhCommitParentIds.get(0));
+            assertEquals(fifthCommit.getOid(), seventhCommitParentIds.get(1));
+
+            /* Assert workspace's files */
+            // testFile1
+            assertTrue(Files.exists(testFile1));
+            assertEquals("Test content 1", TestUtils.readFileContents(testFile1));
+
+            // firstDir
+            assertTrue(Files.exists(firstDir));
+            assertTrue(Files.exists(testFile11)); // Modified
+            assertTrue(Files.exists(testFile12));
+            assertTrue(Files.exists(testFile13)); // Added
+            assertTrue(Files.exists(subFirstDir));
+            assertTrue(Files.exists(testFile111));
+            assertFalse(Files.exists(testFile112)); // Deleted
+            assertEquals("Test content 11 modified", TestUtils.readFileContents(testFile11));
+            assertEquals("Test content 12", TestUtils.readFileContents(testFile12));
+            assertEquals("Test content 13", TestUtils.readFileContents(testFile13));
+            assertEquals("Test content 111", TestUtils.readFileContents(testFile111));
+
+            // secondDir
+            assertTrue(Files.exists(secondDir));
+            assertTrue(Files.exists(testFile21)); // Modified
+            assertFalse(Files.exists(testFile22)); // Deleted
+            assertEquals("Test content 21 modified", TestUtils.readFileContents(testFile21));
+
+            // thirdDir
+            assertTrue(Files.exists(thirdDir)); // Added
+            assertTrue(Files.exists(testFile31)); // Added
+            assertEquals("Test content 31", TestUtils.readFileContents(testFile31));
+
+            // fourthDir
+            assertTrue(Files.exists(fourthDir)); // Added
+            assertTrue(Files.exists(testFile41)); // Added
+            assertEquals("Test content 41", TestUtils.readFileContents(testFile41));
+
+
         } catch (Exception ex) {
-            log.error("Cannot update index: {}", ex.getMessage());
+            ex.printStackTrace();
+            fail();
         }
-
 
     }
 

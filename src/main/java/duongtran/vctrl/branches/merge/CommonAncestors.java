@@ -1,4 +1,4 @@
-package duongtran.vctrl.merge;
+package duongtran.vctrl.branches.merge;
 
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;
