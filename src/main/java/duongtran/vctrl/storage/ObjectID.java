@@ -93,6 +93,21 @@ public class ObjectID {
         return new ObjectID(Utils.bytesToHex(bytes));
     }
 
+    /**
+     * Generates a shortened or abbreviated version of the current ObjectID value.
+     * Specifically, this method truncates the underlying string representation
+     * of the ObjectID to the first 7 characters, typically used for compact display.
+     *
+     * @return a 7-character abbreviated string representation of this ObjectID
+     * @throws IllegalArgumentException if the value is null or its length is less than 7
+     */
+    public String abbreviate() {
+        if (this.value == null || this.value.length() < 7) {
+            throw new IllegalArgumentException("Invalid SHA-1 value");
+        }
+        return this.value.substring(0, 7);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -103,5 +118,10 @@ public class ObjectID {
     @Override
     public int hashCode() {
         return Objects.hashCode(value);
+    }
+
+    @Override
+    public String toString() {
+        return value;
     }
 }

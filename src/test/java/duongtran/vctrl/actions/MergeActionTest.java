@@ -2,7 +2,6 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
-import duongtran.vctrl.branches.merge.CommonAncestors;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;
@@ -13,16 +12,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class MergeActionTest {
 
