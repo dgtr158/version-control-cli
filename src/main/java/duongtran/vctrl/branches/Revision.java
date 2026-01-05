@@ -18,29 +18,30 @@ public final class Revision {
 
     private final Refs refs;
     private final String branchName;
+    private final int revision;
     private final Database database;
 
 
-    public Revision(Refs refs, String branchName) {
+    public Revision(Refs refs, String branchName, int revision) {
         this.refs = refs;
         this.branchName = branchName;
+        this.revision = revision;
         this.database = Database.getInstance();
     }
 
     /**
      * Resolves a revision relative to HEAD.
      *
-     * @param revision number of ancestors (0 = HEAD)
      * @return commit id
      */
-    public String resolveAncestor(int revision) throws IOException, NoSuchAlgorithmException {
+    public String resolveAncestor() throws IOException, NoSuchAlgorithmException {
         ObjectID branchHeadCommit;
         if (branchName == null) {
             branchHeadCommit = new ObjectID(refs.readHead());
         } else {
             branchHeadCommit = new ObjectID(refs.getRefHead().getBranchHeadContent(branchName));
         }
-        return walkAncestors(branchHeadCommit, revision);
+        return walkAncestors(branchHeadCommit, this.revision);
     }
 
 

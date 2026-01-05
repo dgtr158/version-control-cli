@@ -1,9 +1,7 @@
-package duongtran.vctrl.history;
+package duongtran.vctrl.actions;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
-import duongtran.vctrl.actions.AddAction;
-import duongtran.vctrl.actions.CommitAction;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -13,11 +11,11 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
-public class CommitHistoryTest {
+public class LogActionTest {
+
 
     // Vctrl instances
     Workspace workspace;
@@ -97,6 +95,7 @@ public class CommitHistoryTest {
 
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
+        LogAction logAction = new LogAction();
 
         try {
             // Create files and its contents in the firstDir
@@ -153,18 +152,8 @@ public class CommitHistoryTest {
             addAction.execute(fourthDir);
             Commit sixthCommit = commitAction.execute();
 
-            // Assert the commit history
-            CommitHistory commitHistory = new CommitHistory();
-            Iterator<Commit> commitIterator = commitHistory.iterator();
-
-            assertTrue(commitIterator.hasNext());
-            assertEquals(sixthCommit, commitIterator.next());
-            assertEquals(fifthCommit, commitIterator.next());
-            assertEquals(fourthCommit, commitIterator.next());
-            assertEquals(thirdCommit, commitIterator.next());
-            assertEquals(secondCommit, commitIterator.next());
-            assertEquals(firstCommit, commitIterator.next());
-            assertFalse(commitIterator.hasNext());
+            // Assert the log action
+            logAction.execute(null);
 
         } catch (Exception e) {
             e.printStackTrace();

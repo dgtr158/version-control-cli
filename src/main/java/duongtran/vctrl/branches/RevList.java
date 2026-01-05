@@ -1,4 +1,4 @@
-package duongtran.vctrl.history;
+package duongtran.vctrl.branches;
 
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
@@ -13,9 +13,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 import java.util.List;
 
-public class CommitHistory implements Iterable<Commit> {
+public class RevList implements Iterable<Commit> {
 
-    private static final Logger log = LoggerFactory.getLogger(CommitHistory.class);
+    private static final Logger log = LoggerFactory.getLogger(RevList.class);
+
+    private final Refs refs;
+    private final List<String> branches;
+
+    public RevList(Refs refs, List<String> branches) {
+        this.refs = refs;
+        this.branches = branches;
+    }
 
     @Override
     public Iterator<Commit> iterator() {
@@ -23,15 +31,21 @@ public class CommitHistory implements Iterable<Commit> {
     }
 
 
-    private static class CommitIterator implements Iterator<Commit> {
+    class CommitIterator implements Iterator<Commit> {
 
-        ObjectID nextOid = null;
+        ObjectID nextOid;
         Database database;
 
         public CommitIterator() {
             this.database = Database.getInstance();
-            Refs refs = new Refs();
-            this.nextOid = new ObjectID(refs.readHead());
+            this.nextOid = null;
+//            Revision revision = new Revision(refs, branches);
+//            try {
+//                this.nextOid = new ObjectID(revision.resolveAncestor());
+//            } catch (IOException | NoSuchAlgorithmException e) {
+//                log.error("Cannot get the next object Id");
+//                throw new RuntimeException(e);
+//            }
         }
 
         @Override

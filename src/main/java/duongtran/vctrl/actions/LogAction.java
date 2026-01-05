@@ -1,18 +1,25 @@
 package duongtran.vctrl.actions;
 
-import duongtran.vctrl.history.CommitHistory;
+import duongtran.vctrl.branches.RevList;
+import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.objects.Commit;
 
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LogAction {
 
-    public void execute() {
+    public void execute(List<String> branches) {
 
-        CommitHistory commitHistory = new CommitHistory();
-        Iterator<Commit> commitIterator = commitHistory.iterator();
-        while (commitIterator.hasNext()) {
-            Commit commit = commitIterator.next();
+        Refs refs = new Refs();
+        if (branches == null) {
+            branches = new ArrayList<>();
+            String currentBranchName = refs.getCurrentBranch();
+            branches.add(currentBranchName);
+        }
+
+        RevList revList = new RevList(refs, branches);
+        for (Commit commit : revList) {
             showCommit(commit);
         }
     }

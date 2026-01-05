@@ -44,8 +44,8 @@ public class MergeAction {
         ObjectID headCommitId = new ObjectID(ref.readHead());
 
         // Resolve target commit
-        Revision revisionResolvers = new Revision(ref, branchName);
-        ObjectID mergeCommitId = new ObjectID(revisionResolvers.resolveAncestor(revision));
+        Revision revisionResolvers = new Revision(ref, branchName, revision);
+        ObjectID mergeCommitId = new ObjectID(revisionResolvers.resolveAncestor());
 
         // Find the common ancestor between the two commits
         CommonAncestors commonAncestor = new CommonAncestors(headCommitId, mergeCommitId);

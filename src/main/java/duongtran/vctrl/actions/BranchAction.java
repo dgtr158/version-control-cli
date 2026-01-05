@@ -33,8 +33,8 @@ public class BranchAction {
         RefHead refHead = ref.getRefHead();
 
         // Resolve target commit on HEAD
-        Revision revisionResolvers = new Revision(ref, null);
-        String targetCommitId = revisionResolvers.resolveAncestor(revision);
+        Revision revisionResolvers = new Revision(ref, null, revision);
+        String targetCommitId = revisionResolvers.resolveAncestor();
 
         // Create a new branch in ref
         Path branchHead = refHead.createBranch(branchName);

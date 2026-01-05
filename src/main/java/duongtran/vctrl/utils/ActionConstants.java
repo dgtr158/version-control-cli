@@ -7,4 +7,5 @@ public class ActionConstants {
     public static final String ADD = "add";
     public static final String DIFF = "diff";
     public static final String BRANCH = "branch";
+    public static final String LOG = "log";
 }

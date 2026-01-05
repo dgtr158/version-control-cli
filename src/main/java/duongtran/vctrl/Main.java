@@ -48,6 +48,10 @@ public class Main {
                 BranchAction branchAction = new BranchAction();
                 branchAction.execute("", 0);
                 break;
+            case ActionConstants.LOG:
+                LogAction logAction = new LogAction();
+                logAction.execute(null);
+                break;
             default:
                 String msg = MessageFormat.format("{0}: {1} is not a {2} command"
                         , DirectoryNames.PROJECT_NAME
