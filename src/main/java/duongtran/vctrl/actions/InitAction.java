@@ -1,6 +1,7 @@
 package duongtran.vctrl.actions;
 
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.utils.DirectoryNames;
 
 import java.io.File;
@@ -16,8 +17,8 @@ public class InitAction {
 
         // Initialize
         // TODO: uncomment after complete storing part
-//        Workspace.initialize();
-//        Database.initialize();
+        Workspace.initialize(pathName);
+        Database.initialize();
 
         // Define .vctrl directory
         File rootDir = new File(pathName, DirectoryNames.ROOT_DIR_NAME);

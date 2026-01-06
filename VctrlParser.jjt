@@ -1,0 +1,85 @@
+options {
+    STATIC = false;
+    MULTI = true;
+    VISITOR = true;
+    NODE_DEFAULT_VOID = true;
+    JDK_VERSION = "1.11";
+    OUTPUT_DIRECTORY = "src/main/java/duongtran/vctrl/cli/parser";
+    JJTREE_OUTPUT_DIRECTORY = "src/main/java/duongtran/vctrl/cli/parser";
+}
+
+PARSER_BEGIN(VctrlParser)
+package duongtran.vctrl.cli.parser;
+
+@SuppressWarnings("all")
+public class VctrlParser {
+}
+PARSER_END(VctrlParser)
+
+/* ====== SKIP ====== */
+SKIP :
+{
+    " " | "\t" | "\n" | "\r"
+}
+
+/* ====== TOKENS ====== */
+TOKEN :
+{
+      <K_INIT: "init">
+    | <K_STATUS: "status">
+    | <K_ADD: "add">
+    | <K_COMMIT: "commit">
+    | <K_LOG: "log">
+    | <K_BRANCH: "branch">
+    | <K_CHECKOUT: "checkout">
+    | <K_MERGE: "merge">
+    | <K_M: "-m">
+}
+
+/* Path / identifier */
+TOKEN :
+{
+    <STRING_LITERAL: "\"" (~["\""])* "\"">
+  | <PATH: (["a"-"z","A"-"Z","0"-"9","/","_",".","-"])+ >
+}
+
+/* ====== ENTRY ====== */
+ASTCommand command() #Command:
+{}
+{
+    (
+        init_cmd()
+      | add_cmd()
+    )
+    {
+        return jjtThis;
+    }
+}
+/* ====== COMMANDS ====== */
+
+void init_cmd() #InitCommand :
+{
+    Token path = null;
+}
+{
+    <K_INIT>
+    ( path = <PATH> )?
+    {
+        if (path != null) {
+            jjtThis.jjtSetValue(path.image);
+        }
+    }
+}
+
+void add_cmd() #AddCommand :
+{
+    Token path;
+}
+{
+    <K_ADD>
+    path = <PATH>
+    {
+        jjtThis.jjtSetValue(path.image);
+    }
+}
+

@@ -9,6 +9,7 @@ import java.util.List;
 
 public class LogAction {
 
+
     public void execute(List<String> branches) {
 
         Refs refs = new Refs();
