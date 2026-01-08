@@ -52,6 +52,7 @@ ASTCommand command() #Command:
     (
         init_cmd()
       | add_cmd()
+      | commit_cmd()
     )
     {
         return jjtThis;
@@ -82,6 +83,23 @@ void add_cmd() #AddCommand :
     path = <PATH>
     {
         jjtThis.jjtSetValue(path.image);
+    }
+}
+
+void commit_cmd() #CommitCommand :
+{
+    Token msg;
+}
+{
+    <K_COMMIT>
+    <K_M>
+    msg = <STRING_LITERAL>
+    {
+        String m = msg.image;
+        if (m.startsWith("\"") && m.endsWith("\"")) {
+            m = m.substring(1, m.length() - 1);
+        }
+        jjtThis.jjtSetValue(m);
     }
 }
 

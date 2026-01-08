@@ -128,7 +128,7 @@ public class DatabaseTest {
 
             // Add all files to staging and commit
             Index index = addAction.execute(rootPath);
-            Commit commit = commitAction.execute();
+            Commit commit = commitAction.execute("Dummy commit message");
 
             // List all file in HEAD
             Map<Path, DataEntry> actualMap = Database.listFileInHead();

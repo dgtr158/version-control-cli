@@ -105,7 +105,7 @@ public class LogActionTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the subFirstDir
             Files.createDirectories(subFirstDir);
@@ -114,7 +114,7 @@ public class LogActionTest {
 
             // Add subFirstDir to staging and commit
             addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the secondDir
             Files.createDirectories(secondDir);
@@ -123,7 +123,7 @@ public class LogActionTest {
 
             // Add the secondDir to staging and commit
             addAction.execute(secondDir);
-            Commit thirdCommit = commitAction.execute();
+            Commit thirdCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the subSecondDir
             Files.createDirectories(subSecondDir);
@@ -132,7 +132,7 @@ public class LogActionTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(subSecondDir);
-            Commit fourthCommit = commitAction.execute();
+            Commit fourthCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the thirdDir
             Files.createDirectories(thirdDir);
@@ -141,7 +141,7 @@ public class LogActionTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(thirdDir);
-            Commit fifthCommit = commitAction.execute();
+            Commit fifthCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the fourthDir
             Files.createDirectories(fourthDir);
@@ -150,7 +150,7 @@ public class LogActionTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(fourthDir);
-            Commit sixthCommit = commitAction.execute();
+            Commit sixthCommit = commitAction.execute("Dummy commit message");
 
             // Assert the log action
             logAction.execute(null);

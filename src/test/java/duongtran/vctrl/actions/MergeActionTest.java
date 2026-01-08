@@ -112,7 +112,7 @@ public class MergeActionTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the subFirstDir
             TestUtils.writeText(testFile12, "Test content 12");
@@ -123,7 +123,7 @@ public class MergeActionTest {
             // Add testFile12, subFirstDir to staging and commit
             addAction.execute(testFile12);
             addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the secondDir
             Files.createDirectories(secondDir);
@@ -134,7 +134,7 @@ public class MergeActionTest {
             addAction.execute(secondDir);
             addAction.execute(testFile11);
             addAction.execute(testFile112);
-            Commit thirdCommit = commitAction.execute();
+            Commit thirdCommit = commitAction.execute("Dummy commit message");
 
             // Assert the current HEAD
             String headAfterThirdCommit = refs.readHead();
@@ -167,7 +167,7 @@ public class MergeActionTest {
             addAction.execute(testFile21);
             addAction.execute(testFile22);
             addAction.execute(testFile112);
-            Commit fourthCommit = commitAction.execute();
+            Commit fourthCommit = commitAction.execute("Dummy commit message");
 
             // Check out from the fourth commit to the third commit
             checkoutAction.execute(checkoutBranchName, 0);
@@ -196,7 +196,7 @@ public class MergeActionTest {
 
             // Add the thirdDir to staging and commit
             addAction.execute(testFile31);
-            Commit fifthCommit = commitAction.execute();
+            Commit fifthCommit = commitAction.execute("Dummy commit message");
 
             // Assert
             String headRawContent2 = refs.readRawHeadContent();
@@ -237,7 +237,7 @@ public class MergeActionTest {
 
             // Add and commit
             addAction.execute(fourthDir);
-            Commit sixthCommit = commitAction.execute();
+            Commit sixthCommit = commitAction.execute("Dummy commit message");
 
             // Merge firstBranch into master
             mergeAction.execute(checkoutBranchName, 0);

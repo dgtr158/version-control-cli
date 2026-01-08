@@ -104,7 +104,7 @@ public class BranchActionTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Assert first time HEAD
             String firstHeadRef = ref.readRawHeadContent();
@@ -135,7 +135,7 @@ public class BranchActionTest {
             // Add firstDir to staging and commit
             addAction.execute(testFile11);
             addAction.execute(testFile112);
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
 
             // Assert third time HEAD
             String thirdHeadRef = ref.readRawHeadContent();
@@ -173,7 +173,7 @@ public class BranchActionTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Assert first time HEAD
             String firstHeadRef = ref.readRawHeadContent();
@@ -190,7 +190,7 @@ public class BranchActionTest {
 
             // Add subFirstDir to staging and commit
             addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
 
             // Assert second time HEAD
             String secondHeadRef = ref.readRawHeadContent();
@@ -207,7 +207,7 @@ public class BranchActionTest {
             // Add firstDir to staging and commit
             addAction.execute(testFile11);
             addAction.execute(testFile112);
-            Commit thirdCommit = commitAction.execute();
+            Commit thirdCommit = commitAction.execute("Dummy commit message");
 
             // Assert third time HEAD
             String thirdHeadRef = ref.readRawHeadContent();
@@ -273,7 +273,7 @@ public class BranchActionTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Create new branches
             List<String> expectedBranches = new ArrayList<>(List.of("master"));
@@ -317,7 +317,7 @@ public class BranchActionTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Create new branches
             List<String> expectedBranches = new ArrayList<>(List.of("master"));

@@ -163,7 +163,7 @@ public class StatusActionTest {
 
                 // Add testFile11 to staging and commit
                 Index index = addAction.execute(testFile11);
-                Commit commit = commitAction.execute();
+                Commit commit = commitAction.execute("Dummy commit message");
 
                 // Execute status command
                 Status actual = statusAction.execute();
@@ -209,7 +209,7 @@ public class StatusActionTest {
 
                 // Add testFile11 to staging and commit
                 Index index = addAction.execute(testFile11);
-                Commit commit = commitAction.execute();
+                Commit commit = commitAction.execute("Dummy commit message");
 
                 // Execute status command
                 Status actual = statusAction.execute();
@@ -253,7 +253,7 @@ public class StatusActionTest {
 
                 // Add testFile11 to staging and commit
                 Index index = addAction.execute(testFile11);
-                Commit commit = commitAction.execute();
+                Commit commit = commitAction.execute("Dummy commit message");
 
                 // Execute status command
                 Status actual = statusAction.execute();
@@ -291,7 +291,7 @@ public class StatusActionTest {
 
                 // Add firstDir to staging and commit
                 Index firstIndex = addAction.execute(firstDir);
-                Commit firstCommit = commitAction.execute();
+                Commit firstCommit = commitAction.execute("Dummy commit message");
 
                 // Execute status command first time
                 Status firstActual = statusAction.execute();
@@ -315,7 +315,7 @@ public class StatusActionTest {
 
                 // Add testFile11 and testFile112 to staging and commit
                 Index secondIndex = addAction.execute(firstDir);
-                Commit secondCommit = commitAction.execute();
+                Commit secondCommit = commitAction.execute("Dummy commit message");
 
                 // Execute status command a third time
                 Status thirdActual = statusAction.execute();
@@ -352,7 +352,7 @@ public class StatusActionTest {
 
                 // Add firstDir to staging and commit
                 Index firstIndex = addAction.execute(firstDir);
-                Commit firstCommit = commitAction.execute();
+                Commit firstCommit = commitAction.execute("Dummy commit message");
 
                 // Execute status command first time
                 Status firstActual = statusAction.execute();
@@ -404,7 +404,7 @@ public class StatusActionTest {
 
                 // Add firstDir to staging and commit
                 Index firstIndex = addAction.execute(firstDir);
-                Commit firstCommit = commitAction.execute();
+                Commit firstCommit = commitAction.execute("Dummy commit message");
 
                 // Execute status command first time
                 Status firstActual = statusAction.execute();
@@ -452,7 +452,7 @@ public class StatusActionTest {
 
                 // Add firstDir to staging and commit
                 Index firstIndex = addAction.execute(firstDir);
-                Commit firstCommit = commitAction.execute();
+                Commit firstCommit = commitAction.execute("Dummy commit message");
 
                 // Get before testFile11's stat
                 FileStat beforeStat = TestUtils.getFileStat(testFile11);
@@ -520,7 +520,7 @@ public class StatusActionTest {
 
                 // Add firstDir to staging and commit
                 Index firstIndex = addAction.execute(rootPath);
-                Commit firstCommit = commitAction.execute();
+                Commit firstCommit = commitAction.execute("Dummy commit message");
 
                 // Delete testFile21
                 TestUtils.deleteRecursively(testFile21);
@@ -575,7 +575,7 @@ public class StatusActionTest {
 
                 // Add all files to staging and commit
                 Index index = addAction.execute(firstDir);
-                Commit commit = commitAction.execute();
+                Commit commit = commitAction.execute("Dummy commit message");
 
                 // Create testFile112 in the subFirstDir, then report status
                 TestUtils.writeText(testFile112, "Test content 112");
@@ -590,7 +590,7 @@ public class StatusActionTest {
                 assertEquals(firstExpected, firstActual);
 
                 // Commit 2nd
-                commit = commitAction.execute();
+                commit = commitAction.execute("Dummy commit message");
 
                 // Create files and ít contents in the secondDir
                 Files.createDirectories(secondDir);
@@ -608,7 +608,7 @@ public class StatusActionTest {
                 assertEquals(secondExpected, secondActual);
 
                 // Commit 3rd
-                commit = commitAction.execute();
+                commit = commitAction.execute("Dummy commit message");
 
                 // Report status
                 Status thirdActual = statusAction.execute();
@@ -649,7 +649,7 @@ public class StatusActionTest {
 
                 // Add and commit the first time
                 addAction.execute(rootPath);
-                commitAction.execute();
+                commitAction.execute("Dummy commit message");
 
                 // Change the file mode of testFile111 to EXECUTABLE
                 if (FileUtil.isUnix()) {
@@ -706,7 +706,7 @@ public class StatusActionTest {
 
                 // Add and commit the first time
                 addAction.execute(rootPath);
-                commitAction.execute();
+                commitAction.execute("Dummy commit message");
 
                 // Remove the testFile22 and secondDir
                 TestUtils.deleteRecursively(testFile112);

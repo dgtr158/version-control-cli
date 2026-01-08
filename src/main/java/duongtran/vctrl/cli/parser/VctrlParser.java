@@ -21,6 +21,10 @@ public class VctrlParser/*@bgen(jjtree)*/implements VctrlParserTreeConstants, Vc
         add_cmd();
         break;
         }
+      case K_COMMIT:{
+        commit_cmd();
+        break;
+        }
       default:
         jj_la1[0] = jj_gen;
         jj_consume_token(-1);
@@ -71,8 +75,7 @@ void init_cmd() throws ParseException {/*@bgen(jjtree) InitCommand */
 jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
 if (path != null) {
-            String p = path.image;
-            jjtn000.jjtSetValue(p);
+            jjtn000.jjtSetValue(path.image);
         }
     } finally {
 if (jjtc000) {
@@ -98,6 +101,28 @@ if (jjtc000) {
     }
 }
 
+  final public void commit_cmd() throws ParseException {/*@bgen(jjtree) CommitCommand */
+    ASTCommitCommand jjtn000 = new ASTCommitCommand(JJTCOMMITCOMMAND);
+    boolean jjtc000 = true;
+    jjtree.openNodeScope(jjtn000);Token msg;
+    try {
+      jj_consume_token(K_COMMIT);
+      jj_consume_token(K_M);
+      msg = jj_consume_token(STRING_LITERAL);
+jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+String m = msg.image;
+        if (m.startsWith("\"") && m.endsWith("\"")) {
+            m = m.substring(1, m.length() - 1);
+        }
+        jjtn000.jjtSetValue(m);
+    } finally {
+if (jjtc000) {
+        jjtree.closeNodeScope(jjtn000, true);
+      }
+    }
+}
+
   /** Generated Token Manager. */
   public VctrlParserTokenManager token_source;
   SimpleCharStream jj_input_stream;
@@ -113,7 +138,7 @@ if (jjtc000) {
 	   jj_la1_init_0();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0xa0,0x8000,};
+	   jj_la1_0 = new int[] {0x1a0,0x8000,};
 	}
 
   /** Constructor with InputStream. */

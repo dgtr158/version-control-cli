@@ -2,13 +2,18 @@ package duongtran.vctrl.cli.visitor;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.AddAction;
+import duongtran.vctrl.actions.CommitAction;
 import duongtran.vctrl.actions.InitAction;
 import duongtran.vctrl.cli.parser.*;
 import duongtran.vctrl.utils.DirectoryNames;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 
 public class CommandVisitor implements VctrlParserVisitor {
+
+    private static final Logger log = LoggerFactory.getLogger(CommandVisitor.class);
 
     @Override
     public Object visit(ASTInitCommand node, Object data) {
@@ -30,7 +35,17 @@ public class CommandVisitor implements VctrlParserVisitor {
         return null;
     }
 
-    /* ===== required boilerplate ===== */
+    @Override
+    public Object visit(ASTCommitCommand node, Object data) {
+        String commitMsg = (String) node.jjtGetValue();
+        CommitAction commitAction = new CommitAction();
+        try {
+            commitAction.execute(commitMsg);
+        } catch (Exception ex) {
+            log.error("Cannot commit with message: {}", ex.getMessage());
+        }
+        return null;
+    }
 
     @Override
     public Object visit(SimpleNode node, Object data) {

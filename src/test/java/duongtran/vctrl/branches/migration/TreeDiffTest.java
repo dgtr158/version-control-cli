@@ -104,7 +104,7 @@ public class TreeDiffTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the subFirstDir
             TestUtils.writeText(testFile12, "Test content 12");
@@ -115,7 +115,7 @@ public class TreeDiffTest {
             // Add testFile12, subFirstDir to staging and commit
             addAction.execute(testFile12);
             addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
 
             // Assert Tree Diff first time: testFile12, testFile111, testFile112 were added
             TreeDiff firstTreeDiff = new TreeDiff();
@@ -156,7 +156,7 @@ public class TreeDiffTest {
             // Add firstDir to staging and commit
             addAction.execute(testFile11);
             addAction.execute(testFile112);
-            Commit thirdCommit = commitAction.execute();
+            Commit thirdCommit = commitAction.execute("Dummy commit message");
 
             // Assert Tree Diff the second time: testFile11, testFile112, were deleted
             TreeDiff secondTreeDiff = new TreeDiff();
@@ -185,7 +185,7 @@ public class TreeDiffTest {
             // Add testFile11, testFile112 to staging and commit
             addAction.execute(testFile11);
             addAction.execute(testFile112);
-            Commit fourthCommit = commitAction.execute();
+            Commit fourthCommit = commitAction.execute("Dummy commit message");
 
             // Assert Tree Diff the third time: testFile11, testFile112, were deleted
             TreeDiff thirdTreeDiff = new TreeDiff();

@@ -115,7 +115,7 @@ public class CheckoutActionTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the subFirstDir
             TestUtils.writeText(testFile12, "Test content 12");
@@ -126,7 +126,7 @@ public class CheckoutActionTest {
             // Add testFile12, subFirstDir to staging and commit
             addAction.execute(testFile12);
             addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the secondDir
             Files.createDirectories(secondDir);
@@ -137,7 +137,7 @@ public class CheckoutActionTest {
             addAction.execute(secondDir);
             addAction.execute(testFile11);
             addAction.execute(testFile112);
-            Commit thirdCommit = commitAction.execute();
+            Commit thirdCommit = commitAction.execute("Dummy commit message");
 
             // Assert the current HEAD
             String headAfterThirdCommit = refs.readHead();
@@ -170,7 +170,7 @@ public class CheckoutActionTest {
             addAction.execute(testFile21);
             addAction.execute(testFile22);
             addAction.execute(testFile112);
-            Commit fourthCommit = commitAction.execute();
+            Commit fourthCommit = commitAction.execute("Dummy commit message");
 
             // Check out from the fourth commit to the third commit
             checkoutAction.execute(checkoutBranchName, 0);
@@ -208,7 +208,7 @@ public class CheckoutActionTest {
 
             // Add the thirdDir to staging and commit
             addAction.execute(thirdDir);
-            Commit fifthCommit = commitAction.execute();
+            Commit fifthCommit = commitAction.execute("Dummy commit message");
             String headRawContent2 = refs.readRawHeadContent();
             assertEquals("ref: " + Path.of("refs", "heads", checkoutBranchName), headRawContent2);
             String headContent2 = refs.readHead();
@@ -242,7 +242,7 @@ public class CheckoutActionTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the subFirstDir
             TestUtils.writeText(testFile12, "Test content 12");
@@ -253,7 +253,7 @@ public class CheckoutActionTest {
             // Add testFile12, subFirstDir to staging and commit
             addAction.execute(testFile12);
             addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
 
             // Create files and its contents in the secondDir
             Files.createDirectories(secondDir);
@@ -264,7 +264,7 @@ public class CheckoutActionTest {
             addAction.execute(secondDir);
             addAction.execute(testFile11);
             addAction.execute(testFile112);
-            Commit thirdCommit = commitAction.execute();
+            Commit thirdCommit = commitAction.execute("Dummy commit message");
 
             // Add testFile1, and testFile13
             TestUtils.writeText(testFile1, "Test content 1");
@@ -285,7 +285,7 @@ public class CheckoutActionTest {
             addAction.execute(testFile21);
             addAction.execute(testFile22);
             indexBeforeCheckout = addAction.execute(testFile112);
-            Commit fourthCommit = commitAction.execute();
+            Commit fourthCommit = commitAction.execute("Dummy commit message");
 
             // Change contents of testFile11 and testFile21
             TestUtils.writeText(testFile11, "Test content 11 modified second time");

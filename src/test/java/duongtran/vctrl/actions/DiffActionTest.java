@@ -121,7 +121,7 @@ public class DiffActionTest {
 
             // Add firstDir to staging and commit
             Index firstIndex = addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Execute status command first time
             Status firstActual = statusAction.execute();
@@ -202,7 +202,7 @@ public class DiffActionTest {
 
             // Add testFile11 and testFile112 to staging and commit
             Index secondIndex = addAction.execute(firstDir);
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
 
             // Execute status command a third time
             Status thirdActual = statusAction.execute();
@@ -254,7 +254,7 @@ public class DiffActionTest {
 
             // Add firstDir to staging and commit
             Index firstIndex = addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute();
+            Commit firstCommit = commitAction.execute("Dummy commit message");
 
             // Execute status command first time
             Status firstActual = statusAction.execute();
@@ -338,7 +338,7 @@ public class DiffActionTest {
             assertEquals(expectedDiffResult, actualDiffResult);
 
             // Commit the second time
-            Commit secondCommit = commitAction.execute();
+            Commit secondCommit = commitAction.execute("Dummy commit message");
             assertEquals(1, secondCommit.getParentIds().size());
             assertEquals(firstCommit.getOid(), secondCommit.getParentIds().get(0));
 

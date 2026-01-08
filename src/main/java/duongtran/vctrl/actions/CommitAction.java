@@ -55,15 +55,12 @@ public class CommitAction {
      * If an error occurs during the process, an {@link IOException} is thrown with
      * a descriptive message and the underlying exception as its cause.
      *
+     * @param message the commit message
      * @throws IOException if there is an error during the commit process, such as
      *                     issues with reading files, hashing, or storing data.
      */
-    public Commit execute() throws IOException {
+    public Commit execute(String message) throws IOException {
         try {
-//        System.out.println("Enter the commit messages:");
-//        String message = getCommitMsg();
-            // TODO: get commit message from terminal
-            String message = "Dummy commit message";
             return saveCommit(null, message);
         } catch (IOException | NoSuchAlgorithmException e) {
             throw new IOException("Failed to commit changes", e);

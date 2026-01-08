@@ -98,7 +98,7 @@ public class CommitActionTest {
 
             // Execute: commit
             commitAction = new CommitAction();
-            Commit savedCommit = commitAction.execute();
+            Commit savedCommit = commitAction.execute("Dummy commit message");
 
             // Load the saved commit from the disk
             Refs refs = new Refs();
