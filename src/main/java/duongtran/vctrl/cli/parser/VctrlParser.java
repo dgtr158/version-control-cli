@@ -71,7 +71,8 @@ void init_cmd() throws ParseException {/*@bgen(jjtree) InitCommand */
 jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
 if (path != null) {
-            jjtn000.jjtSetValue(path.image);
+            String p = path.image;
+            jjtn000.jjtSetValue(p);
         }
     } finally {
 if (jjtc000) {

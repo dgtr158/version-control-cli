@@ -15,13 +15,16 @@ public class InitAction {
             pathName = DirectoryNames.WORKING_DIRECTORY;
         }
 
-        // Initialize
-        // TODO: uncomment after complete storing part
+        // Initialize workspace and database
         Workspace.initialize(pathName);
         Database.initialize();
 
         // Define .vctrl directory
         File rootDir = new File(pathName, DirectoryNames.ROOT_DIR_NAME);
+        if (rootDir.exists()) {
+            System.out.println(MessageFormat.format("{0} directory is already existed", DirectoryNames.ROOT_DIR_NAME));
+            return;
+        }
 
         // Define subdirectories inside .vctrl directory
         File objectsDir = new File(rootDir, DirectoryNames.OBJECTS);

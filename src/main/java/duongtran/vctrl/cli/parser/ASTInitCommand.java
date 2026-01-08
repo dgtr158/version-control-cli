@@ -20,4 +20,4 @@ class ASTInitCommand extends SimpleNode {
     visitor.visit(this, data);
   }
 }
-/* JavaCC - OriginalChecksum=d7290218b2af20b9c05385470d5a9f10 (do not edit this line) */
+/* JavaCC - OriginalChecksum=cc6bf643340586ce1fb9503b558b4774 (do not edit this line) */

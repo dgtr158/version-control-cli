@@ -4,6 +4,8 @@ options {
     VISITOR = true;
     NODE_DEFAULT_VOID = true;
     JDK_VERSION = "1.11";
+    JAVA_UNICODE_ESCAPE = false;
+
     OUTPUT_DIRECTORY = "src/main/java/duongtran/vctrl/cli/parser";
     JJTREE_OUTPUT_DIRECTORY = "src/main/java/duongtran/vctrl/cli/parser";
 }
@@ -40,7 +42,7 @@ TOKEN :
 TOKEN :
 {
     <STRING_LITERAL: "\"" (~["\""])* "\"">
-  | <PATH: (["a"-"z","A"-"Z","0"-"9","/","_",".","-"])+ >
+    | <PATH: (~[" ", "\t", "\n", "\r"])+ >
 }
 
 /* ====== ENTRY ====== */

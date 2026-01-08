@@ -92,8 +92,8 @@ public class RevListTest {
         testFile32 = thirdDir.resolve("file32.txt");
         testFile41 = fourthDir.resolve("file41.txt");
         testFile42 = fourthDir.resolve("file42.txt");
-        testFile51 = fourthDir.resolve("file51.txt");
-        testFile52 = fourthDir.resolve("file52.txt");
+        testFile51 = fifthDir.resolve("file51.txt");
+        testFile52 = fifthDir.resolve("file52.txt");
 
     }
 

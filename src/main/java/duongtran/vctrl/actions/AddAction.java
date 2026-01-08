@@ -2,6 +2,9 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.Index;
+import duongtran.vctrl.reportchanges.Status;
+import duongtran.vctrl.reportchanges.StatusEntry;
+import duongtran.vctrl.reportchanges.StatusType;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Blob;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -12,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.NavigableMap;
 
 /**
  * Represents the action of adding files or directories to an index within the
@@ -36,6 +40,31 @@ public class AddAction {
         this.workspace = Workspace.getInstance();
         this.database = Database.getInstance();
         this.normalizedVctrl = workspace.getVctrlPath().toAbsolutePath().normalize();
+    }
+
+    public Index execute() {
+        Index index = null;
+        StatusAction statusAction = new StatusAction();
+        try {
+            Status status = statusAction.execute();
+            NavigableMap<Path, StatusEntry> untrackedEntries = status.get(StatusType.UNTRACKED);
+
+            if (Files.exists(Workspace.getInstance().getVctrlPath().resolve(DirectoryNames.INDEX))) {
+                index = Index.loadFromDisk();
+            } else {
+                index = new Index();
+            }
+
+            // Add untracked files into index
+            for (Path path : untrackedEntries.keySet()) {
+                execute(path);
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to write index file: {}\n", e.getMessage());
+        }
+
+        return index;
     }
 
     /**

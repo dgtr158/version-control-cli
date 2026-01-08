@@ -23,6 +23,13 @@
             <version>1.4.11</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/javacc/javacc -->
+        <dependency>
+            <groupId>javacc</groupId>
+            <artifactId>javacc</artifactId>
+            <version>4.1</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -46,5 +53,42 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>javacc-maven-plugin</artifactId>
+                <version>2.6</version>
+
+                <executions>
+                    <execution>
+                        <id>javacc</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>javacc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <!-- Where .jjt files live -->
+<!--                    <sourceDirectory>${project.basedir}/src/main/javacc</sourceDirectory>-->
+
+                    <!-- Generated Java output -->
+<!--                    <outputDirectory>-->
+<!--                        ${project.build.directory}/generated-sources/javacc-->
+<!--                    </outputDirectory>-->
+
+                    <!-- Optional but useful -->
+                    <lookAhead>1</lookAhead>
+                    <choiceAmbiguityCheck>2</choiceAmbiguityCheck>
+                    <forceLaCheck>false</forceLaCheck>
+                </configuration>
+
+            </plugin>
+        </plugins>
+    </build>
+
 
 </project>

@@ -4,6 +4,7 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.AddAction;
 import duongtran.vctrl.actions.InitAction;
 import duongtran.vctrl.cli.parser.*;
+import duongtran.vctrl.utils.DirectoryNames;
 
 import java.nio.file.Path;
 
@@ -18,9 +19,14 @@ public class CommandVisitor implements VctrlParserVisitor {
 
     @Override
     public Object visit(ASTAddCommand node, Object data) {
+        AddAction addAction = new AddAction();
         String parsed = (String) node.jjtGetValue();
-        Path path = Workspace.getInstance().getRootPath().resolve(parsed);
-        new AddAction().execute(path);
+        if (parsed.equals(DirectoryNames.ADD_ALL_FILES)) {
+            addAction.execute();
+        } else {
+            Path path = Workspace.getInstance().getRootPath().resolve(parsed);
+            addAction.execute(path);
+        }
         return null;
     }
 

@@ -13,5 +13,6 @@ public class DirectoryNames {
     public static final String HEAD = "HEAD";
 
     public static final String DEFAULT_BRANCH_NAME = "master";
+    public static final String ADD_ALL_FILES = ".";
 
 }
