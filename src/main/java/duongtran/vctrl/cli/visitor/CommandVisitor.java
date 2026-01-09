@@ -4,11 +4,14 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.AddAction;
 import duongtran.vctrl.actions.CommitAction;
 import duongtran.vctrl.actions.InitAction;
+import duongtran.vctrl.actions.StatusAction;
 import duongtran.vctrl.cli.parser.*;
+import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 public class CommandVisitor implements VctrlParserVisitor {
@@ -45,6 +48,19 @@ public class CommandVisitor implements VctrlParserVisitor {
             log.error("Cannot commit with message: {}", ex.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public Object visit(ASTStatusCommand node, Object data) {
+       StatusAction statusAction = new StatusAction();
+       try {
+           Status status = statusAction.execute();
+           statusAction.displayStatus(status);
+       } catch (Exception ex) {
+           log.error("Failed to execute status command: {}", ex.getMessage());
+       }
+
+       return null;
     }
 
     @Override

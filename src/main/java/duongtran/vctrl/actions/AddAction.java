@@ -61,6 +61,7 @@ public class AddAction {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Failed to write index file: {}\n", e.getMessage());
         }
 
@@ -89,6 +90,7 @@ public class AddAction {
             index.write();
 
         } catch (IOException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
             log.error("Failed to write index file: {}\n", e.getMessage());
         }
 

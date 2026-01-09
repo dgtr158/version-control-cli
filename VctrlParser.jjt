@@ -53,6 +53,7 @@ ASTCommand command() #Command:
         init_cmd()
       | add_cmd()
       | commit_cmd()
+      | status_cmd()
     )
     {
         return jjtThis;
@@ -101,5 +102,11 @@ void commit_cmd() #CommitCommand :
         }
         jjtThis.jjtSetValue(m);
     }
+}
+
+void status_cmd() #StatusCommand :
+{}
+{
+    <K_STATUS>
 }
 

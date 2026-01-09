@@ -4,11 +4,13 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.reportchanges.*;
 import duongtran.vctrl.storage.DataEntry;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;
 import duongtran.vctrl.storage.objects.Blob;
+import duongtran.vctrl.utils.AnsiColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,9 +18,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.sql.SQLOutput;
+import java.util.*;
 
 /**
  * The {@code StatusAction} class provides functionality to analyze the current state
@@ -32,6 +33,30 @@ public class StatusAction {
 
     private final Path rootPath;
     private final Inspector inspector;
+
+    class StatusDisplayItem {
+        private final String path;
+        private final StatusFileType type;
+
+        public StatusDisplayItem(String path, StatusFileType type) {
+            this.path = path;
+            this.type = type;
+        }
+
+        public String getPath() {
+            return this.path;
+        }
+
+        public StatusFileType getType() {
+            return this.type;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("  %s:    %s", this.type.toString(), this.path);
+        }
+
+    }
 
     public StatusAction() {
         Workspace workspace = Workspace.getInstance();
@@ -70,6 +95,27 @@ public class StatusAction {
         }
 
         return status;
+    }
+
+    public void displayStatus(Status status) {
+        // Display status results
+        Refs refs = new Refs();
+        String branch = refs.getCurrentBranch();
+
+        System.out.println("On branch " + branch);
+        System.out.println();
+
+        // Nothing changed
+        if (status.isEmpty()) {
+            System.out.println("nothing to commit, working tree clean");
+            return;
+        }
+
+        // Display the changes
+        displayChangesToBeCommit(status);
+        displayChangesNotStagedCommit(status);
+        displayUntrackedFiles(status);
+
     }
 
     /**
@@ -203,6 +249,90 @@ public class StatusAction {
                     new StatusEntry(indexEntryPath, StatusType.INDEX_MODIFIED)
             );
             case CLEAN -> { /* no-op */ }
+        }
+
+    }
+
+    // Compare index with HEAD
+    private void displayChangesToBeCommit(Status status) {
+        List<StatusDisplayItem> items = new ArrayList<>();
+
+        // Newly added files
+        for(Path path : status.get(StatusType.ADDED).keySet()) {
+            items.add(new StatusDisplayItem(
+                    rootPath.relativize(path).toString()
+                    ,StatusFileType.ADD
+            ));
+        }
+
+        // Modified files
+        for(Path path : status.get(StatusType.INDEX_MODIFIED).keySet()) {
+            items.add(new StatusDisplayItem(
+                    rootPath.relativize(path).toString()
+                    ,StatusFileType.MODIFIED
+            ));
+        }
+
+        // Deleted files
+        for(Path path : status.get(StatusType.INDEX_DELETED).keySet()) {
+            items.add(new StatusDisplayItem(
+                    rootPath.relativize(path).toString()
+                    ,StatusFileType.DELETED
+            ));
+        }
+
+        // Display the result
+        if (items.isEmpty()) return;
+        System.out.println("Change to be commited:");
+        for (StatusDisplayItem item : items) {
+            System.out.println(AnsiColor.green(item.toString()));
+        }
+    }
+
+
+    private void displayChangesNotStagedCommit(Status status) {
+        List<StatusDisplayItem> items = new ArrayList<>();
+
+        // Newly added files
+        for(Path path : status.get(StatusType.WORKSPACE_MODIFIED).keySet()) {
+            items.add(new StatusDisplayItem(
+                    rootPath.relativize(path).toString()
+                    ,StatusFileType.MODIFIED
+            ));
+        }
+
+        // Deleted files
+        for(Path path : status.get(StatusType.WORKSPACE_DELETED).keySet()) {
+            items.add(new StatusDisplayItem(
+                    rootPath.relativize(path).toString()
+                    ,StatusFileType.DELETED
+            ));
+        }
+
+        // Display the result
+        if (items.isEmpty()) return;
+        System.out.println("Changes not staged for commit:");
+        for (StatusDisplayItem item : items) {
+            System.out.println(AnsiColor.red(item.toString()));
+        }
+    }
+
+    public void displayUntrackedFiles(Status status) {
+        List<StatusDisplayItem> items = new ArrayList<>();
+
+        // Newly added files
+        for(Path path : status.get(StatusType.UNTRACKED).keySet()) {
+            items.add(new StatusDisplayItem(
+                    rootPath.relativize(path).toString()
+                    ,StatusFileType.UNTRACKED
+            ));
+        }
+
+        // Display the result
+        if (items.isEmpty()) return;
+        System.out.println("Untracked files:");
+        for (StatusDisplayItem item : items) {
+            System.out.println(AnsiColor.red("  " + item.path));
         }
 
     }

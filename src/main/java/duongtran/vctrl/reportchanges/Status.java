@@ -42,6 +42,14 @@ public class Status {
         return entries.get(type).isEmpty();
     }
 
+    public boolean isEmpty() {
+        for (StatusType type : StatusType.values()) {
+            if (!isEmpty(type)) return false;
+        }
+
+        return true;
+    }
+
     public EnumMap<StatusType, NavigableMap<Path, StatusEntry>> getAll() {
         return entries;
     }

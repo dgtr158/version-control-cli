@@ -1,10 +1,13 @@
 package duongtran.vctrl.actions;
 
 import duongtran.vctrl.Workspace;
+import duongtran.vctrl.references.RefHead;
+import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.utils.DirectoryNames;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -39,10 +42,13 @@ public class InitAction {
             );
         } else {
             System.out.println(MessageFormat.format("{0} directory is already existed", DirectoryNames.ROOT_DIR_NAME));
+            return;
         }
 
         // Set the root path of work space
         Path rootPath = Paths.get(pathName);
-        Workspace.getInstance().setRootPath(rootPath);
+        Workspace workspace = Workspace.getInstance();
+        workspace.setRootPath(rootPath);
+
     }
 }

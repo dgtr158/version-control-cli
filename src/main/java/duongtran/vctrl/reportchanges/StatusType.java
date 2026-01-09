@@ -6,11 +6,11 @@ import java.util.stream.Collectors;
 
 public enum StatusType {
     WORKSPACE_MODIFIED("workspace_modified"), // IN the workspace and IN the index, but the content is changed
-    INDEX_MODIFIED("index_modified"), // IN the workspace and IN the index, but the content is changed
+    INDEX_MODIFIED("index_modified"), // IN the HEAD and IN the index, but the content is changed
     STAGED("staged"),
     UNTRACKED("untracked"), // IN the workspace but NOT IN the index
     WORKSPACE_DELETED("workspace_deleted"), // NOT IN the workspace but IN the index
-    INDEX_DELETED("index_deleted"), // NOT IN the workspace but IN the index
+    INDEX_DELETED("index_deleted"), // NOT IN the INDEX but IN the HEAD
     ADDED("added"), // IN the index but NOT IN HEAD
     ;
 

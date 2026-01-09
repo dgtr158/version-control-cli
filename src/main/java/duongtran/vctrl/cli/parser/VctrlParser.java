@@ -25,6 +25,10 @@ public class VctrlParser/*@bgen(jjtree)*/implements VctrlParserTreeConstants, Vc
         commit_cmd();
         break;
         }
+      case K_STATUS:{
+        status_cmd();
+        break;
+        }
       default:
         jj_la1[0] = jj_gen;
         jj_consume_token(-1);
@@ -123,6 +127,19 @@ if (jjtc000) {
     }
 }
 
+  final public void status_cmd() throws ParseException {/*@bgen(jjtree) StatusCommand */
+  ASTStatusCommand jjtn000 = new ASTStatusCommand(JJTSTATUSCOMMAND);
+  boolean jjtc000 = true;
+  jjtree.openNodeScope(jjtn000);
+    try {
+      jj_consume_token(K_STATUS);
+    } finally {
+if (jjtc000) {
+        jjtree.closeNodeScope(jjtn000, true);
+      }
+    }
+}
+
   /** Generated Token Manager. */
   public VctrlParserTokenManager token_source;
   SimpleCharStream jj_input_stream;
@@ -138,7 +155,7 @@ if (jjtc000) {
 	   jj_la1_init_0();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0x1a0,0x8000,};
+	   jj_la1_0 = new int[] {0x1e0,0x8000,};
 	}
 
   /** Constructor with InputStream. */
