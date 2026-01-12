@@ -29,9 +29,17 @@ public interface VctrlParserConstants {
   /** RegularExpression Id. */
   int K_M = 13;
   /** RegularExpression Id. */
-  int STRING_LITERAL = 14;
+  int ONELINE = 14;
   /** RegularExpression Id. */
-  int PATH = 15;
+  int PRETTY = 15;
+  /** RegularExpression Id. */
+  int FORMAT = 16;
+  /** RegularExpression Id. */
+  int STRING_LITERAL = 17;
+  /** RegularExpression Id. */
+  int PATH = 18;
+  /** RegularExpression Id. */
+  int FORMAT_STR = 19;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -52,8 +60,13 @@ public interface VctrlParserConstants {
     "\"checkout\"",
     "\"merge\"",
     "\"-m\"",
+    "\"--oneline\"",
+    "\"--pretty\"",
+    "\"--format\"",
     "<STRING_LITERAL>",
     "<PATH>",
+    "<FORMAT_STR>",
+    "\"=\"",
   };
 
 }

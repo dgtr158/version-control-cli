@@ -8,6 +8,7 @@ public interface VctrlParserTreeConstants
   public int JJTADDCOMMAND = 2;
   public int JJTCOMMITCOMMAND = 3;
   public int JJTSTATUSCOMMAND = 4;
+  public int JJTLOGCOMMAND = 5;
 
 
   public String[] jjtNodeName = {
@@ -16,6 +17,7 @@ public interface VctrlParserTreeConstants
     "AddCommand",
     "CommitCommand",
     "StatusCommand",
+    "LogCommand",
   };
 }
-/* JavaCC - OriginalChecksum=417ac875d58f6930feafd87615d983b6 (do not edit this line) */
+/* JavaCC - OriginalChecksum=a073fd2e354a55c1d537e7f35c8418a3 (do not edit this line) */

@@ -24,5 +24,8 @@ public class VctrlParserDefaultVisitor implements VctrlParserVisitor{
   public Object visit(ASTStatusCommand node, Object data){
     return defaultVisit(node, data);
   }
+  public Object visit(ASTLogCommand node, Object data){
+    return defaultVisit(node, data);
+  }
 }
-/* JavaCC - OriginalChecksum=6d48bc33edbc5b307efa03a3f1a1cc4c (do not edit this line) */
+/* JavaCC - OriginalChecksum=84b5c2694ecc7c9418bd9701356758ba (do not edit this line) */

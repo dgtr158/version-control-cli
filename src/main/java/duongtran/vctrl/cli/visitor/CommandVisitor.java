@@ -1,10 +1,7 @@
 package duongtran.vctrl.cli.visitor;
 
 import duongtran.vctrl.Workspace;
-import duongtran.vctrl.actions.AddAction;
-import duongtran.vctrl.actions.CommitAction;
-import duongtran.vctrl.actions.InitAction;
-import duongtran.vctrl.actions.StatusAction;
+import duongtran.vctrl.actions.*;
 import duongtran.vctrl.cli.parser.*;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -45,7 +42,7 @@ public class CommandVisitor implements VctrlParserVisitor {
         try {
             commitAction.execute(commitMsg);
         } catch (Exception ex) {
-            log.error("Cannot commit with message: {}", ex.getMessage());
+            System.out.println(ex.getMessage());
         }
         return null;
     }
@@ -57,10 +54,22 @@ public class CommandVisitor implements VctrlParserVisitor {
            Status status = statusAction.execute();
            statusAction.displayStatus(status);
        } catch (Exception ex) {
-           log.error("Failed to execute status command: {}", ex.getMessage());
+           System.out.println(ex.getMessage());
        }
 
        return null;
+    }
+
+    @Override
+    public Object visit(ASTLogCommand node, Object data) {
+        LogAction logAction = new LogAction();
+        try {
+            logAction.execute(null);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+
+        return null;
     }
 
     @Override

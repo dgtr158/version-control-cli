@@ -7,8 +7,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -17,6 +22,8 @@ import java.util.Objects;
  * a parent commit.
  */
 public class Commit extends ObjectStorage {
+
+    public static final String COMMIT_TIME_FORMAT = "EEE MMM d HH:mm:ss yyyy Z";
 
     private final CommitAuthor author;
     private final ObjectID treeOid;
@@ -66,7 +73,7 @@ public class Commit extends ObjectStorage {
      *
      * @param oid the identifier of the commit object to be loaded
      * @return the {@link Commit} object associated with the specified {@code ObjectID}
-     * @throws IOException if there is an I/O error while retrieving the commit object
+     * @throws IOException              if there is an I/O error while retrieving the commit object
      * @throws NoSuchAlgorithmException if the required algorithm for object retrieval is not available
      */
     public static Commit loadCommit(ObjectID oid) throws IOException, NoSuchAlgorithmException {
@@ -76,7 +83,7 @@ public class Commit extends ObjectStorage {
 
     /**
      * Constructs a {@code Commit} object by parsing its serialized byte array representation.
-     *
+     * <p>
      * The input byte array is expected to contain the serialized representation of a commit
      * object, including its headers and message. The method validates the necessary fields,
      * such as the tree object ID and author, and throws an exception if they are missing or invalid.
@@ -133,6 +140,27 @@ public class Commit extends ObjectStorage {
                 new ObjectID(treeOid),
                 message,
                 parentIds
+        );
+    }
+
+    /**
+     * Formats the given {@code Instant} into a string representation based on a predefined format.
+     * The method uses the system's default time zone and a locale of English.
+     *
+     * @param instant the {@link Instant} to be formatted; must not be null.
+     * @return a formatted time string representing the given {@code Instant}.
+     */
+    public static String formatTime(Instant instant) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(
+                COMMIT_TIME_FORMAT
+                , Locale.ENGLISH
+        );
+
+        return fmt.format(
+                ZonedDateTime.ofInstant(
+                        instant
+                        , ZoneId.systemDefault()
+                )
         );
     }
 

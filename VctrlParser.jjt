@@ -35,7 +35,11 @@ TOKEN :
     | <K_BRANCH: "branch">
     | <K_CHECKOUT: "checkout">
     | <K_MERGE: "merge">
+
     | <K_M: "-m">
+    | <ONELINE: "--oneline">
+    | <PRETTY: "--pretty">
+    | <FORMAT: "--format">
 }
 
 /* Path / identifier */
@@ -43,6 +47,7 @@ TOKEN :
 {
     <STRING_LITERAL: "\"" (~["\""])* "\"">
     | <PATH: (~[" ", "\t", "\n", "\r"])+ >
+    | <FORMAT_STR: "\"" (~["\""])* "\"" | (~[" ", "\t", "\n", "\r"])+ >
 }
 
 /* ====== ENTRY ====== */
@@ -54,6 +59,7 @@ ASTCommand command() #Command:
       | add_cmd()
       | commit_cmd()
       | status_cmd()
+      | log_cmd()
     )
     {
         return jjtThis;
@@ -109,4 +115,37 @@ void status_cmd() #StatusCommand :
 {
     <K_STATUS>
 }
+
+void log_cmd() #LogCommand :
+{
+    Token opt = null;
+    Token fmt = null;
+}
+{
+    <K_LOG>
+    (
+        <ONELINE>
+      | ( (<PRETTY> | <FORMAT>) "=" fmt=<FORMAT_STR> )
+    )?
+    {
+        LogCommandData data = new LogCommandData();
+
+        if (opt != null && opt.image.equals("--oneline")) {
+            data.oneline = true;
+        }
+
+        data.format = null;
+        if (fmt != null) {
+            String m = msg.image;
+            if (m.startsWith("\"") && m.endsWith("\"")) {
+                m = m.substring(1, m.length() - 1);
+            }
+            data.format = m;
+        }
+
+        jjtThis.jjtSetValue(data);
+    }
+}
+
+
 
