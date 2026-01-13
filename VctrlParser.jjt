@@ -164,20 +164,35 @@ void log_cmd() #LogCommand :
 {
     Token opt = null;
     Token fmt = null;
+    java.util.List branches = new java.util.ArrayList();
+    Token branch;
 }
 {
     <K_LOG>
+
+    /* -------- options -------- */
     (
-        <ONELINE>
+        opt = <ONELINE>
       | ( (<PRETTY> | <FORMAT>) <EQUAL> fmt=<FORMAT_STR> )
     )?
+
+    /* -------- branches -------- */
+     (
+        branch = <PATH>
+        {
+            branches.add(branch.image);
+        }
+    )*
+
     {
         LogCommandData data = new LogCommandData();
 
+        // OneLine format
         if (opt != null && opt.image.equals("--oneline")) {
             data.oneline = true;
         }
 
+        // Data format
         data.format = null;
         if (fmt != null) {
             String m = fmt.image;
@@ -186,6 +201,9 @@ void log_cmd() #LogCommand :
             }
             data.format = m;
         }
+
+        // List of branches
+        data.branches = branches;
 
         jjtThis.jjtSetValue(data);
     }

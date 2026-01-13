@@ -20,4 +20,4 @@ class ASTCheckoutCommand extends SimpleNode {
     visitor.visit(this, data);
   }
 }
-/* JavaCC - OriginalChecksum=d9593dac7c6c03f7577c73ac872f4867 (do not edit this line) */
+/* JavaCC - OriginalChecksum=0a2d8ee6aaa37bd754af3b9971ecf378 (do not edit this line) */

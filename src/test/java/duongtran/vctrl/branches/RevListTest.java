@@ -277,8 +277,8 @@ public class RevListTest {
 
             // Assert the revision list
             Refs refs = new Refs();
-            String currentBranchName = refs.getCurrentBranch();
-            RevList revList = new RevList(refs, new ArrayList<>(List.of(currentBranchName)));
+            List<String> branches = branchAction.listBranches();
+            RevList revList = new RevList(refs, branches);
             Iterator<Commit> commitIterator = revList.iterator();
 
             assertTrue(commitIterator.hasNext());

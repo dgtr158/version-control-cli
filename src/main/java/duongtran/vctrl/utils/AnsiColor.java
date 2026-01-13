@@ -23,4 +23,8 @@ public class AnsiColor {
         return YELLOW + s + RESET;
     }
 
+    public static String cyan(String s) {
+        return CYAN + s + RESET;
+    }
+
 }

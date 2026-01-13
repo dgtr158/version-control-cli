@@ -251,6 +251,8 @@ if (jjtc000) {
     boolean jjtc000 = true;
     jjtree.openNodeScope(jjtn000);Token opt = null;
     Token fmt = null;
+    java.util.List branches = new java.util.ArrayList();
+    Token branch;
     try {
       jj_consume_token(K_LOG);
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -259,7 +261,7 @@ if (jjtc000) {
       case FORMAT:{
         switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
         case ONELINE:{
-          jj_consume_token(ONELINE);
+          opt = jj_consume_token(ONELINE);
           break;
           }
         case PRETTY:
@@ -293,14 +295,30 @@ if (jjtc000) {
         jj_la1[8] = jj_gen;
         ;
       }
+      label_1:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case PATH:{
+          ;
+          break;
+          }
+        default:
+          jj_la1[9] = jj_gen;
+          break label_1;
+        }
+        branch = jj_consume_token(PATH);
+branches.add(branch.image);
+      }
 jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
 LogCommandData data = new LogCommandData();
 
+        // OneLine format
         if (opt != null && opt.image.equals("--oneline")) {
             data.oneline = true;
         }
 
+        // Data format
         data.format = null;
         if (fmt != null) {
             String m = fmt.image;
@@ -309,6 +327,9 @@ LogCommandData data = new LogCommandData();
             }
             data.format = m;
         }
+
+        // List of branches
+        data.branches = branches;
 
         jjtn000.jjtSetValue(data);
     } finally {
@@ -327,13 +348,13 @@ if (jjtc000) {
   public Token jj_nt;
   private int jj_ntk;
   private int jj_gen;
-  final private int[] jj_la1 = new int[9];
+  final private int[] jj_la1 = new int[10];
   static private int[] jj_la1_0;
   static {
 	   jj_la1_init_0();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0xfe0,0x200000,0x204000,0x204000,0x208000,0x208000,0x60000,0x70000,0x70000,};
+	   jj_la1_0 = new int[] {0xfe0,0x200000,0x204000,0x204000,0x208000,0x208000,0x60000,0x70000,0x70000,0x200000,};
 	}
 
   /** Constructor with InputStream. */
@@ -347,7 +368,7 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 9; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -362,7 +383,7 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 9; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
   }
 
   /** Constructor. */
@@ -372,7 +393,7 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 9; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -391,7 +412,7 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 9; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
   }
 
   /** Constructor with generated Token Manager. */
@@ -400,7 +421,7 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 9; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -410,7 +431,7 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 9; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
   }
 
   private Token jj_consume_token(int kind) throws ParseException {
@@ -466,7 +487,7 @@ if (jjtc000) {
 	   la1tokens[jj_kind] = true;
 	   jj_kind = -1;
 	 }
-	 for (int i = 0; i < 9; i++) {
+	 for (int i = 0; i < 10; i++) {
 	   if (jj_la1[i] == jj_gen) {
 		 for (int j = 0; j < 32; j++) {
 		   if ((jj_la1_0[i] & (1<<j)) != 0) {

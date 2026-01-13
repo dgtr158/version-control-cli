@@ -5,6 +5,7 @@ import duongtran.vctrl.actions.*;
 import duongtran.vctrl.cli.visitor.args.BranchCommandData;
 import duongtran.vctrl.cli.parser.*;
 import duongtran.vctrl.cli.visitor.args.CheckoutCommandData;
+import duongtran.vctrl.cli.visitor.args.LogCommandData;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
@@ -64,10 +65,12 @@ public class CommandVisitor implements VctrlParserVisitor {
 
     @Override
     public Object visit(ASTLogCommand node, Object data) {
+        LogCommandData cmdArgs = (LogCommandData) node.jjtGetValue();
         LogAction logAction = new LogAction();
         try {
-            logAction.execute(null);
+            logAction.execute(cmdArgs);
         } catch (Exception ex) {
+            ex.printStackTrace();
             System.out.println(ex.getMessage());
         }
 
