@@ -20,4 +20,4 @@ class ASTCommitCommand extends SimpleNode {
     visitor.visit(this, data);
   }
 }
-/* JavaCC - OriginalChecksum=037b2f151e1818b8d2ab26f609dc0588 (do not edit this line) */
+/* JavaCC - OriginalChecksum=0ed515accf2c497998885c70a0c9fa37 (do not edit this line) */

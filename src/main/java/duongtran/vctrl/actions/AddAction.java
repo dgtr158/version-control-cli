@@ -4,6 +4,7 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.reportchanges.StatusEntry;
+import duongtran.vctrl.reportchanges.StatusFileType;
 import duongtran.vctrl.reportchanges.StatusType;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Blob;
@@ -55,8 +56,16 @@ public class AddAction {
                 index = new Index();
             }
 
-            // Add untracked files into index
+            // Add all changes that are not staged for commit and untracked files
             for (Path path : untrackedEntries.keySet()) {
+                execute(path);
+            }
+            // modified files
+            for(Path path : status.get(StatusType.WORKSPACE_MODIFIED).keySet()) {
+                execute(path);
+            }
+            // Deleted files
+            for(Path path : status.get(StatusType.WORKSPACE_DELETED).keySet()) {
                 execute(path);
             }
 

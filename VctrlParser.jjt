@@ -35,11 +35,15 @@ TOKEN :
     | <K_BRANCH: "branch">
     | <K_CHECKOUT: "checkout">
     | <K_MERGE: "merge">
+    | <K_M: "-m"> // commit message
+    | <K_D: "-d"> // remove branch
+    | <K_B: "-b"> // create new branch
 
-    | <K_M: "-m">
     | <ONELINE: "--oneline">
     | <PRETTY: "--pretty">
     | <FORMAT: "--format">
+
+    | <EQUAL: "=">
 }
 
 /* Path / identifier */
@@ -59,6 +63,8 @@ ASTCommand command() #Command:
       | add_cmd()
       | commit_cmd()
       | status_cmd()
+      | branch_cmd()
+      | checkout_cmd()
       | log_cmd()
     )
     {
@@ -116,6 +122,44 @@ void status_cmd() #StatusCommand :
     <K_STATUS>
 }
 
+void branch_cmd() #BranchCommand :
+{
+    Token name = null; // branch's name
+    boolean delete = false;
+}
+{
+    <K_BRANCH>
+    (
+        <K_D> {delete = true;} name = <PATH>
+        | name = <PATH>
+    )?
+    {
+        BranchCommandData data = new BranchCommandData();
+        data.name = name != null ? name.image : null;
+        data.delete = delete;
+        jjtThis.jjtSetValue(data);
+    }
+}
+
+void checkout_cmd() #CheckoutCommand :
+{
+    Token name = null; // branch name
+    boolean create = false;
+}
+{
+    <K_CHECKOUT>
+    (
+        <K_B> {create = true;} name = <PATH>
+        | name = <PATH>
+    )?
+    {
+        CheckoutCommandData data = new CheckoutCommandData();
+        data.name = name.image;
+        data.create = create;
+        jjtThis.jjtSetValue(data);
+    }
+}
+
 void log_cmd() #LogCommand :
 {
     Token opt = null;
@@ -125,7 +169,7 @@ void log_cmd() #LogCommand :
     <K_LOG>
     (
         <ONELINE>
-      | ( (<PRETTY> | <FORMAT>) "=" fmt=<FORMAT_STR> )
+      | ( (<PRETTY> | <FORMAT>) <EQUAL> fmt=<FORMAT_STR> )
     )?
     {
         LogCommandData data = new LogCommandData();
@@ -136,7 +180,7 @@ void log_cmd() #LogCommand :
 
         data.format = null;
         if (fmt != null) {
-            String m = msg.image;
+            String m = fmt.image;
             if (m.startsWith("\"") && m.endsWith("\"")) {
                 m = m.substring(1, m.length() - 1);
             }

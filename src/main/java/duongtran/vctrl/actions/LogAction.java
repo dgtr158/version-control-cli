@@ -1,7 +1,7 @@
 package duongtran.vctrl.actions;
 
 import duongtran.vctrl.branches.RevList;
-import duongtran.vctrl.cli.LogCommandData;
+import duongtran.vctrl.cli.visitor.args.LogCommandData;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.AnsiColor;

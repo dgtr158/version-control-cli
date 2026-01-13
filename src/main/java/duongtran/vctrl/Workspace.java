@@ -364,7 +364,6 @@ public class Workspace {
                     ? new WindowFileStat(path)
                     : new UnixFileStat(path);
         } catch (IOException e) {
-            log.error("Failed to stat file: {}", path);
             return null;
         }
     }

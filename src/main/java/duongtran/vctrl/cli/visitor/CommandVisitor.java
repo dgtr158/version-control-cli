@@ -2,14 +2,16 @@ package duongtran.vctrl.cli.visitor;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.*;
+import duongtran.vctrl.cli.visitor.args.BranchCommandData;
 import duongtran.vctrl.cli.parser.*;
+import duongtran.vctrl.cli.visitor.args.CheckoutCommandData;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 public class CommandVisitor implements VctrlParserVisitor {
 
@@ -69,6 +71,45 @@ public class CommandVisitor implements VctrlParserVisitor {
             System.out.println(ex.getMessage());
         }
 
+       return null;
+    }
+
+    @Override
+    public Object visit(ASTBranchCommand node, Object data) {
+        BranchCommandData args = (BranchCommandData) node.jjtGetValue();
+        BranchAction branchAction = new BranchAction();
+        try {
+            if (args.name == null) {
+                List<String> branches = branchAction.listBranches();
+                branchAction.displayBranches(branches);
+            } else if (args.delete) {
+                branchAction.deleteBranch(args.name);
+            } else { // Create a new branch
+                branchAction.execute(args.name, 0);
+            }
+
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTCheckoutCommand node, Object data) {
+        CheckoutCommandData args = (CheckoutCommandData) node.jjtGetValue();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+        try {
+            String branchName = args.name;
+            int revision = 0;
+            if (args.create) {
+                branchAction.execute(branchName, revision);
+            }
+            checkoutAction.execute(branchName, revision);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
         return null;
     }
 

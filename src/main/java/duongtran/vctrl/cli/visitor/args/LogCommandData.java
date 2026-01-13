@@ -1,4 +1,4 @@
-package duongtran.vctrl.cli;
+package duongtran.vctrl.cli.visitor.args;
 
 public class LogCommandData {
     public boolean oneline = false;
