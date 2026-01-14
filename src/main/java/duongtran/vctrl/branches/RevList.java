@@ -68,7 +68,7 @@ public class RevList implements Iterable<Commit> {
             }
         }
 
-        public CommitIterator(Refs refs, List<String> branches) {
+        public CommitIterator(Refs refs, List<String> branches) throws VctrlException {
             this.database = Database.getInstance();
             this.branchTable = new HashMap<>();
             this.commitQueue = new PriorityQueue<>(

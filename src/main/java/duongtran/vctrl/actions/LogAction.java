@@ -64,8 +64,8 @@ public class LogAction {
 
         // Get log branches
         List<String> branches;
-        if (cmdArgs != null && cmdArgs.branches != null && !cmdArgs.branches.isEmpty()) {
-            branches = cmdArgs.branches;
+        if (cmdArgs != null && cmdArgs.revSpec.include != null && !cmdArgs.revSpec.include.isEmpty()) {
+            branches = cmdArgs.revSpec.include;
         } else {
             branches = this.branchAction.listBranches();
         }

@@ -15,6 +15,18 @@ package duongtran.vctrl.cli.parser;
 
 @SuppressWarnings("all")
 public class VctrlParser {
+
+    private static String stripQuotes(String s) {
+        if (s == null || s.length() < 2) {
+            return s;
+        }
+        if ((s.startsWith("\"") && s.endsWith("\""))
+         || (s.startsWith("'") && s.endsWith("'"))) {
+            return s.substring(1, s.length() - 1);
+        }
+        return s;
+    }
+
 }
 PARSER_END(VctrlParser)
 
@@ -42,7 +54,9 @@ TOKEN :
     | <ONELINE: "--oneline">
     | <PRETTY: "--pretty">
     | <FORMAT: "--format">
-
+    | <GRAPH: "--graph">
+    | <CARET: "^">
+    | <DOTDOT: "..">
     | <EQUAL: "=">
 }
 
@@ -50,8 +64,8 @@ TOKEN :
 TOKEN :
 {
     <STRING_LITERAL: "\"" (~["\""])* "\"">
-    | <PATH: (~[" ", "\t", "\n", "\r"])+ >
     | <FORMAT_STR: "\"" (~["\""])* "\"" | (~[" ", "\t", "\n", "\r"])+ >
+    | <PATH: (~[" ", "\t", "\n", "\r", "^", "."])+ >
 }
 
 /* ====== ENTRY ====== */
@@ -162,52 +176,63 @@ void checkout_cmd() #CheckoutCommand :
 
 void log_cmd() #LogCommand :
 {
-    Token opt = null;
+
+    LogRevisionSpec revSpec = new LogRevisionSpec();
+
+    boolean oneline = false;
+    boolean graph = false;
+    String format = null;
+
     Token fmt = null;
-    java.util.List branches = new java.util.ArrayList();
-    Token branch;
+    Token t1, t2;
 }
 {
     <K_LOG>
 
     /* -------- options -------- */
     (
-        opt = <ONELINE>
-      | ( (<PRETTY> | <FORMAT>) <EQUAL> fmt=<FORMAT_STR> )
-    )?
+        <ONELINE>     { oneline = true; }
+      | <GRAPH>       { graph = true; }
+      | ( (<PRETTY> | <FORMAT>) <EQUAL> fmt=<FORMAT_STR>
+            { format = stripQuotes(fmt.image); }
+        )
+    )*
 
-    /* -------- branches -------- */
-     (
-        branch = <PATH>
+    /* -------- revision specs -------- */
+    (
+        /* ^branch */
+        <CARET> t1=<PATH>
         {
-            branches.add(branch.image);
+            revSpec.exclude.add(t1.image);
+        }
+
+      | LOOKAHEAD( <PATH> <DOTDOT> )
+        /* A..B */
+        t1=<PATH> <DOTDOT> t2=<PATH>
+        {
+            revSpec.exclude.add(t1.image);
+            revSpec.include.add(t2.image);
+        }
+
+      | LOOKAHEAD( <PATH> )
+        /* normal branch */
+        t1=<PATH>
+        {
+            revSpec.include.add(t1.image);
         }
     )*
 
     {
         LogCommandData data = new LogCommandData();
-
-        // OneLine format
-        if (opt != null && opt.image.equals("--oneline")) {
-            data.oneline = true;
-        }
-
-        // Data format
-        data.format = null;
-        if (fmt != null) {
-            String m = fmt.image;
-            if (m.startsWith("\"") && m.endsWith("\"")) {
-                m = m.substring(1, m.length() - 1);
-            }
-            data.format = m;
-        }
-
-        // List of branches
-        data.branches = branches;
+        data.oneline = oneline;
+        data.graph = graph;
+        data.format = format;
+        data.revSpec = revSpec;
 
         jjtThis.jjtSetValue(data);
     }
 }
+
 
 
 

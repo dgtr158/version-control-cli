@@ -5,10 +5,21 @@ package duongtran.vctrl.cli.parser;
 import duongtran.vctrl.cli.visitor.args.BranchCommandData;
 import duongtran.vctrl.cli.visitor.args.CheckoutCommandData;
 import duongtran.vctrl.cli.visitor.args.LogCommandData;
+import duongtran.vctrl.cli.visitor.args.LogRevisionSpec;
 
 @SuppressWarnings("all")
 public class VctrlParser/*@bgen(jjtree)*/implements VctrlParserTreeConstants, VctrlParserConstants {/*@bgen(jjtree)*/
   protected JJTVctrlParserState jjtree = new JJTVctrlParserState();
+    private static String stripQuotes(String s) {
+        if (s == null || s.length() < 2) {
+            return s;
+        }
+        if ((s.startsWith("\"") && s.endsWith("\""))
+         || (s.startsWith("'") && s.endsWith("'"))) {
+            return s.substring(1, s.length() - 1);
+        }
+        return s;
+    }
 
 /* ====== ENTRY ====== */
   final public ASTCommand command() throws ParseException {/*@bgen(jjtree) Command */
@@ -249,19 +260,40 @@ if (jjtc000) {
   final public void log_cmd() throws ParseException {/*@bgen(jjtree) LogCommand */
     ASTLogCommand jjtn000 = new ASTLogCommand(JJTLOGCOMMAND);
     boolean jjtc000 = true;
-    jjtree.openNodeScope(jjtn000);Token opt = null;
+    jjtree.openNodeScope(jjtn000);
+      LogRevisionSpec revSpec = new LogRevisionSpec();
+
+    boolean oneline = false;
+    boolean graph = false;
+    String format = null;
+
     Token fmt = null;
-    java.util.List branches = new java.util.ArrayList();
-    Token branch;
+    Token t1, t2;
     try {
       jj_consume_token(K_LOG);
-      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case ONELINE:
-      case PRETTY:
-      case FORMAT:{
+      label_1:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case ONELINE:
+        case PRETTY:
+        case FORMAT:
+        case GRAPH:{
+          ;
+          break;
+          }
+        default:
+          jj_la1[6] = jj_gen;
+          break label_1;
+        }
         switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
         case ONELINE:{
-          opt = jj_consume_token(ONELINE);
+          jj_consume_token(ONELINE);
+oneline = true;
+          break;
+          }
+        case GRAPH:{
+          jj_consume_token(GRAPH);
+graph = true;
           break;
           }
         case PRETTY:
@@ -276,60 +308,66 @@ if (jjtc000) {
             break;
             }
           default:
-            jj_la1[6] = jj_gen;
+            jj_la1[7] = jj_gen;
             jj_consume_token(-1);
             throw new ParseException();
           }
           jj_consume_token(EQUAL);
           fmt = jj_consume_token(FORMAT_STR);
+format = stripQuotes(fmt.image);
           break;
           }
         default:
-          jj_la1[7] = jj_gen;
+          jj_la1[8] = jj_gen;
           jj_consume_token(-1);
           throw new ParseException();
         }
-        break;
-        }
-      default:
-        jj_la1[8] = jj_gen;
-        ;
       }
-      label_1:
+      label_2:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case CARET:
         case PATH:{
           ;
           break;
           }
         default:
           jj_la1[9] = jj_gen;
-          break label_1;
+          break label_2;
         }
-        branch = jj_consume_token(PATH);
-branches.add(branch.image);
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case CARET:{
+          jj_consume_token(CARET);
+          t1 = jj_consume_token(PATH);
+revSpec.exclude.add(t1.image);
+          break;
+          }
+        default:
+          jj_la1[10] = jj_gen;
+          if (jj_2_1(2147483647)) {
+            /* A..B */
+                    t1 = jj_consume_token(PATH);
+            jj_consume_token(DOTDOT);
+            t2 = jj_consume_token(PATH);
+revSpec.exclude.add(t1.image);
+            revSpec.include.add(t2.image);
+          } else if (jj_2_2(2147483647)) {
+            /* normal branch */
+                    t1 = jj_consume_token(PATH);
+revSpec.include.add(t1.image);
+          } else {
+            jj_consume_token(-1);
+            throw new ParseException();
+          }
+        }
       }
 jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
 LogCommandData data = new LogCommandData();
-
-        // OneLine format
-        if (opt != null && opt.image.equals("--oneline")) {
-            data.oneline = true;
-        }
-
-        // Data format
-        data.format = null;
-        if (fmt != null) {
-            String m = fmt.image;
-            if (m.startsWith("\"") && m.endsWith("\"")) {
-                m = m.substring(1, m.length() - 1);
-            }
-            data.format = m;
-        }
-
-        // List of branches
-        data.branches = branches;
+        data.oneline = oneline;
+        data.graph = graph;
+        data.format = format;
+        data.revSpec = revSpec;
 
         jjtn000.jjtSetValue(data);
     } finally {
@@ -339,6 +377,35 @@ if (jjtc000) {
     }
 }
 
+  private boolean jj_2_1(int xla)
+ {
+    jj_la = xla; jj_lastpos = jj_scanpos = token;
+    try { return (!jj_3_1()); }
+    catch(LookaheadSuccess ls) { return true; }
+    finally { jj_save(0, xla); }
+  }
+
+  private boolean jj_2_2(int xla)
+ {
+    jj_la = xla; jj_lastpos = jj_scanpos = token;
+    try { return (!jj_3_2()); }
+    catch(LookaheadSuccess ls) { return true; }
+    finally { jj_save(1, xla); }
+  }
+
+  private boolean jj_3_1()
+ {
+    if (jj_scan_token(PATH)) return true;
+    if (jj_scan_token(DOTDOT)) return true;
+    return false;
+  }
+
+  private boolean jj_3_2()
+ {
+    if (jj_scan_token(PATH)) return true;
+    return false;
+  }
+
   /** Generated Token Manager. */
   public VctrlParserTokenManager token_source;
   SimpleCharStream jj_input_stream;
@@ -347,15 +414,20 @@ if (jjtc000) {
   /** Next token. */
   public Token jj_nt;
   private int jj_ntk;
+  private Token jj_scanpos, jj_lastpos;
+  private int jj_la;
   private int jj_gen;
-  final private int[] jj_la1 = new int[10];
+  final private int[] jj_la1 = new int[11];
   static private int[] jj_la1_0;
   static {
 	   jj_la1_init_0();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0xfe0,0x200000,0x204000,0x204000,0x208000,0x208000,0x60000,0x70000,0x70000,0x200000,};
+	   jj_la1_0 = new int[] {0xfe0,0x2000000,0x2004000,0x2004000,0x2008000,0x2008000,0xf0000,0x60000,0xf0000,0x2100000,0x100000,};
 	}
+  final private JJCalls[] jj_2_rtns = new JJCalls[2];
+  private boolean jj_rescan = false;
+  private int jj_gc = 0;
 
   /** Constructor with InputStream. */
   public VctrlParser(java.io.InputStream stream) {
@@ -368,7 +440,8 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
   /** Reinitialise. */
@@ -383,7 +456,8 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
   /** Constructor. */
@@ -393,7 +467,8 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
   /** Reinitialise. */
@@ -412,7 +487,8 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
   /** Constructor with generated Token Manager. */
@@ -421,7 +497,8 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
   /** Reinitialise. */
@@ -431,7 +508,8 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
   private Token jj_consume_token(int kind) throws ParseException {
@@ -441,11 +519,50 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 if (token.kind == kind) {
 	   jj_gen++;
+	   if (++jj_gc > 100) {
+		 jj_gc = 0;
+		 for (int i = 0; i < jj_2_rtns.length; i++) {
+		   JJCalls c = jj_2_rtns[i];
+		   while (c != null) {
+			 if (c.gen < jj_gen) c.first = null;
+			 c = c.next;
+		   }
+		 }
+	   }
 	   return token;
 	 }
 	 token = oldToken;
 	 jj_kind = kind;
 	 throw generateParseException();
+  }
+
+  @SuppressWarnings("serial")
+  static private final class LookaheadSuccess extends java.lang.Error {
+    @Override
+    public Throwable fillInStackTrace() {
+      return this;
+    }
+  }
+  static private final LookaheadSuccess jj_ls = new LookaheadSuccess();
+  private boolean jj_scan_token(int kind) {
+	 if (jj_scanpos == jj_lastpos) {
+	   jj_la--;
+	   if (jj_scanpos.next == null) {
+		 jj_lastpos = jj_scanpos = jj_scanpos.next = token_source.getNextToken();
+	   } else {
+		 jj_lastpos = jj_scanpos = jj_scanpos.next;
+	   }
+	 } else {
+	   jj_scanpos = jj_scanpos.next;
+	 }
+	 if (jj_rescan) {
+	   int i = 0; Token tok = token;
+	   while (tok != null && tok != jj_scanpos) { i++; tok = tok.next; }
+	   if (tok != null) jj_add_error_token(kind, i);
+	 }
+	 if (jj_scanpos.kind != kind) return true;
+	 if (jj_la == 0 && jj_scanpos == jj_lastpos) throw jj_ls;
+	 return false;
   }
 
 
@@ -478,16 +595,57 @@ if (jjtc000) {
   private java.util.List jj_expentries = new java.util.ArrayList();
   private int[] jj_expentry;
   private int jj_kind = -1;
+  private int[] jj_lasttokens = new int[100];
+  private int jj_endpos;
+
+  private void jj_add_error_token(int kind, int pos) {
+	 if (pos >= 100) {
+		return;
+	 }
+
+	 if (pos == jj_endpos + 1) {
+	   jj_lasttokens[jj_endpos++] = kind;
+	 } else if (jj_endpos != 0) {
+	   jj_expentry = new int[jj_endpos];
+
+	   for (int i = 0; i < jj_endpos; i++) {
+		 jj_expentry[i] = jj_lasttokens[i];
+	   }
+
+	   for (java.util.Iterator it = jj_expentries.iterator(); it.hasNext();) {
+		 int[] oldentry = (int[])(it.next());
+		 if (oldentry.length == jj_expentry.length) {
+		   boolean isMatched = true;
+
+		   for (int i = 0; i < jj_expentry.length; i++) {
+			 if (oldentry[i] != jj_expentry[i]) {
+			   isMatched = false;
+			   break;
+			 }
+
+		   }
+		   if (isMatched) {
+			 jj_expentries.add(jj_expentry);
+			 break;
+		   }
+		 }
+	   }
+
+	   if (pos != 0) {
+		 jj_lasttokens[(jj_endpos = pos) - 1] = kind;
+	   }
+	 }
+  }
 
   /** Generate ParseException. */
   public ParseException generateParseException() {
 	 jj_expentries.clear();
-	 boolean[] la1tokens = new boolean[23];
+	 boolean[] la1tokens = new boolean[26];
 	 if (jj_kind >= 0) {
 	   la1tokens[jj_kind] = true;
 	   jj_kind = -1;
 	 }
-	 for (int i = 0; i < 10; i++) {
+	 for (int i = 0; i < 11; i++) {
 	   if (jj_la1[i] == jj_gen) {
 		 for (int j = 0; j < 32; j++) {
 		   if ((jj_la1_0[i] & (1<<j)) != 0) {
@@ -496,13 +654,16 @@ if (jjtc000) {
 		 }
 	   }
 	 }
-	 for (int i = 0; i < 23; i++) {
+	 for (int i = 0; i < 26; i++) {
 	   if (la1tokens[i]) {
 		 jj_expentry = new int[1];
 		 jj_expentry[0] = i;
 		 jj_expentries.add(jj_expentry);
 	   }
 	 }
+	 jj_endpos = 0;
+	 jj_rescan_token();
+	 jj_add_error_token(0, 0);
 	 int[][] exptokseq = new int[jj_expentries.size()][];
 	 for (int i = 0; i < jj_expentries.size(); i++) {
 	   exptokseq[i] = (int[])jj_expentries.get(i);
@@ -523,6 +684,47 @@ if (jjtc000) {
 
   /** Disable tracing. */
   final public void disable_tracing() {
+  }
+
+  private void jj_rescan_token() {
+	 jj_rescan = true;
+	 for (int i = 0; i < 2; i++) {
+	   try {
+		 JJCalls p = jj_2_rtns[i];
+
+		 do {
+		   if (p.gen > jj_gen) {
+			 jj_la = p.arg; jj_lastpos = jj_scanpos = p.first;
+			 switch (i) {
+			   case 0: jj_3_1(); break;
+			   case 1: jj_3_2(); break;
+			 }
+		   }
+		   p = p.next;
+		 } while (p != null);
+
+		 } catch(LookaheadSuccess ls) { }
+	 }
+	 jj_rescan = false;
+  }
+
+  private void jj_save(int index, int xla) {
+	 JJCalls p = jj_2_rtns[index];
+	 while (p.gen > jj_gen) {
+	   if (p.next == null) { p = p.next = new JJCalls(); break; }
+	   p = p.next;
+	 }
+
+	 p.gen = jj_gen + xla - jj_la; 
+	 p.first = token;
+	 p.arg = xla;
+  }
+
+  static final class JJCalls {
+	 int gen;
+	 Token first;
+	 int arg;
+	 JJCalls next;
   }
 
 }

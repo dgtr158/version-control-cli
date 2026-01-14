@@ -139,6 +139,7 @@ public class Refs {
 
     public String getCurrentBranch() {
         String headContent = this.readRawHeadContent();
+        if (headContent == null) return null;
         if (headContent.startsWith("ref: ")) {
             return Path.of(headContent.substring(5)).getFileName().toString();
         }

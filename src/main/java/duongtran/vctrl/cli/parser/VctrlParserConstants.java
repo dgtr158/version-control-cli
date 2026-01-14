@@ -39,13 +39,19 @@ public interface VctrlParserConstants {
   /** RegularExpression Id. */
   int FORMAT = 18;
   /** RegularExpression Id. */
-  int EQUAL = 19;
+  int GRAPH = 19;
   /** RegularExpression Id. */
-  int STRING_LITERAL = 20;
+  int CARET = 20;
   /** RegularExpression Id. */
-  int PATH = 21;
+  int DOTDOT = 21;
   /** RegularExpression Id. */
-  int FORMAT_STR = 22;
+  int EQUAL = 22;
+  /** RegularExpression Id. */
+  int STRING_LITERAL = 23;
+  /** RegularExpression Id. */
+  int FORMAT_STR = 24;
+  /** RegularExpression Id. */
+  int PATH = 25;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -71,10 +77,13 @@ public interface VctrlParserConstants {
     "\"--oneline\"",
     "\"--pretty\"",
     "\"--format\"",
+    "\"--graph\"",
+    "\"^\"",
+    "\"..\"",
     "\"=\"",
     "<STRING_LITERAL>",
-    "<PATH>",
     "<FORMAT_STR>",
+    "<PATH>",
   };
 
 }
