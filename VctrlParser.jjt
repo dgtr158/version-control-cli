@@ -17,26 +17,23 @@ package duongtran.vctrl.cli.parser;
 public class VctrlParser {
 
     private static String stripQuotes(String s) {
-        if (s == null || s.length() < 2) {
-            return s;
-        }
+        if (s == null || s.length() < 2) return s;
         if ((s.startsWith("\"") && s.endsWith("\""))
          || (s.startsWith("'") && s.endsWith("'"))) {
             return s.substring(1, s.length() - 1);
         }
         return s;
     }
-
 }
 PARSER_END(VctrlParser)
 
-/* ====== SKIP ====== */
+/* ===================== SKIP ===================== */
 SKIP :
 {
     " " | "\t" | "\n" | "\r"
 }
 
-/* ====== TOKENS ====== */
+/* ===================== KEYWORDS ===================== */
 TOKEN :
 {
       <K_INIT: "init">
@@ -47,29 +44,45 @@ TOKEN :
     | <K_BRANCH: "branch">
     | <K_CHECKOUT: "checkout">
     | <K_MERGE: "merge">
-    | <K_M: "-m"> // commit message
-    | <K_D: "-d"> // remove branch
-    | <K_B: "-b"> // create new branch
+
+    | <K_M: "-m">
+    | <K_D: "-d">
+    | <K_B: "-b">
 
     | <ONELINE: "--oneline">
+    | <GRAPH: "--graph">
     | <PRETTY: "--pretty">
     | <FORMAT: "--format">
-    | <GRAPH: "--graph">
+
     | <CARET: "^">
     | <DOTDOT: "..">
     | <EQUAL: "=">
 }
 
-/* Path / identifier */
+/* ===================== GENERIC ATOMS ===================== */
+/*
+ * ATOM is intentionally broad:
+ * - branch names
+ * - commit ids
+ * - Linux paths
+ * - Windows paths
+ *
+ * Meaning is decided in the parser, NOT the lexer.
+ */
 TOKEN :
 {
-    <STRING_LITERAL: "\"" (~["\""])* "\"">
-    | <FORMAT_STR: "\"" (~["\""])* "\"" | (~[" ", "\t", "\n", "\r"])+ >
-    | <PATH: (~[" ", "\t", "\n", "\r", "^", "."])+ >
+    <QUOTED:
+        "\"" (~["\""])* "\""
+      | "'"  (~["'"])*  "'"
+    >
+  |
+    <ATOM:
+        (~[" ", "\t", "\n", "\r"])+
+    >
 }
 
-/* ====== ENTRY ====== */
-ASTCommand command() #Command:
+/* ===================== ENTRY ===================== */
+ASTCommand command() #Command :
 {}
 {
     (
@@ -81,11 +94,10 @@ ASTCommand command() #Command:
       | checkout_cmd()
       | log_cmd()
     )
-    {
-        return jjtThis;
-    }
+    { return jjtThis; }
 }
-/* ====== COMMANDS ====== */
+
+/* ===================== COMMANDS ===================== */
 
 void init_cmd() #InitCommand :
 {
@@ -93,10 +105,10 @@ void init_cmd() #InitCommand :
 }
 {
     <K_INIT>
-    ( path = <PATH> )?
+    ( path=<ATOM> | path=<QUOTED> )?
     {
         if (path != null) {
-            jjtThis.jjtSetValue(path.image);
+            jjtThis.jjtSetValue(stripQuotes(path.image));
         }
     }
 }
@@ -107,9 +119,9 @@ void add_cmd() #AddCommand :
 }
 {
     <K_ADD>
-    path = <PATH>
+    ( path=<ATOM> | path=<QUOTED> )
     {
-        jjtThis.jjtSetValue(path.image);
+        jjtThis.jjtSetValue(stripQuotes(path.image));
     }
 }
 
@@ -120,13 +132,9 @@ void commit_cmd() #CommitCommand :
 {
     <K_COMMIT>
     <K_M>
-    msg = <STRING_LITERAL>
+    msg=<QUOTED>
     {
-        String m = msg.image;
-        if (m.startsWith("\"") && m.endsWith("\"")) {
-            m = m.substring(1, m.length() - 1);
-        }
-        jjtThis.jjtSetValue(m);
+        jjtThis.jjtSetValue(stripQuotes(msg.image));
     }
 }
 
@@ -138,18 +146,18 @@ void status_cmd() #StatusCommand :
 
 void branch_cmd() #BranchCommand :
 {
-    Token name = null; // branch's name
+    Token name = null;
     boolean delete = false;
 }
 {
     <K_BRANCH>
     (
-        <K_D> {delete = true;} name = <PATH>
-        | name = <PATH>
+        <K_D> { delete = true; } ( name=<ATOM> | name=<QUOTED> )
+      | ( name=<ATOM> | name=<QUOTED> )
     )?
     {
         BranchCommandData data = new BranchCommandData();
-        data.name = name != null ? name.image : null;
+        data.name = name != null ? stripQuotes(name.image) : null;
         data.delete = delete;
         jjtThis.jjtSetValue(data);
     }
@@ -157,43 +165,43 @@ void branch_cmd() #BranchCommand :
 
 void checkout_cmd() #CheckoutCommand :
 {
-    Token name = null; // branch name
+    Token name = null;
     boolean create = false;
 }
 {
     <K_CHECKOUT>
     (
-        <K_B> {create = true;} name = <PATH>
-        | name = <PATH>
+        <K_B> { create = true; } ( name=<ATOM> | name=<QUOTED> )
+      | ( name=<ATOM> | name=<QUOTED> )
     )?
     {
         CheckoutCommandData data = new CheckoutCommandData();
-        data.name = name.image;
+        data.name = name != null ? stripQuotes(name.image) : null;
         data.create = create;
         jjtThis.jjtSetValue(data);
     }
 }
 
+/* ===================== LOG ===================== */
+
 void log_cmd() #LogCommand :
 {
-
     LogRevisionSpec revSpec = new LogRevisionSpec();
 
     boolean oneline = false;
     boolean graph = false;
     String format = null;
 
-    Token fmt = null;
-    Token t1, t2;
+    Token t1, t2, fmt;
 }
 {
     <K_LOG>
 
     /* -------- options -------- */
     (
-        <ONELINE>     { oneline = true; }
-      | <GRAPH>       { graph = true; }
-      | ( (<PRETTY> | <FORMAT>) <EQUAL> fmt=<FORMAT_STR>
+        <ONELINE> { oneline = true; }
+      | <GRAPH>   { graph = true; }
+      | ( (<PRETTY> | <FORMAT>) <EQUAL> (fmt=<ATOM> | fmt=<QUOTED>)
             { format = stripQuotes(fmt.image); }
         )
     )*
@@ -201,24 +209,22 @@ void log_cmd() #LogCommand :
     /* -------- revision specs -------- */
     (
         /* ^branch */
-        <CARET> t1=<PATH>
+        <CARET> (t1=<ATOM> | t1=<QUOTED>)
         {
-            revSpec.exclude.add(t1.image);
+            revSpec.exclude.add(stripQuotes(t1.image));
         }
 
-      | LOOKAHEAD( <PATH> <DOTDOT> )
+      | LOOKAHEAD( ( <ATOM> | <QUOTED> ) <DOTDOT> )
         /* A..B */
-        t1=<PATH> <DOTDOT> t2=<PATH>
+        (t1=<ATOM> | t1=<QUOTED>) <DOTDOT> (t2=<ATOM> | t2=<QUOTED>)
         {
-            revSpec.exclude.add(t1.image);
-            revSpec.include.add(t2.image);
+            revSpec.exclude.add(stripQuotes(t1.image));
+            revSpec.include.add(stripQuotes(t2.image));
         }
 
-      | LOOKAHEAD( <PATH> )
-        /* normal branch */
-        t1=<PATH>
+      | (t1=<ATOM> | t1=<QUOTED>)
         {
-            revSpec.include.add(t1.image);
+            revSpec.include.add(stripQuotes(t1.image));
         }
     )*
 
@@ -228,11 +234,7 @@ void log_cmd() #LogCommand :
         data.graph = graph;
         data.format = format;
         data.revSpec = revSpec;
-
         jjtThis.jjtSetValue(data);
     }
 }
-
-
-
 
