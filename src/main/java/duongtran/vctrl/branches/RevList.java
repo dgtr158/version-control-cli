@@ -20,78 +20,56 @@ public class RevList implements Iterable<Commit> {
     private static final Logger log = LoggerFactory.getLogger(RevList.class);
 
     private final Refs refs;
-    private final List<String> branches;
+    private final List<String> includes;
+    private final List<String> excludes;
 
-    public RevList(Refs refs, List<String> branches) throws VctrlException {
+    public RevList(Refs refs, List<String> includes, List<String> excludes) throws VctrlException {
         this.refs = refs;
-        this.branches = branches;
+        this.includes = includes;
+        this.excludes = excludes;
     }
 
     @Override
     public Iterator<Commit> iterator() {
-        return new CommitIterator(this.refs, this.branches);
+        return new CommitIterator();
     }
 
 
-    static class CommitIterator implements Iterator<Commit> {
+    class CommitIterator implements Iterator<Commit> {
 
         private final Database database;
-        private final Map<String, ObjectID> branchTable;
-        private final PriorityQueue<CommitQueueItem> commitQueue;
+        private final Set<ObjectID> seenCommits;
+        private final Set<ObjectID> uninterestingCommits;
+        private final PriorityQueue<Commit> commitQueue;
 
-        static class CommitQueueItem {
-            String branch;
-            Commit commit;
-
-            public CommitQueueItem(String branch, Commit commit) {
-                this.branch = branch;
-                this.commit = commit;
-            }
-
-            public String getBranch() {
-                return this.branch;
-            }
-
-            public Commit getCommit() {
-                return this.commit;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (!(o instanceof CommitQueueItem that)) return false;
-                return Objects.equals(commit.getOid(), that.commit.getOid());
-            }
-
-            @Override
-            public int hashCode() {
-                return Objects.hash(branch, commit.getOid());
-            }
-        }
-
-        public CommitIterator(Refs refs, List<String> branches) throws VctrlException {
+        public CommitIterator() throws VctrlException {
             this.database = Database.getInstance();
-            this.branchTable = new HashMap<>();
+            this.seenCommits = new HashSet<>();
+            this.uninterestingCommits = new HashSet<>();
             this.commitQueue = new PriorityQueue<>(
-                    (item1, item2) -> {
-                        Instant t1 = item1.getCommit().getAuthor().getTime();
-                        Instant t2 = item2.getCommit().getAuthor().getTime();
+                    (c1, c2) -> {
+                        Instant t1 = c1.getAuthor().getTime();
+                        Instant t2 = c2.getAuthor().getTime();
                         return t2.compareTo(t1);
                     }
             );
 
             try {
-                // Build a branch table
+                // Add each branch's head commit into the commit queue
                 RefHead refHeads = refs.getRefHead();
-                for (String branch : branches) {
+                for (String branch : includes) {
                     String branchHeadCommitID = refHeads.getBranchHeadContent(branch);
-                    branchTable.put(branch, new ObjectID(branchHeadCommitID));
+                    if (branchHeadCommitID != null) {
+                        enqueueCommit(new ObjectID(branchHeadCommitID));
+                    }
                 }
 
-                // Init the commit queue
-                for (Map.Entry<String, ObjectID> branchTableEntry : branchTable.entrySet()) {
-                    String branchName = branchTableEntry.getKey();
-                    ObjectID headCommitID = branchTableEntry.getValue();
-                    this.loadNewCommit(branchName, headCommitID);
+                // Mard uninteresting commits
+                for (String branch : excludes) {
+                    String branchHeadCommitID = refHeads.getBranchHeadContent(branch);
+                    if (branchHeadCommitID != null) {
+                        markUninteresting(new ObjectID(branchHeadCommitID));
+                    }
                 }
 
             } catch (Exception e) {
@@ -104,20 +82,16 @@ public class RevList implements Iterable<Commit> {
             return !commitQueue.isEmpty();
         }
 
-        // TODO: right now get only the first parent if there're multiple parents
         @Override
         public Commit next() {
             if (commitQueue.isEmpty()) {
                 throw new VctrlException("There no more commit");
             }
-            CommitQueueItem queueItem = commitQueue.poll();
-            String branch = queueItem.getBranch();
-            Commit commit = queueItem.getCommit();
+            Commit commit = commitQueue.poll();
 
             try {
-                ObjectID branchHeadCommitID = branchTable.get(branch);
-                if (branchHeadCommitID != null) {
-                    this.loadNewCommit(branch, branchHeadCommitID);
+                for (ObjectID parentId : commit.getParentIds()) {
+                    enqueueCommit(parentId);
                 }
             } catch (Exception e) {
                 throw new VctrlException(e);
@@ -127,22 +101,23 @@ public class RevList implements Iterable<Commit> {
 
         }
 
-        private void loadNewCommit(String branch, ObjectID commitID) throws IOException, NoSuchAlgorithmException {
-            if (commitID == null) {
-                branchTable.put(branch, null);
-                return;
-            }
+        private void enqueueCommit(ObjectID commitID) throws IOException, NoSuchAlgorithmException {
+            if (commitID == null || seenCommits.contains(commitID) || uninterestingCommits.contains(commitID)) return;
 
             Commit commit = (Commit) database.loadObject(commitID, ObjectType.COMMIT);
-            CommitQueueItem queueItem = new CommitQueueItem(branch, commit);
-            if (!commitQueue.contains(queueItem)) {
-                commitQueue.add(queueItem);
-            }
+            if (commit == null) return;
+            seenCommits.add(commit.getOid());
+            commitQueue.add(commit);
+        }
 
-            // Update the branch table
-            // TODO: Need to deal with the commit has multiple parents
-            ObjectID parent = commit.getParentIds().isEmpty() ? null : commit.getParentIds().get(0);
-            branchTable.put(branch, parent);
+        private void markUninteresting(ObjectID commitID) throws IOException, NoSuchAlgorithmException {
+            if (commitID == null || uninterestingCommits.contains(commitID)) return;
+
+            uninterestingCommits.add(commitID);
+            Commit commit = (Commit) database.loadObject(commitID, ObjectType.COMMIT);
+            for (ObjectID parentID : commit.getParentIds()) {
+                markUninteresting(parentID);
+            }
         }
 
     }

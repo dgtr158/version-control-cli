@@ -168,7 +168,7 @@ public class RevListTest {
             Refs refs = new Refs();
             List<String> branches = new ArrayList<>(List.of(DirectoryNames.DEFAULT_BRANCH_NAME));
             String currentBranchName = refs.getCurrentBranch();
-            RevList revList = new RevList(refs, branches);
+            RevList revList = new RevList(refs, branches, new ArrayList<>());
             Iterator<Commit> commitIterator = revList.iterator();
 
             assertTrue(commitIterator.hasNext());
@@ -278,7 +278,7 @@ public class RevListTest {
             // Assert the revision list
             Refs refs = new Refs();
             List<String> branches = branchAction.listBranches();
-            RevList revList = new RevList(refs, branches);
+            RevList revList = new RevList(refs, branches, new ArrayList<>());
             Iterator<Commit> commitIterator = revList.iterator();
 
             assertTrue(commitIterator.hasNext());
@@ -298,7 +298,109 @@ public class RevListTest {
 
     }
 
+    @Test
+    void testShowExcludingBranchCommitHistory() {
 
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+
+        try {
+            // Create files and its contents in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Add firstDir to staging and commit
+            addAction.execute(firstDir);
+            Commit firstCommit = commitAction.execute("Dummy commit message");
+
+            // Create files and its contents in the subFirstDir
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+
+            // Add subFirstDir to staging and commit
+            addAction.execute(subFirstDir);
+            Commit secondCommit = commitAction.execute("Dummy commit message");
+
+            String checkoutBranch = "firstBranch";
+            branchAction.execute(checkoutBranch, 0);
+            checkoutAction.execute(checkoutBranch, 0);
+
+            // Create files and its contents in the secondDir
+            Files.createDirectories(secondDir);
+            TestUtils.writeText(testFile21, "Test content 21");
+            TestUtils.writeText(testFile22, "Test content 22");
+
+            // Add the secondDir to staging and commit
+            addAction.execute(secondDir);
+            Commit thirdCommit = commitAction.execute("Dummy commit message");
+
+            // Checkout to master branch
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+
+            // Create files and its contents in the subSecondDir
+            Files.createDirectories(subSecondDir);
+            TestUtils.writeText(testFile211, "Test content 211");
+            TestUtils.writeText(testFile212, "Test content 212");
+
+            // Add the subSecondDir to staging and commit
+            addAction.execute(subSecondDir);
+            Commit fourthCommit = commitAction.execute("Dummy commit message");
+
+            // Checkout to firstBranch
+            checkoutAction.execute(checkoutBranch, 0);
+
+            // Create files and its contents in the thirdDir
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile31, "Test content 31");
+            TestUtils.writeText(testFile32, "Test content 32");
+
+            // Add the subSecondDir to staging and commit
+            addAction.execute(thirdDir);
+            Commit fifthCommit = commitAction.execute("Dummy commit message");
+
+            // Checkout to master branch
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+
+            // Create files and its contents in the fourthDir
+            Files.createDirectories(fourthDir);
+            TestUtils.writeText(testFile41, "Test content 41");
+            TestUtils.writeText(testFile42, "Test content 42");
+
+            // Add the subSecondDir to staging and commit
+            addAction.execute(fourthDir);
+            Commit sixthCommit = commitAction.execute("Dummy commit message");
+
+            // Checkout to firstBranch
+            checkoutAction.execute(checkoutBranch, 0);
+
+            // Create files and its contents in the fifthDir
+            Files.createDirectories(fifthDir);
+            TestUtils.writeText(testFile51, "Test content 51");
+            TestUtils.writeText(testFile52, "Test content 52");
+
+            // Add the subSecondDir to staging and commit
+            addAction.execute(fifthDir);
+            Commit seventhCommit = commitAction.execute("Dummy commit message");
+
+            // Assert the revision list
+            Refs refs = new Refs();
+            RevList revList = new RevList(refs, new ArrayList<>(List.of(DirectoryNames.DEFAULT_BRANCH_NAME)), new ArrayList<>(List.of(checkoutBranch)));
+            Iterator<Commit> commitIterator = revList.iterator();
+
+            assertTrue(commitIterator.hasNext());
+            assertEquals(sixthCommit, commitIterator.next());
+            assertEquals(fourthCommit, commitIterator.next());
+            assertFalse(commitIterator.hasNext());
+
+        } catch (Exception e) {
+            fail();
+        }
+
+    }
 
 
 }

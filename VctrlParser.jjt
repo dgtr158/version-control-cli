@@ -208,23 +208,26 @@ void log_cmd() #LogCommand :
 
     /* -------- revision specs -------- */
     (
-        /* ^branch */
-        <CARET> (t1=<ATOM> | t1=<QUOTED>)
+        (t1=<ATOM> | t1=<QUOTED>)
         {
-            revSpec.exclude.add(stripQuotes(t1.image));
-        }
+            String val = stripQuotes(t1.image);
 
-      | LOOKAHEAD( ( <ATOM> | <QUOTED> ) <DOTDOT> )
-        /* A..B */
-        (t1=<ATOM> | t1=<QUOTED>) <DOTDOT> (t2=<ATOM> | t2=<QUOTED>)
-        {
-            revSpec.exclude.add(stripQuotes(t1.image));
-            revSpec.include.add(stripQuotes(t2.image));
-        }
+            int dotdot = val.indexOf("..");
+            if (dotdot >= 0) {
+                String left  = val.substring(0, dotdot);
+                String right = val.substring(dotdot + 2);
 
-      | (t1=<ATOM> | t1=<QUOTED>)
-        {
-            revSpec.include.add(stripQuotes(t1.image));
+                if (!left.isEmpty()) {
+                    revSpec.include.add(left);
+                }
+                if (!right.isEmpty()) {
+                    revSpec.exclude.add(right);
+                }
+            } else if (val.startsWith("^")) {
+                revSpec.exclude.add(val.substring(1));
+            } else {
+                revSpec.include.add(val);
+            }
         }
     )*
 

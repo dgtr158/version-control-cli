@@ -63,16 +63,19 @@ public class LogAction {
     public void execute(LogCommandData cmdArgs) {
 
         // Get log branches
-        List<String> branches;
-        if (cmdArgs != null && cmdArgs.revSpec.include != null && !cmdArgs.revSpec.include.isEmpty()) {
-            branches = cmdArgs.revSpec.include;
+        List<String> exclude;
+        List<String> include;
+        if (cmdArgs != null && cmdArgs.revSpec != null && !cmdArgs.revSpec.include.isEmpty()) {
+            include = cmdArgs.revSpec.include;
+            exclude = cmdArgs.revSpec.exclude;
         } else {
-            branches = this.branchAction.listBranches();
+            include = this.branchAction.listBranches();
+            exclude = new ArrayList<>();
         }
 
         // Get the revision list
         Refs refs = new Refs();
-        RevList revList = new RevList(refs, branches);
+        RevList revList = new RevList(refs, include, exclude);
         for (Commit commit : revList) {
             showCommit(commit, cmdArgs);
         }
