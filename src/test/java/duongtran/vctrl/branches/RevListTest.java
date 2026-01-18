@@ -203,7 +203,8 @@ public class RevListTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute("Dummy commit message");
+            Commit firstCommit = commitAction.execute("First commit");
+            Thread.sleep(1100);
 
             // Create files and its contents in the subFirstDir
             Files.createDirectories(subFirstDir);
@@ -212,7 +213,8 @@ public class RevListTest {
 
             // Add subFirstDir to staging and commit
             addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute("Dummy commit message");
+            Commit secondCommit = commitAction.execute("Second commit");
+            Thread.sleep(1100);
 
             String checkoutBranch = "firstBranch";
             branchAction.execute(checkoutBranch, 0);
@@ -225,7 +227,8 @@ public class RevListTest {
 
             // Add the secondDir to staging and commit
             addAction.execute(secondDir);
-            Commit thirdCommit = commitAction.execute("Dummy commit message");
+            Commit thirdCommit = commitAction.execute("Third commit");
+            Thread.sleep(1100);
 
             // Checkout to master branch
             checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
@@ -237,7 +240,8 @@ public class RevListTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(subSecondDir);
-            Commit fourthCommit = commitAction.execute("Dummy commit message");
+            Commit fourthCommit = commitAction.execute("Fourth commit");
+            Thread.sleep(1100);
 
             // Checkout to firstBranch
             checkoutAction.execute(checkoutBranch, 0);
@@ -249,7 +253,8 @@ public class RevListTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(thirdDir);
-            Commit fifthCommit = commitAction.execute("Dummy commit message");
+            Commit fifthCommit = commitAction.execute("Fifth commit");
+            Thread.sleep(1100);
 
             // Checkout to master branch
             checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
@@ -261,7 +266,8 @@ public class RevListTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(fourthDir);
-            Commit sixthCommit = commitAction.execute("Dummy commit message");
+            Commit sixthCommit = commitAction.execute("Sixth commit");
+            Thread.sleep(1100);
 
             // Checkout to firstBranch
             checkoutAction.execute(checkoutBranch, 0);
@@ -273,7 +279,8 @@ public class RevListTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(fifthDir);
-            Commit seventhCommit = commitAction.execute("Dummy commit message");
+            Commit seventhCommit = commitAction.execute("Seventh commit");
+            Thread.sleep(1100);
 
             // Assert the revision list
             Refs refs = new Refs();
@@ -314,7 +321,7 @@ public class RevListTest {
 
             // Add firstDir to staging and commit
             addAction.execute(firstDir);
-            Commit firstCommit = commitAction.execute("Dummy commit message");
+            Commit firstCommit = commitAction.execute("First Commit");
 
             // Create files and its contents in the subFirstDir
             Files.createDirectories(subFirstDir);
@@ -323,7 +330,7 @@ public class RevListTest {
 
             // Add subFirstDir to staging and commit
             addAction.execute(subFirstDir);
-            Commit secondCommit = commitAction.execute("Dummy commit message");
+            Commit secondCommit = commitAction.execute("Second commit");
 
             String checkoutBranch = "firstBranch";
             branchAction.execute(checkoutBranch, 0);
@@ -336,7 +343,7 @@ public class RevListTest {
 
             // Add the secondDir to staging and commit
             addAction.execute(secondDir);
-            Commit thirdCommit = commitAction.execute("Dummy commit message");
+            Commit thirdCommit = commitAction.execute("Third commit");
 
             // Checkout to master branch
             checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
@@ -348,7 +355,7 @@ public class RevListTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(subSecondDir);
-            Commit fourthCommit = commitAction.execute("Dummy commit message");
+            Commit fourthCommit = commitAction.execute("Fourth Commit");
 
             // Checkout to firstBranch
             checkoutAction.execute(checkoutBranch, 0);
@@ -360,7 +367,7 @@ public class RevListTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(thirdDir);
-            Commit fifthCommit = commitAction.execute("Dummy commit message");
+            Commit fifthCommit = commitAction.execute("Fifth commit");
 
             // Checkout to master branch
             checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
@@ -372,7 +379,7 @@ public class RevListTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(fourthDir);
-            Commit sixthCommit = commitAction.execute("Dummy commit message");
+            Commit sixthCommit = commitAction.execute("Sixth commit");
 
             // Checkout to firstBranch
             checkoutAction.execute(checkoutBranch, 0);
@@ -384,7 +391,7 @@ public class RevListTest {
 
             // Add the subSecondDir to staging and commit
             addAction.execute(fifthDir);
-            Commit seventhCommit = commitAction.execute("Dummy commit message");
+            Commit seventhCommit = commitAction.execute("Seventh commit");
 
             // Assert the revision list
             Refs refs = new Refs();
