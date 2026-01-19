@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The MergeAction class is responsible for performing merge operations in the
@@ -49,7 +50,8 @@ public class MergeAction {
 
         // Find the common ancestor between the two commits
         CommonAncestors commonAncestor = new CommonAncestors(headCommitId, mergeCommitId);
-        ObjectID baseObjectId = commonAncestor.find();
+        Set<ObjectID> baseObjectIds = commonAncestor.find();
+        ObjectID baseObjectId = baseObjectIds.iterator().next();
 
         // Detect differences and apply changes
         TreeDiff treeDiff = new TreeDiff();

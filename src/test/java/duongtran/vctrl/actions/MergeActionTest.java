@@ -95,7 +95,7 @@ public class MergeActionTest {
     }
 
     @Test
-    void testMerge() {
+    void testMergeWithUniqueCommonAncestor() {
 
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();

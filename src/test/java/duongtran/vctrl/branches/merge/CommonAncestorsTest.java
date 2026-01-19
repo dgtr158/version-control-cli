@@ -3,10 +3,10 @@ package duongtran.vctrl.branches.merge;
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.*;
-import duongtran.vctrl.branches.merge.CommonAncestors;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.ObjectID;
+import duongtran.vctrl.storage.ObjectType;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
@@ -17,11 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class CommonAncestorsTest {
 
@@ -102,7 +100,7 @@ public class CommonAncestorsTest {
     }
 
     @Test
-    void testFindBestCommonAncestor() {
+    void testFindWithUniqueCommonAncestor() {
 
         AddAction addAction = new AddAction();
         CommitAction commitAction = new CommitAction();
@@ -247,9 +245,267 @@ public class CommonAncestorsTest {
 
             // Test the common ancestor
             CommonAncestors commonAncestor = new CommonAncestors(sixthCommit.getOid(), fifthCommit.getOid());
-            ObjectID commonAncestorId = commonAncestor.find();
-            assertEquals(thirdCommit.getOid(), commonAncestorId);
+            Set<ObjectID> commonAncestorIds = commonAncestor.find();
+            assertEquals(1, commonAncestorIds.size());
+            assertTrue(commonAncestorIds.contains(thirdCommit.getOid()));
 
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            fail();
+        }
+
+    }
+
+
+    /*
+     * History with multiple paths between two commits
+     *
+     *        1        2        3       6        8        9
+     *        o <----- o <----- o <---- o <----- o <----- o  [master]
+     *                   \             /
+     *                    \           /
+     *                     o <----- o <----- o  [firstBranch]
+     *                     4        5        7
+     *
+     */
+    @Test
+    void testFindWithMultipleCommonAncestors1() {
+
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+        MergeAction mergeAction = new MergeAction();
+        Refs refs = new Refs();
+
+        String newBranchName = "firstBranch";
+
+        try {
+
+            // Create files and its testFile11 in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+
+            // Add firstDir to staging and commit
+            addAction.execute(testFile11);
+            Commit firstCommit = commitAction.execute("First commit");
+            Thread.sleep(1100);
+
+            // Add testFile12 and commit
+            TestUtils.writeText(testFile12, "Test content 12");
+            addAction.execute(testFile12);
+            Commit secondCommit = commitAction.execute("Second commit");
+            Thread.sleep(1100);
+
+            // Create new branch called `firstBranch`
+            branchAction.execute(newBranchName, 0);
+
+            // Add subFirstDir and its content then commit
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+            addAction.execute(subFirstDir);
+            Commit thirdCommit = commitAction.execute("Third Commit");
+            Thread.sleep(1100);
+
+            // Checkout to the new branch
+            checkoutAction.execute(newBranchName, 0);
+
+            // Create files and its testFile21 in the secondDir, then create new commit
+            Files.createDirectories(secondDir);
+            TestUtils.writeText(testFile21, "Test content 21");
+            addAction.execute(testFile21);
+            Commit fourthCommit = commitAction.execute("Fourth Commit");
+            Thread.sleep(1100);
+
+            // Create files and its testFile22 in the secondDir, then create new commit
+            TestUtils.writeText(testFile22, "Test content 22");
+            addAction.execute(testFile22);
+            Commit fifthCommit = commitAction.execute("Fifth Commit");
+            Thread.sleep(1100);
+
+            // Checkout to master branch
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+
+            // Perform merge
+            mergeAction.execute(newBranchName, 0);
+
+            // Assertion after merged
+            // HEAD must point to the master branch
+            String headRawContent1 = refs.readRawHeadContent();
+            assertEquals("ref: " + Path.of("refs", "heads", "master"), headRawContent1);
+
+            // HEAD content is the sixth commit
+            String headContent1 = refs.readHead();
+            Commit sixthCommit = (Commit) database.loadObject(new ObjectID(headContent1), ObjectType.COMMIT);
+            Thread.sleep(1100);
+
+            // Checkout to the new branch
+            checkoutAction.execute(newBranchName, 0);
+
+            // Create files and its testFile31 in the thirdDir, then create seventh commit
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile31, "Test content 31");
+            addAction.execute(testFile31);
+            Commit seventhCommit = commitAction.execute("Seventh Commit");
+            Thread.sleep(1100);
+
+            // After seventh commit: checkout to the master branch
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+
+            // Create testFile32, then create eight commit
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile32, "Test content 32");
+            addAction.execute(testFile32);
+            Commit eightCommit = commitAction.execute("Eight Commit");
+            Thread.sleep(1100);
+
+            // Create fourthDir, then create ninth commit
+            Files.createDirectories(fourthDir);
+            TestUtils.writeText(testFile41, "Test content 41");
+            TestUtils.writeText(testFile42, "Test content 42");
+            addAction.execute(fourthDir);
+            Commit ninthCommit = commitAction.execute("Ninth Commit");
+            Thread.sleep(1100);
+
+            // Test the common ancestor
+            CommonAncestors commonAncestor = new CommonAncestors(ninthCommit.getOid(), seventhCommit.getOid());
+            Set<ObjectID> commonAncestorIds = commonAncestor.find();
+            assertEquals(1, commonAncestorIds.size());
+            assertTrue(commonAncestorIds.contains(fifthCommit.getOid()));
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            fail();
+        }
+
+    }
+
+    /*
+     * History with many candidate common ancestors
+     * Goal: merge `secondBranch` into `master` branch
+     *
+     *        1        2        5               9       10
+     *        o <----- o <----- o <------------ o <----- o   [master]
+     *                   \                     /
+     *                    \                   /
+     *                     o <----- o <----- o  [firstBranch]
+     *                     3        6        8
+     *                      \
+     *                       \
+     *                        o <----- o    [secondBranch]
+     *                        4        7
+     */
+    @Test
+    void testFindWithMultipleCommonAncestors2() {
+
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+        MergeAction mergeAction = new MergeAction();
+        Refs refs = new Refs();
+
+        String firstBranch = "firstBranch";
+        String secondBranch = "secondBranch";
+
+        try {
+
+            // Create files and its testFile11 in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+
+            // Add firstDir to staging and commit
+            addAction.execute(testFile11);
+            Commit firstCommit = commitAction.execute("First commit");
+            Thread.sleep(1100);
+
+            // Add testFile12 and create the second commit
+            TestUtils.writeText(testFile12, "Test content 12");
+            addAction.execute(testFile12);
+            Commit secondCommit = commitAction.execute("Second commit");
+            Thread.sleep(1100);
+
+            // After the second commit: Create new branch called `firstBranch` from `master`, and check out
+            branchAction.execute(firstBranch, 0);
+            checkoutAction.execute(firstBranch, 0);
+
+            // Add subFirstDir and its content then create third commit
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+            addAction.execute(subFirstDir);
+            Commit thirdCommit = commitAction.execute("Third Commit");
+            Thread.sleep(1100);
+
+            // After the third commit: Create new branch called `secondBranch` from `firstBranch`, and checkout
+            branchAction.execute(secondBranch, 0);
+            checkoutAction.execute(secondBranch, 0);
+
+            // Create files and its testFile21 in the secondDir, then create fourth commit
+            Files.createDirectories(secondDir);
+            TestUtils.writeText(testFile21, "Test content 21");
+            addAction.execute(testFile21);
+            Commit fourthCommit = commitAction.execute("Fourth Commit");
+            Thread.sleep(1100);
+
+            // After the fourth commit: Checkout to `master` and create fifth commit
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+            Files.createDirectories(secondDir);
+            TestUtils.writeText(testFile22, "Test content 22");
+            addAction.execute(testFile22);
+            Commit fifthCommit = commitAction.execute("Fifth Commit");
+            Thread.sleep(1100);
+
+            // After the fifth commit: Checkout to `firstBranch` from `master`, and create sixth commit
+            checkoutAction.execute(firstBranch, 0);
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile31, "Test content 31");
+            addAction.execute(testFile31);
+            Commit sixthCommit = commitAction.execute("Sixth Commit");
+            Thread.sleep(1100);
+
+            // After the sixth commit: Checkout to `secondBranch` from `firstBranch`, and create seventh commit
+            checkoutAction.execute(secondBranch, 0);
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile32, "Test content 32");
+            addAction.execute(testFile32);
+            Commit seventhCommit = commitAction.execute("Seventh Commit");
+            Thread.sleep(1100);
+
+            // After the seventh commit: Checkout to `firstBranch` from `secondBranch`, and create eight commit
+            checkoutAction.execute(firstBranch, 0);
+            Files.createDirectories(fourthDir);
+            TestUtils.writeText(testFile41, "Test content 41");
+            addAction.execute(testFile41);
+            Commit eightCommit = commitAction.execute("Eight Commit");
+            Thread.sleep(1100);
+
+            // After the eight commit: Checkout to `master` from `firstBranch`, and perform merge with `firstBranch`
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+            mergeAction.execute(firstBranch, 0);
+
+            // Assertion after merged
+            // HEAD must point to the master branch
+            String headRawContent1 = refs.readRawHeadContent();
+            assertEquals("ref: " + Path.of("refs", "heads", "master"), headRawContent1);
+
+            // HEAD content is the ninth commit
+            String headContent1 = refs.readHead();
+            Commit ninthCommit = (Commit) database.loadObject(new ObjectID(headContent1), ObjectType.COMMIT);
+
+            // After merged `firstBranch` to `master`, create the tenth commit
+            Files.createDirectories(fourthDir);
+            TestUtils.writeText(testFile42, "Test content 42");
+            addAction.execute(testFile42);
+            Commit tenthCommit = commitAction.execute("Tenth Commit");
+            Thread.sleep(1100);
+
+            // Test the common ancestor when merge `secondBranch` to `master`
+            CommonAncestors commonAncestor = new CommonAncestors(tenthCommit.getOid(), seventhCommit.getOid());
+            Set<ObjectID> commonAncestorIds = commonAncestor.find();
+            assertEquals(1, commonAncestorIds.size());
+            assertTrue(commonAncestorIds.contains(thirdCommit.getOid()));
 
         } catch (Exception ex) {
             ex.printStackTrace();

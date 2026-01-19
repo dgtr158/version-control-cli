@@ -26,7 +26,10 @@ public class CommonAncestors {
     private final PriorityQueue<Commit> queue;
 
     private enum Flag {
-        PARENT1, PARENT2
+        PARENT1     // Reachable from the first branch
+        , PARENT2   // Reachable from the second branch
+        , RESULT    // Can be BCA
+        , STALE     // No need to consider
     }
 
     private static final EnumSet<Flag> BOTH =
@@ -64,18 +67,34 @@ public class CommonAncestors {
      * @throws IOException              if an error occurs while accessing the repository.
      * @throws NoSuchAlgorithmException if the required cryptographic algorithm is unavailable.
      */
-    public ObjectID find() throws IOException, NoSuchAlgorithmException {
+    public Set<ObjectID> find() throws IOException, NoSuchAlgorithmException {
+        Set<ObjectID> results = new HashSet<>();
         while (!queue.isEmpty()) {
             Commit commit = queue.poll();
             EnumSet<Flag> f = flags.get(commit.getOid());
 
-            if (f.equals(BOTH)) {
-                return commit.getOid();
+            // If commit is already stale, no need to expand it
+            if (f.contains(Flag.STALE)) {
+                if (queue.stream().allMatch(c ->
+                        flags.get(c.getOid()).contains(Flag.STALE))) {
+                    break;
+                }
+                continue;
+            }
+
+            // Found a common ancestor
+            if (f.containsAll(BOTH)) {
+                f.add(Flag.RESULT);
+                results.add(commit.getOid());
+
+                // Parents of a result are stale
+                addParent(commit, EnumSet.of(Flag.STALE));
+                continue;
             }
 
             addParent(commit, f);
         }
-        return null;
+        return pruneResults(results);
     }
 
     /**
@@ -91,15 +110,18 @@ public class CommonAncestors {
      */
     private void addParent(Commit commit, EnumSet<Flag> inheritedFlags) throws IOException, NoSuchAlgorithmException {
         if (commit.getParentIds() == null) return;
+
         for (ObjectID parentId : commit.getParentIds()) {
             Commit parentCommit = (Commit) database.loadObject(parentId, ObjectType.COMMIT);
             EnumSet<Flag> parentFlags =
                     flags.computeIfAbsent(parentCommit.getOid(), k -> EnumSet.noneOf(Flag.class));
 
             if (parentFlags.containsAll(inheritedFlags)) return;
-
             parentFlags.addAll(inheritedFlags);
-            queue.add(parentCommit);
+
+            if (!queue.contains(parentCommit)) {
+                queue.add(parentCommit);
+            }
         }
 
     }
@@ -115,6 +137,27 @@ public class CommonAncestors {
      */
     private void mark(ObjectID oid, Flag flag) {
         flags.computeIfAbsent(oid, k -> EnumSet.noneOf(Flag.class)).add(flag);
+    }
+
+    private Set<ObjectID> pruneResults(Set<ObjectID> candidates)
+            throws IOException, NoSuchAlgorithmException {
+
+        Set<ObjectID> pruned = new HashSet<>(candidates);
+
+        for (ObjectID a : candidates) {
+            for (ObjectID b : candidates) {
+                if (a.equals(b)) continue;
+
+                // If a is an ancestor of b, a must-go
+                CommonAncestors ca = new CommonAncestors(a, b);
+                Set<ObjectID> inner = ca.find();
+
+                if (inner.contains(a)) {
+                    pruned.remove(a);
+                }
+            }
+        }
+        return pruned;
     }
 
 
