@@ -20,4 +20,4 @@ class ASTBranchCommand extends SimpleNode {
     visitor.visit(this, data);
   }
 }
-/* JavaCC - OriginalChecksum=743bd923f5d67494c6f0ba53fbd5311b (do not edit this line) */
+/* JavaCC - OriginalChecksum=a28339926b5e53c9bb0f2dbf5421fd73 (do not edit this line) */

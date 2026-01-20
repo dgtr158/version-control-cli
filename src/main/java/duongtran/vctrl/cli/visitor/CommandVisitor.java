@@ -6,6 +6,7 @@ import duongtran.vctrl.cli.visitor.args.BranchCommandData;
 import duongtran.vctrl.cli.parser.*;
 import duongtran.vctrl.cli.visitor.args.CheckoutCommandData;
 import duongtran.vctrl.cli.visitor.args.LogCommandData;
+import duongtran.vctrl.cli.visitor.args.MergeCommandData;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
@@ -77,6 +78,7 @@ public class CommandVisitor implements VctrlParserVisitor {
        return null;
     }
 
+
     @Override
     public Object visit(ASTBranchCommand node, Object data) {
         BranchCommandData args = (BranchCommandData) node.jjtGetValue();
@@ -113,6 +115,25 @@ public class CommandVisitor implements VctrlParserVisitor {
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
+        return null;
+    }
+
+
+    @Override
+    public Object visit(ASTMergeCommand node, Object data) {
+
+        MergeCommandData cmdArgs = (MergeCommandData) node.jjtGetValue();
+        MergeAction mergeAction = new MergeAction();
+        try {
+            // TODO: right now just support merge one branch
+            String mergeBranch = cmdArgs.sources.get(0);
+            int revision = 0;
+            mergeAction.execute(mergeBranch, revision);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.out.println(ex.getMessage());
+        }
+
         return null;
     }
 

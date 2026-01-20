@@ -20,4 +20,4 @@ class ASTStatusCommand extends SimpleNode {
     visitor.visit(this, data);
   }
 }
-/* JavaCC - OriginalChecksum=3d8d5f450a0a8d4661492e9b774b667b (do not edit this line) */
+/* JavaCC - OriginalChecksum=48997afed247a5fe92bec5ff0f88fc56 (do not edit this line) */

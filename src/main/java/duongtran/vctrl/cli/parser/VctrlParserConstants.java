@@ -47,9 +47,13 @@ public interface VctrlParserConstants {
   /** RegularExpression Id. */
   int EQUAL = 22;
   /** RegularExpression Id. */
-  int QUOTED = 23;
+  int NO_FF = 23;
   /** RegularExpression Id. */
-  int ATOM = 24;
+  int SQUASH = 24;
+  /** RegularExpression Id. */
+  int QUOTED = 25;
+  /** RegularExpression Id. */
+  int ATOM = 26;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -79,6 +83,8 @@ public interface VctrlParserConstants {
     "\"^\"",
     "\"..\"",
     "\"=\"",
+    "\"--no-ff\"",
+    "\"--squash\"",
     "<QUOTED>",
     "<ATOM>",
   };

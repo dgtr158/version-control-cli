@@ -2,12 +2,12 @@ package duongtran.vctrl.branches;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
-import duongtran.vctrl.actions.AddAction;
-import duongtran.vctrl.actions.BranchAction;
-import duongtran.vctrl.actions.CheckoutAction;
-import duongtran.vctrl.actions.CommitAction;
+import duongtran.vctrl.actions.*;
+import duongtran.vctrl.branches.merge.CommonAncestors;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.storage.Database;
+import duongtran.vctrl.storage.ObjectID;
+import duongtran.vctrl.storage.ObjectType;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.junit.jupiter.api.AfterEach;
@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -404,6 +405,130 @@ public class RevListTest {
             assertFalse(commitIterator.hasNext());
 
         } catch (Exception e) {
+            fail();
+        }
+
+    }
+
+    @Test
+    void testShowHistoryWithCommitsMultipleParents() {
+
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+        MergeAction mergeAction = new MergeAction();
+        Refs refs = new Refs();
+
+        String newBranchName = "firstBranch";
+
+        try {
+
+            // Create files and its testFile11 in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+
+            // Add firstDir to staging and commit
+            addAction.execute(testFile11);
+            Commit firstCommit = commitAction.execute("First commit");
+            Thread.sleep(1100);
+
+            // Add testFile12 and commit
+            TestUtils.writeText(testFile12, "Test content 12");
+            addAction.execute(testFile12);
+            Commit secondCommit = commitAction.execute("Second commit");
+            Thread.sleep(1100);
+
+            // Create new branch called `firstBranch`
+            branchAction.execute(newBranchName, 0);
+
+            // Add subFirstDir and its content then commit
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+            addAction.execute(subFirstDir);
+            Commit thirdCommit = commitAction.execute("Third Commit");
+            Thread.sleep(1100);
+
+            // Checkout to the new branch
+            checkoutAction.execute(newBranchName, 0);
+
+            // Create files and its testFile21 in the secondDir, then create new commit
+            Files.createDirectories(secondDir);
+            TestUtils.writeText(testFile21, "Test content 21");
+            addAction.execute(testFile21);
+            Commit fourthCommit = commitAction.execute("Fourth Commit");
+            Thread.sleep(1100);
+
+            // Create files and its testFile22 in the secondDir, then create new commit
+            TestUtils.writeText(testFile22, "Test content 22");
+            addAction.execute(testFile22);
+            Commit fifthCommit = commitAction.execute("Fifth Commit");
+            Thread.sleep(1100);
+
+            // Checkout to master branch
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+
+            // Perform merge
+            mergeAction.execute(newBranchName, 0);
+
+            // Assertion after merged
+            // HEAD must point to the master branch
+            String headRawContent1 = refs.readRawHeadContent();
+            assertEquals("ref: " + Path.of("refs", "heads", "master"), headRawContent1);
+
+            // HEAD content is the sixth commit
+            String headContent1 = refs.readHead();
+            Commit sixthCommit = (Commit) database.loadObject(new ObjectID(headContent1), ObjectType.COMMIT);
+            Thread.sleep(1100);
+
+            // Checkout to the new branch
+            checkoutAction.execute(newBranchName, 0);
+
+            // Create files and its testFile31 in the thirdDir, then create seventh commit
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile31, "Test content 31");
+            addAction.execute(testFile31);
+            Commit seventhCommit = commitAction.execute("Seventh Commit");
+            Thread.sleep(1100);
+
+            // After seventh commit: checkout to the master branch
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+
+            // Create testFile32, then create eight commit
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile32, "Test content 32");
+            addAction.execute(testFile32);
+            Commit eightCommit = commitAction.execute("Eight Commit");
+            Thread.sleep(1100);
+
+            // Create fourthDir, then create ninth commit
+            Files.createDirectories(fourthDir);
+            TestUtils.writeText(testFile41, "Test content 41");
+            TestUtils.writeText(testFile42, "Test content 42");
+            addAction.execute(fourthDir);
+            Commit ninthCommit = commitAction.execute("Ninth Commit");
+            Thread.sleep(1100);
+
+            // Assert the revision list
+            List<String> allBranches = branchAction.listBranches();
+            RevList revList = new RevList(refs, allBranches, new ArrayList<>());
+            Iterator<Commit> commitIterator = revList.iterator();
+
+            assertTrue(commitIterator.hasNext());
+            assertEquals(ninthCommit, commitIterator.next());
+            assertEquals(eightCommit, commitIterator.next());
+            assertEquals(seventhCommit, commitIterator.next());
+            assertEquals(sixthCommit, commitIterator.next());
+            assertEquals(fifthCommit, commitIterator.next());
+            assertEquals(fourthCommit, commitIterator.next());
+            assertEquals(thirdCommit, commitIterator.next());
+            assertEquals(secondCommit, commitIterator.next());
+            assertEquals(firstCommit, commitIterator.next());
+            assertFalse(commitIterator.hasNext());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
             fail();
         }
 

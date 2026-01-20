@@ -57,6 +57,9 @@ TOKEN :
     | <CARET: "^">
     | <DOTDOT: "..">
     | <EQUAL: "=">
+
+    | <NO_FF: "--no-ff">
+    | <SQUASH: "--squash">
 }
 
 /* ===================== GENERIC ATOMS ===================== */
@@ -93,6 +96,7 @@ ASTCommand command() #Command :
       | branch_cmd()
       | checkout_cmd()
       | log_cmd()
+      | merge_cmd()
     )
     { return jjtThis; }
 }
@@ -240,4 +244,36 @@ void log_cmd() #LogCommand :
         jjtThis.jjtSetValue(data);
     }
 }
+
+void merge_cmd() #MergeCommand :
+{
+    MergeCommandData data = new MergeCommandData();
+    Token t, msg;
+}
+{
+    <K_MERGE>
+
+    /* -------- options -------- */
+    (
+        <NO_FF> { data.noFastForward = true; }
+      | <SQUASH> { data.squash = true; }
+      | <K_M> msg=<QUOTED>
+        {
+            data.message = stripQuotes(msg.image);
+        }
+    )*
+
+    /* -------- merge sources -------- */
+    (
+        t=<ATOM>
+        {
+            data.sources.add(stripQuotes(t.image));
+        }
+    )+
+
+    {
+        jjtThis.jjtSetValue(data);
+    }
+}
+
 
