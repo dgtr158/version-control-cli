@@ -300,4 +300,191 @@ public class MergeActionTest {
 
     }
 
+    /*
+     * A null merge occurs when the requested merge commit is already reachable from the current HEAD
+     * Merge `firstBranch` into `master`
+     *
+     *        1        2        3       6        7
+     *        o <----- o <----- o <---- o <----- o  [HEAD -> master]
+     *                   \             /
+     *                    \           /
+     *                     o <----- o   [firstBranch]
+     *                     4        5
+     *
+     */
+    @Test
+    void testNullMerge() {
+
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+        MergeAction mergeAction = new MergeAction();
+        Refs refs = new Refs();
+
+        String newBranch = "firstBranch";
+
+        try {
+
+            // Create files and its contents in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Add firstDir to staging and commit
+            addAction.execute(firstDir);
+            Commit firstCommit = commitAction.execute("First Commit");
+
+            // Create files and its contents in the subFirstDir
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+
+            // Add testFile12, subFirstDir to staging and commit
+            addAction.execute(subFirstDir);
+            Commit secondCommit = commitAction.execute("Second Commit");
+
+            // Create first Branch
+            branchAction.execute(newBranch, 0);
+
+            // Create files and its contents in the secondDir
+            Files.createDirectories(secondDir);
+            TestUtils.writeText(testFile21, "Test content 21");
+            TestUtils.writeText(testFile22, "Test content 22");
+
+            // Add the secondDir to staging and commit
+            addAction.execute(secondDir);
+            Commit thirdCommit = commitAction.execute("Third commit");
+
+            // Checkout to the `firstBranch`
+            checkoutAction.execute(newBranch, 0);
+
+            // Create files and content in the thirdDir
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile31, "Test content 31");
+            TestUtils.writeText(testFile32, "Test content 32");
+
+            // Add thirdDir to staging and commit
+            addAction.execute(thirdDir);
+            commitAction.execute("Fourth Commit");
+
+            // Create files and content in the fourthDir
+            Files.createDirectories(fourthDir);
+            TestUtils.writeText(testFile41, "Test content 41");
+            TestUtils.writeText(testFile42, "Test content 42");
+
+            // Checkout to `master` and perform merging `firstBranch` into `master`
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+            mergeAction.execute(newBranch, 0);
+
+            // Create testFile1 content
+            TestUtils.writeText(testFile1, "Test content 1");
+
+            // Add testFile1 and create a commit
+            addAction.execute(testFile1);
+            Commit seventhCommit = commitAction.execute("Seventh Commit");
+
+            // Perform null merging
+            mergeAction.execute(newBranch, 0);
+
+            // Assert: the HEAD commit is the seventh commit (no more commit is created)
+            Commit afterNullMergeCommit = (Commit) database.loadObject(new ObjectID(refs.readHead()), ObjectType.COMMIT);
+            assertEquals(seventhCommit, afterNullMergeCommit);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            fail();
+        }
+
+
+    }
+
+    /*
+     * A null merge occurs when the requested merge commit is already reachable from the current HEAD
+     * Merge `firstBranch` into `master`
+     *
+     *        1        2
+     *        o <----- o  [HEAD -> master]
+     *                   \
+     *                    \
+     *                     o <----- o   [firstBranch]
+     *                     3        4
+     *
+     */
+    @Test
+    void testFastForwardMerge() {
+
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+        MergeAction mergeAction = new MergeAction();
+        Refs refs = new Refs();
+
+        String newBranch = "firstBranch";
+
+        try {
+
+            // Create files and its contents in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Add firstDir to staging and commit
+            addAction.execute(firstDir);
+            Commit firstCommit = commitAction.execute("First Commit");
+
+            // Create files and its contents in the subFirstDir
+            Files.createDirectories(subFirstDir);
+            TestUtils.writeText(testFile111, "Test content 111");
+            TestUtils.writeText(testFile112, "Test content 112");
+
+            // Add testFile12, subFirstDir to staging and commit
+            addAction.execute(subFirstDir);
+            Commit secondCommit = commitAction.execute("Second Commit");
+
+            // Create first Branch
+            branchAction.execute(newBranch, 0);
+            checkoutAction.execute(newBranch, 0);
+
+            // Create files and its contents in the secondDir
+            Files.createDirectories(secondDir);
+            TestUtils.writeText(testFile21, "Test content 21");
+            TestUtils.writeText(testFile22, "Test content 22");
+
+            // Add the secondDir to staging and commit
+            addAction.execute(secondDir);
+            Commit thirdCommit = commitAction.execute("Third commit");
+
+            // Create files and content in the thirdDir
+            Files.createDirectories(thirdDir);
+            TestUtils.writeText(testFile31, "Test content 31");
+            TestUtils.writeText(testFile32, "Test content 32");
+
+            // Add thirdDir to staging and commit
+            addAction.execute(thirdDir);
+            Commit fourthCommit = commitAction.execute("Fourth Commit");
+
+            // Checkout to `master`
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+
+            // Perform fast-forward merging on
+            mergeAction.execute(newBranch, 0);
+
+            // Assert: the HEAD commit is the fourth commit (no more commit is created)
+            Commit afterFastForwardMergeCommit = (Commit) database.loadObject(new ObjectID(refs.readHead()), ObjectType.COMMIT);
+            assertEquals(fourthCommit, afterFastForwardMergeCommit);
+
+            // Assert: the firstBranch's head is also the fourth commit
+            ObjectID newBranchHeadCommitID = new ObjectID(refs.getRefHead().getBranchHeadContent(newBranch));
+            assertEquals(fourthCommit.getOid(), newBranchHeadCommitID);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            fail();
+        }
+
+    }
+
+
 }
