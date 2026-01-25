@@ -101,8 +101,8 @@ public class Migration {
         } catch (ConflictException e) {
             throw new ConflictException(e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Failed to apply changes to the workspace: {}", e.getMessage());
+//            e.printStackTrace();
+//            log.error("Failed to apply changes to the workspace: {}", e.getMessage());
         }
 
     }
