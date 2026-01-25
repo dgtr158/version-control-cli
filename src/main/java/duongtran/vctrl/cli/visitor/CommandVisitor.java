@@ -2,11 +2,8 @@ package duongtran.vctrl.cli.visitor;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.*;
-import duongtran.vctrl.cli.visitor.args.BranchCommandData;
+import duongtran.vctrl.cli.visitor.args.*;
 import duongtran.vctrl.cli.parser.*;
-import duongtran.vctrl.cli.visitor.args.CheckoutCommandData;
-import duongtran.vctrl.cli.visitor.args.LogCommandData;
-import duongtran.vctrl.cli.visitor.args.MergeCommandData;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.utils.DirectoryNames;
 import org.slf4j.Logger;
@@ -134,6 +131,18 @@ public class CommandVisitor implements VctrlParserVisitor {
             System.out.println(ex.getMessage());
         }
 
+        return null;
+    }
+
+    @Override
+    public Object visit(ASTDiffCommand node, Object data) {
+        DiffCommandData args = (DiffCommandData) node.jjtGetValue();
+        DiffAction diffAction = new DiffAction();
+        try {
+            diffAction.execute(args.cached);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
         return null;
     }
 

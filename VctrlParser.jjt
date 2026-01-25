@@ -44,6 +44,7 @@ TOKEN :
     | <K_BRANCH: "branch">
     | <K_CHECKOUT: "checkout">
     | <K_MERGE: "merge">
+    | <K_DIFF: "diff">
 
     | <K_M: "-m">
     | <K_D: "-d">
@@ -60,6 +61,8 @@ TOKEN :
 
     | <NO_FF: "--no-ff">
     | <SQUASH: "--squash">
+
+    | <CACHED: "--cached">
 }
 
 /* ===================== GENERIC ATOMS ===================== */
@@ -97,6 +100,7 @@ ASTCommand command() #Command :
       | checkout_cmd()
       | log_cmd()
       | merge_cmd()
+      | diff_cmd()
     )
     { return jjtThis; }
 }
@@ -275,5 +279,20 @@ void merge_cmd() #MergeCommand :
         jjtThis.jjtSetValue(data);
     }
 }
+
+void diff_cmd() #DiffCommand :
+{
+    boolean cached = false;
+}
+{
+    <K_DIFF>
+    ( <CACHED> { cached = true; } )?
+    {
+        DiffCommandData data = new DiffCommandData();
+        data.cached = cached;
+        jjtThis.jjtSetValue(data);
+    }
+}
+
 
 

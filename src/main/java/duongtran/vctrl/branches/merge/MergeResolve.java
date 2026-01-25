@@ -33,8 +33,8 @@ public class MergeResolve {
     }
 
     public void execute() throws IOException, NoSuchAlgorithmException {
-        TreeDiff treeDiff = new TreeDiff();
 
+        TreeDiff treeDiff = new TreeDiff();
         Map<Path, TreeDiffEntry> diff =
                 treeDiff.detectTreeDiff(
                         inputs.getBase(),

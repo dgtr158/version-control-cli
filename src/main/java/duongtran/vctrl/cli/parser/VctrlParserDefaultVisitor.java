@@ -36,5 +36,8 @@ public class VctrlParserDefaultVisitor implements VctrlParserVisitor{
   public Object visit(ASTMergeCommand node, Object data){
     return defaultVisit(node, data);
   }
+  public Object visit(ASTDiffCommand node, Object data){
+    return defaultVisit(node, data);
+  }
 }
-/* JavaCC - OriginalChecksum=e062963e41d57c1f14b3a131c322040f (do not edit this line) */
+/* JavaCC - OriginalChecksum=e3f02e8c9243166d3ba8413df35fa7c9 (do not edit this line) */

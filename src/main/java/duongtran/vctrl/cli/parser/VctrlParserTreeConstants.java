@@ -12,6 +12,7 @@ public interface VctrlParserTreeConstants
   public int JJTCHECKOUTCOMMAND = 6;
   public int JJTLOGCOMMAND = 7;
   public int JJTMERGECOMMAND = 8;
+  public int JJTDIFFCOMMAND = 9;
 
 
   public String[] jjtNodeName = {
@@ -24,6 +25,7 @@ public interface VctrlParserTreeConstants
     "CheckoutCommand",
     "LogCommand",
     "MergeCommand",
+    "DiffCommand",
   };
 }
-/* JavaCC - OriginalChecksum=81909b49c43087ddf90b77534586e59e (do not edit this line) */
+/* JavaCC - OriginalChecksum=b78ffca95825a534bf8f432b9a054b48 (do not edit this line) */

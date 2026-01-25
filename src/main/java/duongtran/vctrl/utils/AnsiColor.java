@@ -4,6 +4,8 @@ public class AnsiColor {
 
     public static final String RESET  = "\u001B[0m";
 
+    public static final String BOLD = "\u001B[1m";
+
     public static final String RED    = "\u001B[31m";
     public static final String GREEN  = "\u001B[32m";
     public static final String YELLOW = "\u001B[33m";
@@ -25,6 +27,14 @@ public class AnsiColor {
 
     public static String cyan(String s) {
         return CYAN + s + RESET;
+    }
+
+    public static String bold(String s) {
+        return BOLD + s + RESET;
+    }
+
+    public static String boldYellow(String s) {
+        return BOLD + YELLOW + s + RESET;
     }
 
 }

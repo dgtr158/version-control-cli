@@ -13,5 +13,6 @@ public interface VctrlParserVisitor
   public Object visit(ASTCheckoutCommand node, Object data);
   public Object visit(ASTLogCommand node, Object data);
   public Object visit(ASTMergeCommand node, Object data);
+  public Object visit(ASTDiffCommand node, Object data);
 }
-/* JavaCC - OriginalChecksum=143765fd41b867cee2a0bb6f43a922e8 (do not edit this line) */
+/* JavaCC - OriginalChecksum=45fcdd912c09531b78cee9664f38fd31 (do not edit this line) */

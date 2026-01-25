@@ -121,7 +121,7 @@ public class Index implements Serializable {
         else stat = new UnixFileStat(path);
 
         // Create the index entry
-        IndexEntry entry = createIndexEntry(path, blobId, stat);
+        IndexEntry entry = createIndexEntry(path, blobId, stat, StagEnum.STAGE_NORMAL);
 
         // Create or update the index entry
         IndexKey indexKey = entry.getIndexKey();
@@ -142,6 +142,41 @@ public class Index implements Serializable {
     }
 
     /**
+     * Adds conflict entries to the index for a specified file path with multiple blob identifiers.
+     * This method removes any existing normal stage entry for the given path and adds entries
+     * corresponding to the conflicting stages (1, 2, and 3) based on the provided blob IDs.
+     *
+     * @param path    the file path for which conflict entries are to be added
+     * @param blobIds a list of blob identifiers representing the conflicting entries;
+     *                the list must have exactly three elements, where each element corresponds
+     *                to a conflict stage (stage 1, 2, or 3), and can contain null values for missing stages
+     * @param stat    the file statistics providing metadata such as modification time, size, and permissions
+     * @throws IOException if an I/O error occurs while processing the entries
+     */
+    public void addConflictEntries(Path path, List<String> blobIds, FileStat stat) throws IOException {
+        assert blobIds.size() == 3;
+        // Remove normal entry
+        removeEntryWithStage(path, StagEnum.STAGE_NORMAL.toValue());
+
+        for (int i = 0; i < blobIds.size(); i++) {
+            String blobId = blobIds.get(i);
+            if (blobId == null) continue;
+
+            int stage = i + 1; // 1..3
+            IndexEntry entry = this.createIndexEntry(path, blobId, stat, StagEnum.fromValue(stage));
+
+            this.entryMap.put(new IndexKey(path, stage), entry);
+            header.incrementEntryCount();
+            sizeInBytes += entry.getSize();
+        }
+
+        this.isChanged = true;
+
+    }
+
+
+
+    /**
      * Creates an index entry based on the provided path, blob ID, and file statistics.
      *
      * @param path   the file path for the index entry
@@ -149,7 +184,7 @@ public class Index implements Serializable {
      * @param stat   the file statistics providing metadata such as modification time, size, and permissions
      * @return an IndexEntry object representing the data and metadata for the given file
      */
-    private IndexEntry createIndexEntry(Path path, String blobId, FileStat stat) throws IOException {
+    private IndexEntry createIndexEntry(Path path, String blobId, FileStat stat, StagEnum stage) throws IOException {
         /*
             TODO: modify flags 16-bit
                 16-bit flags (high to low) contains:
@@ -158,7 +193,31 @@ public class Index implements Serializable {
                    2-bit stage (0-normal, 1-ours, 2-theirs, 3-base)
                    12-bit name length MIN(actual_path_length.countBytes(), 0xFFF)
          */
-        short flags = (short) Math.min(path.toString().getBytes(StandardCharsets.UTF_8).length, MAX_PATH_SIZE);
+
+        String pathStr = path.toString();
+        int pathLen = Math.min(
+                pathStr.getBytes(StandardCharsets.UTF_8).length,
+                Index.MAX_PATH_SIZE
+        );
+        if (stage == null) stage = StagEnum.STAGE_NORMAL;
+        int flags = (stage.toValue() << 12) | pathLen;
+
+        if (stage != StagEnum.STAGE_NORMAL) {
+            return new IndexEntry(
+                    0, 0,
+                    0, 0,
+                    0, 0,
+                    stat.getMode().getIntValue(),
+                    0, 0,
+                    0,
+                    blobId,
+                    flags,
+                    pathStr,
+                    IndexEntry.computeEntrySize(pathStr)
+            );
+
+        }
+
         return new IndexEntry(
                 stat.getCtimeSeconds()
                 , stat.getCtimeNanos()
@@ -172,7 +231,7 @@ public class Index implements Serializable {
                 , stat.getSize()
                 , blobId
                 , flags
-                , path.toString()
+                , pathStr
                 , IndexEntry.computeEntrySize(path.toString())
         );
     }
@@ -343,8 +402,12 @@ public class Index implements Serializable {
      * @return true if the path is being tracked, false otherwise
      */
     public boolean isTracked(Path path) {
-        IndexKey indexKey = new IndexKey(path, StagEnum.STAGE_NORMAL.toValue());
-        return entryMap.containsKey(indexKey) || trackedDirs.contains(path);
+        for (int stage = 0; stage <= 3; stage++) {
+            if (this.entryMap.containsKey(new IndexKey(path, stage)) || this.trackedDirs.contains(path)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -365,12 +428,28 @@ public class Index implements Serializable {
      * @param removePath the path of the entry to be removed from the index
      */
     public void removeEntry(Path removePath) {
-        if (contains(removePath)) {
-            IndexKey indexKey = new IndexKey(removePath, StagEnum.STAGE_NORMAL.toValue());
-            IndexEntry removedEntry = entryMap.get(indexKey);
-            entryMap.remove(indexKey, removedEntry);
+        for (int stage = 0; stage <= 3; stage++) {
+            removeEntryWithStage(removePath, stage);
+        }
+    }
+
+
+    /**
+     * Removes an entry from the index based on the specified file path and stage.
+     * If the corresponding entry exists, it is removed from the entry map, the entry count
+     * in the index header is decremented, and the index size is updated.
+     * Additionally, marks the index as changed if a removal occurs.
+     *
+     * @param path  the file path of the entry to be removed
+     * @param stage the stage identifier associated with the entry
+     */
+    public void removeEntryWithStage(Path path, int stage) {
+        IndexKey key = new IndexKey(path, stage);
+        IndexEntry removed = this.entryMap.remove(key);
+        if (removed != null) {
             header.decrementEntryCount();
-            setSizeInBytes(getSizeInBytes() - removedEntry.getSize());
+            setSizeInBytes(getSizeInBytes() - removed.getSize());
+            this.isChanged = true;
         }
     }
 
@@ -382,6 +461,21 @@ public class Index implements Serializable {
         this.trackedDirs = new HashSet<>();
         this.indexId = null;
     }
+
+    public boolean hasConflicts() {
+        return this.entryMap.keySet().stream()
+                .anyMatch(k -> k.getStage() != StagEnum.STAGE_NORMAL.toValue());
+    }
+
+    public List<IndexEntry> conflictEntries(Path path) {
+        List<IndexEntry> result = new ArrayList<>();
+        for (int stage = 1; stage <= 3; stage++) {
+            IndexEntry indexEntry = this.entryMap.get(new IndexKey(path, stage));
+            if (indexEntry != null) result.add(indexEntry);
+        }
+        return result;
+    }
+
 
     /**
      * Adds all parent directories of the given path to the set of tracked directories.

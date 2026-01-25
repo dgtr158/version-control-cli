@@ -69,10 +69,18 @@ public class DiffAction {
             index = new Index();
         }
 
+        DiffResult diffResult;
         if (isCached) {
-            return spotIndexHeadDifferences(index, status);
+            diffResult = spotIndexHeadDifferences(index, status);
+        } else {
+            diffResult = spotIndexWorkspaceDifferences(index, status);
         }
-        return spotIndexWorkspaceDifferences(index, status);
+
+        // Print the diff result
+        DiffPrinter diffPrinter = new DiffPrinter();
+        diffPrinter.print(diffResult);
+
+        return diffResult;
 
     }
 

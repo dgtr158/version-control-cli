@@ -28,7 +28,7 @@ public enum StagEnum {
                             t -> t
                     ));
 
-    public StagEnum fromValue(Integer value) {
+    public static StagEnum fromValue(Integer value) {
         if (value == null) {
             throw new IllegalArgumentException("value must not be null");
         }

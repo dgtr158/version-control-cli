@@ -27,33 +27,37 @@ public interface VctrlParserConstants {
   /** RegularExpression Id. */
   int K_MERGE = 12;
   /** RegularExpression Id. */
-  int K_M = 13;
+  int K_DIFF = 13;
   /** RegularExpression Id. */
-  int K_D = 14;
+  int K_M = 14;
   /** RegularExpression Id. */
-  int K_B = 15;
+  int K_D = 15;
   /** RegularExpression Id. */
-  int ONELINE = 16;
+  int K_B = 16;
   /** RegularExpression Id. */
-  int GRAPH = 17;
+  int ONELINE = 17;
   /** RegularExpression Id. */
-  int PRETTY = 18;
+  int GRAPH = 18;
   /** RegularExpression Id. */
-  int FORMAT = 19;
+  int PRETTY = 19;
   /** RegularExpression Id. */
-  int CARET = 20;
+  int FORMAT = 20;
   /** RegularExpression Id. */
-  int DOTDOT = 21;
+  int CARET = 21;
   /** RegularExpression Id. */
-  int EQUAL = 22;
+  int DOTDOT = 22;
   /** RegularExpression Id. */
-  int NO_FF = 23;
+  int EQUAL = 23;
   /** RegularExpression Id. */
-  int SQUASH = 24;
+  int NO_FF = 24;
   /** RegularExpression Id. */
-  int QUOTED = 25;
+  int SQUASH = 25;
   /** RegularExpression Id. */
-  int ATOM = 26;
+  int CACHED = 26;
+  /** RegularExpression Id. */
+  int QUOTED = 27;
+  /** RegularExpression Id. */
+  int ATOM = 28;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -73,6 +77,7 @@ public interface VctrlParserConstants {
     "\"branch\"",
     "\"checkout\"",
     "\"merge\"",
+    "\"diff\"",
     "\"-m\"",
     "\"-d\"",
     "\"-b\"",
@@ -85,6 +90,7 @@ public interface VctrlParserConstants {
     "\"=\"",
     "\"--no-ff\"",
     "\"--squash\"",
+    "\"--cached\"",
     "<QUOTED>",
     "<ATOM>",
   };

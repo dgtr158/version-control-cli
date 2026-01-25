@@ -103,6 +103,7 @@ public class StatusAction {
         Refs refs = new Refs();
         String branch = refs.getCurrentBranch();
 
+        if (branch == null) branch = "master";
         System.out.println("On branch " + branch);
         System.out.println();
 

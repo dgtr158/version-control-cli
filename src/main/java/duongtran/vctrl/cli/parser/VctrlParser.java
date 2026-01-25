@@ -55,6 +55,10 @@ public class VctrlParser/*@bgen(jjtree)*/implements VctrlParserTreeConstants, Vc
         merge_cmd();
         break;
         }
+      case K_DIFF:{
+        diff_cmd();
+        break;
+        }
       default:
         jj_la1[0] = jj_gen;
         jj_consume_token(-1);
@@ -543,6 +547,34 @@ if (jjtc000) {
     }
 }
 
+  final public void diff_cmd() throws ParseException {/*@bgen(jjtree) DiffCommand */
+    ASTDiffCommand jjtn000 = new ASTDiffCommand(JJTDIFFCOMMAND);
+    boolean jjtc000 = true;
+    jjtree.openNodeScope(jjtn000);boolean cached = false;
+    try {
+      jj_consume_token(K_DIFF);
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case CACHED:{
+        jj_consume_token(CACHED);
+cached = true;
+        break;
+        }
+      default:
+        jj_la1[21] = jj_gen;
+        ;
+      }
+jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+DiffCommandData data = new DiffCommandData();
+        data.cached = cached;
+        jjtn000.jjtSetValue(data);
+    } finally {
+if (jjtc000) {
+        jjtree.closeNodeScope(jjtn000, true);
+      }
+    }
+}
+
   /** Generated Token Manager. */
   public VctrlParserTokenManager token_source;
   SimpleCharStream jj_input_stream;
@@ -552,13 +584,13 @@ if (jjtc000) {
   public Token jj_nt;
   private int jj_ntk;
   private int jj_gen;
-  final private int[] jj_la1 = new int[21];
+  final private int[] jj_la1 = new int[22];
   static private int[] jj_la1_0;
   static {
 	   jj_la1_init_0();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0x1fe0,0x6000000,0x6000000,0x6000000,0x6000000,0x6000000,0x6004000,0x6004000,0x6000000,0x6000000,0x6008000,0x6008000,0xf0000,0xc0000,0x6000000,0xf0000,0x6000000,0x6000000,0x1802000,0x1802000,0x4000000,};
+	   jj_la1_0 = new int[] {0x3fe0,0x18000000,0x18000000,0x18000000,0x18000000,0x18000000,0x18008000,0x18008000,0x18000000,0x18000000,0x18010000,0x18010000,0x1e0000,0x180000,0x18000000,0x1e0000,0x18000000,0x18000000,0x3004000,0x3004000,0x10000000,0x4000000,};
 	}
 
   /** Constructor with InputStream. */
@@ -572,7 +604,7 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 21; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -587,7 +619,7 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 21; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Constructor. */
@@ -597,7 +629,7 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 21; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -616,7 +648,7 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 21; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Constructor with generated Token Manager. */
@@ -625,7 +657,7 @@ if (jjtc000) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 21; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -635,7 +667,7 @@ if (jjtc000) {
 	 jj_ntk = -1;
 	 jjtree.reset();
 	 jj_gen = 0;
-	 for (int i = 0; i < 21; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   private Token jj_consume_token(int kind) throws ParseException {
@@ -686,12 +718,12 @@ if (jjtc000) {
   /** Generate ParseException. */
   public ParseException generateParseException() {
 	 jj_expentries.clear();
-	 boolean[] la1tokens = new boolean[27];
+	 boolean[] la1tokens = new boolean[29];
 	 if (jj_kind >= 0) {
 	   la1tokens[jj_kind] = true;
 	   jj_kind = -1;
 	 }
-	 for (int i = 0; i < 21; i++) {
+	 for (int i = 0; i < 22; i++) {
 	   if (jj_la1[i] == jj_gen) {
 		 for (int j = 0; j < 32; j++) {
 		   if ((jj_la1_0[i] & (1<<j)) != 0) {
@@ -700,7 +732,7 @@ if (jjtc000) {
 		 }
 	   }
 	 }
-	 for (int i = 0; i < 27; i++) {
+	 for (int i = 0; i < 29; i++) {
 	   if (la1tokens[i]) {
 		 jj_expentry = new int[1];
 		 jj_expentry[0] = i;
