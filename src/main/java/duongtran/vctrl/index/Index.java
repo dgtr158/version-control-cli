@@ -49,7 +49,7 @@ public class Index implements Serializable {
     private transient Set<Path> trackedDirs; // Set of tracked directories
 
     private IndexHeader header;
-    private Map<Path, IndexEntry> entryMap;
+    private Map<IndexKey, IndexEntry> entryMap;
     private ObjectID indexId;
 
     public Index() {
@@ -73,7 +73,7 @@ public class Index implements Serializable {
         return sizeInBytes;
     }
 
-    public Map<Path, IndexEntry> getEntryMap() {
+    public Map<IndexKey, IndexEntry> getEntryMap() {
         return entryMap;
     }
 
@@ -93,7 +93,7 @@ public class Index implements Serializable {
         this.sizeInBytes = sizeInBytes;
     }
 
-    public void setEntryMap(Map<Path, IndexEntry> entryMap) {
+    public void setEntryMap(Map<IndexKey, IndexEntry> entryMap) {
         this.entryMap = entryMap;
         this.header.setEntryCount(entryMap.size());
     }
@@ -124,15 +124,15 @@ public class Index implements Serializable {
         IndexEntry entry = createIndexEntry(path, blobId, stat);
 
         // Create or update the index entry
-        Path entryPath = Paths.get(entry.getPath());
-        IndexEntry existingEntry = entryMap.get(entryPath);
+        IndexKey indexKey = entry.getIndexKey();
+        IndexEntry existingEntry = entryMap.get(indexKey);
         if (existingEntry == null) {
-            entryMap.put(path, entry);
+            entryMap.put(indexKey, entry);
             sizeInBytes += entry.getSize();
             this.header.incrementEntryCount();
             this.isChanged = true;
         } else if (!existingEntry.equals(entry)) {
-            entryMap.put(path, entry);
+            entryMap.put(indexKey, entry);
             this.isChanged = true;
         }
 
@@ -228,7 +228,7 @@ public class Index implements Serializable {
         this.header.toBytes(buf);
 
         // Index Entries
-        for (Map.Entry<Path, IndexEntry> mapEntry : this.entryMap.entrySet()) {
+        for (Map.Entry<IndexKey, IndexEntry> mapEntry : this.entryMap.entrySet()) {
             IndexEntry indexEntry = mapEntry.getValue();
             indexEntry.toBytes(buf);
         }
@@ -270,7 +270,7 @@ public class Index implements Serializable {
      */
     public static Index fromBytes(ByteBuffer buf) {
         int size = 0;
-        Map<Path, IndexEntry> entryMap = new TreeMap<>();
+        Map<IndexKey, IndexEntry> entryMap = new TreeMap<>();
         Index index = new Index();
 
         // Header
@@ -282,14 +282,13 @@ public class Index implements Serializable {
         for (int i = 0; i < numEntries; i++) {
             // Create index's entries
             IndexEntry indexEntry = IndexEntry.fromBytes(buf);
-            Path path = Paths.get(indexEntry.getPath()).normalize();
-            entryMap.put(path, indexEntry);
+            entryMap.put(indexEntry.getIndexKey(), indexEntry);
 
             // Update index's size
             size += indexEntry.getSize();
 
             // Update the tracked directories set
-            index.addToCheckDir(path);
+            index.addToCheckDir(indexEntry.getIndexKey().getPath().normalize());
         }
 
         // Index's ID
@@ -344,7 +343,8 @@ public class Index implements Serializable {
      * @return true if the path is being tracked, false otherwise
      */
     public boolean isTracked(Path path) {
-        return entryMap.containsKey(path) || trackedDirs.contains(path);
+        IndexKey indexKey = new IndexKey(path, StagEnum.STAGE_NORMAL.toValue());
+        return entryMap.containsKey(indexKey) || trackedDirs.contains(path);
     }
 
     /**
@@ -354,7 +354,8 @@ public class Index implements Serializable {
      * @return true if the path exists in the entry map, false otherwise
      */
     public boolean contains(Path path) {
-        return entryMap.containsKey(path);
+        IndexKey indexKey = new IndexKey(path, StagEnum.STAGE_NORMAL.toValue());
+        return entryMap.containsKey(indexKey);
     }
 
     /**
@@ -365,8 +366,9 @@ public class Index implements Serializable {
      */
     public void removeEntry(Path removePath) {
         if (contains(removePath)) {
-            IndexEntry removedEntry = entryMap.get(removePath);
-            entryMap.remove(removePath, removedEntry);
+            IndexKey indexKey = new IndexKey(removePath, StagEnum.STAGE_NORMAL.toValue());
+            IndexEntry removedEntry = entryMap.get(indexKey);
+            entryMap.remove(indexKey, removedEntry);
             header.decrementEntryCount();
             setSizeInBytes(getSizeInBytes() - removedEntry.getSize());
         }

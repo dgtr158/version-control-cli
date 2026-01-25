@@ -79,11 +79,11 @@ public class IndexTest {
 
         int numEntries = 2;
         Instant now = Instant.now();
-        Map<Path, IndexEntry> entryMap = createIndexEntryMap(numEntries, now);
+        Map<IndexKey, IndexEntry> entryMap = createIndexEntryMap(numEntries, now);
 
         // Get the size of the index
         int size = IndexHeader.HEADER_SIZE;
-        for (Map.Entry<Path, IndexEntry> entry : entryMap.entrySet()) {
+        for (Map.Entry<IndexKey, IndexEntry> entry : entryMap.entrySet()) {
             size += entry.getValue().getSize();
         }
         size += ObjectStorage.OID_SIZE;
@@ -104,8 +104,8 @@ public class IndexTest {
             assertFalse(buf.hasRemaining());
 
             // Index's entry must be ascending order of its path
-            List<Path> keys = new ArrayList<>(actual.getEntryMap().keySet());
-            List<Path> sorted = new ArrayList<>(keys);
+            List<IndexKey> keys = new ArrayList<>(actual.getEntryMap().keySet());
+            List<IndexKey> sorted = new ArrayList<>(keys);
             sorted.sort(null);
             assertEquals(sorted, keys);
 
@@ -147,14 +147,14 @@ public class IndexTest {
             Index actual = Index.loadFromDisk();
 
             // Validate entries
-            List<Path> expectedEntries = Arrays.asList(
-                    testFile11
-                    ,testFile12
-                    ,testFile21
+            List<IndexKey> expectedEntries = Arrays.asList(
+                    new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile12, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile21, StagEnum.STAGE_NORMAL.toValue())
             );
             assertEquals(3, actual.getHeader().getEntryCount());
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            Map<IndexKey, IndexEntry> entryMap = actual.getEntryMap();
+            List<IndexKey> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
@@ -241,11 +241,12 @@ public class IndexTest {
         }
     }
 
-    private Map<Path, IndexEntry> createIndexEntryMap(int num, Instant time) {
-        Map<Path, IndexEntry> indexEntries = new TreeMap<>();
+    private Map<IndexKey, IndexEntry> createIndexEntryMap(int num, Instant time) {
+        Map<IndexKey, IndexEntry> indexEntries = new TreeMap<>();
         for (int i = 0; i < num; i++) {
             IndexEntry entry = createIndexEntry(time, i + 1);
-            indexEntries.put(Paths.get(entry.getPath()), entry);
+            IndexKey key = new IndexKey(Paths.get(entry.getPath()), StagEnum.STAGE_NORMAL.toValue());
+            indexEntries.put(key, entry);
         }
         return indexEntries;
     }

@@ -1,10 +1,7 @@
 package duongtran.vctrl.branches.migration;
 
 import duongtran.vctrl.Workspace;
-import duongtran.vctrl.index.FileStat;
-import duongtran.vctrl.index.Index;
-import duongtran.vctrl.index.IndexEntry;
-import duongtran.vctrl.index.IndexUpdater;
+import duongtran.vctrl.index.*;
 import duongtran.vctrl.reportchanges.HeadComparison;
 import duongtran.vctrl.reportchanges.Inspector;
 import duongtran.vctrl.reportchanges.WorkspaceComparison;
@@ -104,6 +101,7 @@ public class Migration {
         } catch (ConflictException e) {
             throw new ConflictException(e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Failed to apply changes to the workspace: {}", e.getMessage());
         }
 
@@ -213,7 +211,8 @@ public class Migration {
      * @throws NoSuchAlgorithmException if a required cryptographic algorithm is not available
      */
     private void checkConflict(Index index, Path path, TreeDiffEntry treeChangePair) throws IOException, NoSuchAlgorithmException {
-        IndexEntry indexEntry = index.getEntryMap().get(workspace.getRootPath().resolve(path));
+        IndexKey indexKey = new IndexKey(workspace.getRootPath().resolve(path), StagEnum.STAGE_NORMAL.toValue());
+        IndexEntry indexEntry = index.getEntryMap().get(indexKey);
         DataEntry oldEntry = treeChangePair.getOldEntry();
         DataEntry newEntry = treeChangePair.getNewEntry();
         if (isIndexDiffersFromTrees(indexEntry, oldEntry, newEntry)) {

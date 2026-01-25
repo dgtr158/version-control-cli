@@ -4,6 +4,8 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.diff.*;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.index.IndexKey;
+import duongtran.vctrl.index.StagEnum;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.reportchanges.StatusEntry;
 import duongtran.vctrl.reportchanges.StatusType;
@@ -89,14 +91,15 @@ public class DiffAction {
      */
     private DiffResult spotIndexHeadDifferences(Index index, Status status) throws IOException, NoSuchAlgorithmException {
         NavigableMap<Path, StatusEntry> indexModifiedMap = status.get(StatusType.INDEX_MODIFIED);
-        Map<Path, IndexEntry> indexEntryMap = index.getEntryMap();
+        Map<IndexKey, IndexEntry> indexEntryMap = index.getEntryMap();
         Map<Path, DataEntry> headFiles = Database.listFileInHead();
 
         TreeMap<Path, List<Hunk>> hunkMap = new TreeMap<>();
         for (Map.Entry<Path, StatusEntry> indexModifiedMapEntry : indexModifiedMap.entrySet()) {
             Path path = indexModifiedMapEntry.getKey();
             // Read the index's entry lines
-            IndexEntry indexEntry = indexEntryMap.get(path);
+            IndexKey indexKey = new IndexKey(path, StagEnum.STAGE_NORMAL.toValue());
+            IndexEntry indexEntry = indexEntryMap.get(indexKey);
             if (indexEntry == null) continue;
             List<String> indexEntryLines = database.getBlobLines(new ObjectID(indexEntry.getOid()));
 
@@ -125,13 +128,13 @@ public class DiffAction {
      */
     private DiffResult spotIndexWorkspaceDifferences(Index index, Status status) {
         NavigableMap<Path, StatusEntry> workspaceModifiedMap = status.get(StatusType.WORKSPACE_MODIFIED);
-        Map<Path, IndexEntry> indexEntryMap = index.getEntryMap();
+        Map<IndexKey, IndexEntry> indexEntryMap = index.getEntryMap();
 
         TreeMap<Path, List<Hunk>> hunkMap = new TreeMap<>();
         for (Map.Entry<Path, StatusEntry> modifiedMapEntry : workspaceModifiedMap.entrySet()) {
             Path path = modifiedMapEntry.getKey();
             // Read the index's entry lines
-            IndexEntry indexEntry = indexEntryMap.get(path);
+            IndexEntry indexEntry = indexEntryMap.get(new IndexKey(path, StagEnum.STAGE_NORMAL.toValue()));
             if (indexEntry == null) continue;
             List<String> indexEntryLines = database.getBlobLines(new ObjectID(indexEntry.getOid()));
 

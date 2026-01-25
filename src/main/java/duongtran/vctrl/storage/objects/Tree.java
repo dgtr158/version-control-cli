@@ -2,6 +2,8 @@ package duongtran.vctrl.storage.objects;
 
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.index.IndexKey;
+import duongtran.vctrl.index.StagEnum;
 import duongtran.vctrl.storage.*;
 
 import java.io.ByteArrayOutputStream;
@@ -118,8 +120,9 @@ public class Tree extends ObjectStorage {
      * @return a Tree object representing the hierarchical structure of the given
      * paths and index entries.
      */
-    public static Tree buildTree(Map<Path, IndexEntry> indexEntries) {
-        Map<Path, IndexEntry> relativeEntryPath = normalizePath(indexEntries);
+    public static Tree buildTree(Map<IndexKey, IndexEntry> indexEntries) {
+        Map<IndexKey, IndexEntry> normalStageEntries = filterNormalStage(indexEntries);
+        Map<IndexKey, IndexEntry> relativeEntryPath = normalizePath(normalStageEntries);
         return buildWithNormalize(Path.of(""), relativeEntryPath);
     }
 
@@ -254,12 +257,12 @@ public class Tree extends ObjectStorage {
      *                            The paths are expected to be normalized relative paths.
      * @return a Tree object representing the hierarchical structure of the given paths and index entries.
      */
-    private static Tree buildWithNormalize(Path currentPath, Map<Path, IndexEntry> normalizedEntryPath) {
+    private static Tree buildWithNormalize(Path currentPath, Map<IndexKey, IndexEntry> normalizedEntryPath) {
         List<TreeEntry> files = new ArrayList<>();
-        Map<String, Map<Path, IndexEntry>> children = new TreeMap<>();
+        Map<String, Map<IndexKey, IndexEntry>> children = new TreeMap<>();
 
-        for (Map.Entry<Path, IndexEntry> e : normalizedEntryPath.entrySet()) {
-            Path path = e.getKey();
+        for (Map.Entry<IndexKey, IndexEntry> e : normalizedEntryPath.entrySet()) {
+            Path path = e.getKey().getPath();
 
             if (path.getNameCount() == 1) {
 
@@ -270,16 +273,16 @@ public class Tree extends ObjectStorage {
                 ));
             } else {
                 String dir = path.getName(0).toString();
-                Path rest = path.subpath(1, path.getNameCount());
+                Path restPath = path.subpath(1, path.getNameCount());
 
                 children
                         .computeIfAbsent(dir, k -> new TreeMap<>())
-                        .put(rest, e.getValue());
+                        .put(new IndexKey(restPath, e.getKey().getStage()), e.getValue());
             }
         }
 
         List<Tree> subTrees = new ArrayList<>();
-        for (Map.Entry<String, Map<Path, IndexEntry>> child : children.entrySet()) {
+        for (Map.Entry<String, Map<IndexKey, IndexEntry>> child : children.entrySet()) {
             Path childPath = currentPath.resolve(child.getKey());
             Tree subTree = buildWithNormalize(childPath, child.getValue());
             subTrees.add(subTree);
@@ -295,12 +298,27 @@ public class Tree extends ObjectStorage {
      * @param map a map containing absolute paths as keys and their associated index entries as values
      * @return a new map with keys as relative paths to the workspace root and their original index entries as values
      */
-    private static Map<Path, IndexEntry> normalizePath(Map<Path, IndexEntry> map) {
-        Map<Path, IndexEntry> relativeMap = new TreeMap<>();
-        for (Map.Entry<Path, IndexEntry> e : map.entrySet()) {
-            relativeMap.put(Workspace.getInstance().getRootPath().relativize(e.getKey()), e.getValue());
+    private static Map<IndexKey, IndexEntry> normalizePath(Map<IndexKey, IndexEntry> map) {
+        Map<IndexKey, IndexEntry> relativeMap = new TreeMap<>();
+        for (Map.Entry<IndexKey, IndexEntry> e : map.entrySet()) {
+            Path indexPath = Workspace.getInstance()
+                    .getRootPath()
+                    .relativize(e.getKey().getPath());
+
+            IndexKey indexKey = new IndexKey(indexPath, e.getKey().getStage());
+            relativeMap.put(indexKey, e.getValue());
         }
         return relativeMap;
+    }
+
+    private static Map<IndexKey, IndexEntry> filterNormalStage(Map<IndexKey, IndexEntry> indexEntries) {
+        Map<IndexKey, IndexEntry> result = new TreeMap<>();
+        for (Map.Entry<IndexKey, IndexEntry> e : indexEntries.entrySet()) {
+            if (e.getKey().getStage() == StagEnum.STAGE_NORMAL.toValue()) {
+                result.put(e.getKey(), e.getValue());
+            }
+        }
+        return result;
     }
 
     /**

@@ -4,6 +4,7 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.FileStat;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.index.IndexKey;
 import duongtran.vctrl.references.Refs;
 import duongtran.vctrl.reportchanges.*;
 import duongtran.vctrl.storage.DataEntry;
@@ -156,13 +157,13 @@ public class StatusAction {
      */
     private void detectWorkspaceChanges(Status status, Index index) throws IOException, NoSuchAlgorithmException {
         // Index's entries
-        Map<Path, IndexEntry> entryMap = index.getEntryMap();
+        Map<IndexKey, IndexEntry> entryMap = index.getEntryMap();
         // Workspace's files
         Map<Path, FileStat> trackedFiles = status.getTrackedFiles();
         // Head's files
         Map<Path, DataEntry> allHeadFiles = Database.listFileInHead();
 
-        for (Map.Entry<Path, IndexEntry> e : entryMap.entrySet()) {
+        for (Map.Entry<IndexKey, IndexEntry> e : entryMap.entrySet()) {
             // Index/Workspace differences
             checkIndexAgainstWorkspace(e, trackedFiles, status, index);
 
@@ -193,11 +194,11 @@ public class StatusAction {
      * @throws IOException              if an I/O error occurs while reading files in the workspace or index
      * @throws NoSuchAlgorithmException if the algorithm used for hashing file content is invalid
      */
-    private void checkIndexAgainstWorkspace(Map.Entry<Path, IndexEntry> entryMap, Map<Path, FileStat> trackedFiles, Status status, Index index) throws IOException, NoSuchAlgorithmException {
+    private void checkIndexAgainstWorkspace(Map.Entry<IndexKey, IndexEntry> entryMap, Map<Path, FileStat> trackedFiles, Status status, Index index) throws IOException, NoSuchAlgorithmException {
 
-        FileStat wsStatFile = trackedFiles.get(entryMap.getKey());
+        Path indexPath = entryMap.getKey().getPath();
+        FileStat wsStatFile = trackedFiles.get(indexPath);
         IndexEntry indexEntry = entryMap.getValue();
-        Path indexPath = entryMap.getKey();
 
         WorkspaceComparison result =
                 inspector.compareIndexToWorkspace(indexEntry, wsStatFile);
@@ -233,8 +234,8 @@ public class StatusAction {
      * @param status       the status object to update with detected changes such as added or modified files
      * @throws IOException if an I/O error occurs during the comparison process
      */
-    private void checkIndexAgainstHead(Map.Entry<Path, IndexEntry> entryMap, Map<Path, DataEntry> allHeadFiles, Status status) throws IOException {
-        Path indexEntryPath = entryMap.getKey();
+    private void checkIndexAgainstHead(Map.Entry<IndexKey, IndexEntry> entryMap, Map<Path, DataEntry> allHeadFiles, Status status) throws IOException {
+        Path indexEntryPath = entryMap.getKey().getPath();
         IndexEntry indexEntry = entryMap.getValue();
         DataEntry headEntry = allHeadFiles.get(indexEntryPath);
 

@@ -5,6 +5,7 @@ import duongtran.vctrl.utils.Utils;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
@@ -15,6 +16,9 @@ public class IndexEntry {
     public static final int FIXED_SIZE_IN_BYTE = 62;
     public static final int MIN_PATH_SIZE = 2;
     public static final int CONSUME_BYTES_BLOCK = 8;
+
+    public static final int STAGE_SHIFT = 12;
+    public static final int STAGE_MASK = 0b11 << STAGE_SHIFT;
 
     private transient final int size;
 
@@ -31,7 +35,7 @@ public class IndexEntry {
     private final String oid;
     private final int flags;
     private final String path;
-
+    private final IndexKey indexKey;
 
     public IndexEntry(int ctimeSeconds, int ctimeNanos,
                       int mtimeSeconds, int mtimeNanos,
@@ -52,6 +56,7 @@ public class IndexEntry {
         this.flags = flags;
         this.path = path;
         this.size = size;
+        this.indexKey = new IndexKey(Path.of(this.path), this.getStage());
     }
 
     public int getSize() {
@@ -108,6 +113,18 @@ public class IndexEntry {
 
     public String getPath() {
         return path;
+    }
+
+    public IndexKey getIndexKey() {
+        return indexKey;
+    }
+
+    public int getStage() {
+        return (this.flags & STAGE_MASK) >> STAGE_SHIFT;
+    }
+
+    public boolean isConflicted() {
+        return getStage() != StagEnum.STAGE_NORMAL.toValue();
     }
 
     /**

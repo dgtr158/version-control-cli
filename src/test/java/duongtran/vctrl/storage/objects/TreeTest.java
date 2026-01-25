@@ -5,6 +5,8 @@ import duongtran.vctrl.Workspace;
 import duongtran.vctrl.actions.AddAction;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.index.IndexKey;
+import duongtran.vctrl.index.StagEnum;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.FileMode;
 import duongtran.vctrl.storage.ObjectID;
@@ -103,7 +105,7 @@ public class TreeTest {
 
             // Load index from disk
             Index index = Index.loadFromDisk();
-            Map<Path, IndexEntry> indexEntries = index.getEntryMap();
+            Map<IndexKey, IndexEntry> indexEntries = index.getEntryMap();
 
             // Specify the expected tree
             Tree expected = getExpectedTree(indexEntries);
@@ -197,12 +199,12 @@ public class TreeTest {
     }
 
 
-    private Tree getExpectedTree(Map<Path, IndexEntry> indexEntries) {
+    private Tree getExpectedTree(Map<IndexKey, IndexEntry> indexEntries) {
 
         // subFirstDir Tree
         TreeEntry file111Entry = new TreeEntry(
                 testFile111.getFileName().toString()
-                , new ObjectID(indexEntries.get(testFile111).getOid())
+                , new ObjectID(indexEntries.get(new IndexKey(testFile111, StagEnum.STAGE_NORMAL.toValue())).getOid())
                 , FileMode.REGULAR_FILE
         );
         Tree subFirstDirTree = new Tree(new ArrayList<>(List.of(file111Entry)), new ArrayList<>(), rootPath.relativize(subFirstDir));
@@ -210,12 +212,12 @@ public class TreeTest {
         // firstDir Tree
         TreeEntry file12Entry = new TreeEntry(
                 testFile12.getFileName().toString()
-                , new ObjectID(indexEntries.get(testFile12).getOid())
+                , new ObjectID(indexEntries.get(new IndexKey(testFile12, StagEnum.STAGE_NORMAL.toValue())).getOid())
                 , FileMode.REGULAR_FILE
         );
         TreeEntry file11Entry = new TreeEntry(
                 testFile11.getFileName().toString()
-                , new ObjectID(indexEntries.get(testFile11).getOid())
+                , new ObjectID(indexEntries.get(new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue())).getOid())
                 , FileMode.REGULAR_FILE
         );
         Tree firstDirTree = new Tree(
@@ -227,7 +229,7 @@ public class TreeTest {
         // secondDir Tree
         TreeEntry file21Entry = new TreeEntry(
                 testFile21.getFileName().toString()
-                , new ObjectID(indexEntries.get(testFile21).getOid())
+                , new ObjectID(indexEntries.get(new IndexKey(testFile21, StagEnum.STAGE_NORMAL.toValue())).getOid())
                 , FileMode.REGULAR_FILE
         );
         Tree secondDirTree = new Tree(new ArrayList<>(List.of(file21Entry)), new ArrayList<>(), rootPath.relativize(secondDir));

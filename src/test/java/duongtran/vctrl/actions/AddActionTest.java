@@ -4,6 +4,8 @@ import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
 import duongtran.vctrl.index.Index;
 import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.index.IndexKey;
+import duongtran.vctrl.index.StagEnum;
 import duongtran.vctrl.storage.Database;
 import duongtran.vctrl.storage.objects.Commit;
 import duongtran.vctrl.utils.DirectoryNames;
@@ -130,12 +132,12 @@ public class AddActionTest {
             Index actual = Index.loadFromDisk();
 
             // Validate entries
-            List<Path> expectedEntries = Collections.singletonList(
-                    testFile11
+            List<IndexKey> expectedEntries = Collections.singletonList(
+                    new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue())
             );
             assertEquals(1, actual.getHeader().getEntryCount());
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            Map<IndexKey, IndexEntry> entryMap = actual.getEntryMap();
+            List<IndexKey> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
@@ -176,14 +178,14 @@ public class AddActionTest {
             Index actual = Index.loadFromDisk();
 
             // Validate entries
-            List<Path> expectedEntries = Arrays.asList(
-                    testFile11
-                    , testFile12
-                    , testFile21
+            List<IndexKey> expectedEntries = Arrays.asList(
+                    new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile12, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile21, StagEnum.STAGE_NORMAL.toValue())
             );
             assertEquals(3, actual.getHeader().getEntryCount());
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            Map<IndexKey, IndexEntry> entryMap = actual.getEntryMap();
+            List<IndexKey> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
@@ -215,13 +217,13 @@ public class AddActionTest {
             Index actual = Index.loadFromDisk();
 
             // Validate entries
-            List<Path> expectedEntries = Arrays.asList(
-                    testFile11
-                    , testFile12
+            List<IndexKey> expectedEntries = Arrays.asList(
+                    new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile12, StagEnum.STAGE_NORMAL.toValue())
             );
             assertEquals(2, actual.getHeader().getEntryCount());
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            Map<IndexKey, IndexEntry> entryMap = actual.getEntryMap();
+            List<IndexKey> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
@@ -270,14 +272,14 @@ public class AddActionTest {
             Index actual = Index.loadFromDisk();
 
             // Validate entries
-            List<Path> expectedEntries = Arrays.asList(
-                    testFile11
-                    , testFile12
-                    , testFile21
+            List<IndexKey> expectedEntries = Arrays.asList(
+                    new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile12, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile21, StagEnum.STAGE_NORMAL.toValue())
             );
             assertEquals(3, actual.getHeader().getEntryCount());
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            Map<IndexKey, IndexEntry> entryMap = actual.getEntryMap();
+            List<IndexKey> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
@@ -320,14 +322,14 @@ public class AddActionTest {
             Index actual = Index.loadFromDisk();
 
             // Validate entries
-            List<Path> expectedEntries = Arrays.asList(
-                    testFile11
-                    , testFile12
-                    , testFile21
+            List<IndexKey> expectedEntries = Arrays.asList(
+                    new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile12, StagEnum.STAGE_NORMAL.toValue())
+                    ,new IndexKey(testFile21, StagEnum.STAGE_NORMAL.toValue())
             );
             assertEquals(3, actual.getHeader().getEntryCount());
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            Map<IndexKey, IndexEntry> entryMap = actual.getEntryMap();
+            List<IndexKey> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
@@ -372,12 +374,12 @@ public class AddActionTest {
             Index actual = Index.loadFromDisk();
 
             // Validate entries
-            List<Path> expectedEntries = Arrays.asList(
-                    testFile12
+            List<IndexKey> expectedEntries = Arrays.asList(
+                    new IndexKey(testFile12, StagEnum.STAGE_NORMAL.toValue())
             );
             assertEquals(1, actual.getHeader().getEntryCount());
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            Map<IndexKey, IndexEntry> entryMap = actual.getEntryMap();
+            List<IndexKey> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {
@@ -433,23 +435,23 @@ public class AddActionTest {
             Index actual = Index.loadFromDisk();
 
             // Validate entries
-            List<Path> expectedEntries = Arrays.asList(
-                    testFile11
-                    , testFile12
-                    , testFile111
-                    , testFile112
-                    , testFile41
-                    , testFile42
-                    , testFile21
-                    , testFile22
-                    , testFile211
-                    , testFile212
-                    , testFile31
-                    , testFile32
+            List<IndexKey> expectedEntries = Arrays.asList(
+                    new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile12, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile111, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile112, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile41, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile42, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile21, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile22, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile211, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile212, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile31, StagEnum.STAGE_NORMAL.toValue())
+                    , new IndexKey(testFile32, StagEnum.STAGE_NORMAL.toValue())
             );
             assertEquals(12, actual.getHeader().getEntryCount());
-            Map<Path, IndexEntry> entryMap = actual.getEntryMap();
-            List<Path> actualEntries = entryMap.keySet().stream().toList();
+            Map<IndexKey, IndexEntry> entryMap = actual.getEntryMap();
+            List<IndexKey> actualEntries = entryMap.keySet().stream().toList();
             assertIterableEquals(expectedEntries, actualEntries);
 
         } catch (Exception e) {

@@ -2,9 +2,7 @@ package duongtran.vctrl.actions;
 
 import duongtran.vctrl.TestUtils;
 import duongtran.vctrl.Workspace;
-import duongtran.vctrl.index.FileStat;
-import duongtran.vctrl.index.Index;
-import duongtran.vctrl.index.IndexEntry;
+import duongtran.vctrl.index.*;
 import duongtran.vctrl.reportchanges.Status;
 import duongtran.vctrl.reportchanges.StatusEntry;
 import duongtran.vctrl.reportchanges.StatusType;
@@ -477,10 +475,11 @@ public class StatusActionTest {
                 assertEquals(secondExpected, secondActual);
                 Index afterIndex = Index.loadFromDisk();
                 assertNotNull(afterIndex);
-                IndexEntry testFile11IndexEntry = afterIndex.getEntryMap().get(testFile11);
+                IndexEntry testFile11IndexEntry = afterIndex.getEntryMap().get(new IndexKey(testFile11, StagEnum.STAGE_NORMAL.toValue()));
                 assertNotEquals(beforeStat.getMtimeSeconds(), testFile11IndexEntry.getMtimeSeconds());
 
             } catch (Exception ex) {
+                ex.printStackTrace();
                 fail();
             }
         }
