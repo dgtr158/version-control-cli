@@ -494,5 +494,72 @@ public class MergeActionTest {
 
     }
 
+    /*
+     * Merge `firstBranch` into `master` => conflict
+     *
+     *        1        2
+     *        o <----- o  [HEAD -> master]
+     *          \
+     *           \
+     *            o   [firstBranch]
+     *            3
+     *
+     */
+    @Test
+    void testMergeFailed() {
+
+        AddAction addAction = new AddAction();
+        CommitAction commitAction = new CommitAction();
+        CheckoutAction checkoutAction = new CheckoutAction();
+        BranchAction branchAction = new BranchAction();
+        MergeAction mergeAction = new MergeAction();
+        Refs refs = new Refs();
+
+        String newBranch = "firstBranch";
+
+        try {
+
+            // Create files and its contents in the firstDir
+            Files.createDirectories(firstDir);
+            TestUtils.writeText(testFile11, "Test content 11");
+            TestUtils.writeText(testFile12, "Test content 12");
+
+            // Add firstDir to staging and commit
+            addAction.execute(firstDir);
+            Commit firstCommit = commitAction.execute("First Commit");
+
+            // Change the content of the testFile11 (update 1)
+            TestUtils.writeText(testFile11, "Test content 11 update 1");
+
+            // Add updated testFile11 to staging and commit
+            addAction.execute(testFile11);
+            Commit secondCommit = commitAction.execute("Second Commit");
+
+            // Branch from the first commit of the master -> first branch
+            branchAction.execute(newBranch, 1);
+            checkoutAction.execute(newBranch, 0);
+
+            // Change the content of the testFile11 (update 2)
+            TestUtils.writeText(testFile11, "Test content 11 update 2");
+
+            // Add updated testFile11 to staging and commit
+            addAction.execute(testFile11);
+            Commit thirdCommit = commitAction.execute("Third Commit");
+
+            // Checkout back to master's head
+            checkoutAction.execute(DirectoryNames.DEFAULT_BRANCH_NAME, 0);
+
+            // Perform merge
+            mergeAction.execute(newBranch, 0);
+
+            System.out.println("processing...");
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            fail();
+        }
+
+    }
+
 
 }
