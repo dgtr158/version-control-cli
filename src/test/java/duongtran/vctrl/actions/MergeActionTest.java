@@ -479,6 +479,14 @@ public class MergeActionTest {
             ObjectID newBranchHeadCommitID = new ObjectID(refs.getRefHead().getBranchHeadContent(newBranch));
             assertEquals(fourthCommit.getOid(), newBranchHeadCommitID);
 
+            // Assert: the master's head is also the fourth commit
+            ObjectID masterHeadCommitID = new ObjectID(refs.getRefHead().getBranchHeadContent(DirectoryNames.DEFAULT_BRANCH_NAME));
+            assertEquals(fourthCommit.getOid(), masterHeadCommitID);
+
+            // Assert: the HEAD is also the fourth commit
+            ObjectID headCommitID = new ObjectID(refs.readHead());
+            assertEquals(fourthCommit.getOid(), headCommitID);
+
         } catch (Exception ex) {
             ex.printStackTrace();
             fail();

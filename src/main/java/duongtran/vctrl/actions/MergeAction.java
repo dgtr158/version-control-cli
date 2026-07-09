@@ -100,7 +100,7 @@ public class MergeAction {
             );
             migration.applyChanges();
 
-            // Update HEAD
+            // Update the head of the current branch
             String currentBranch = this.refs.getCurrentBranch();
             this.refs.getRefHead().updateBranchHeadValue(this.refs.getRefHead().getReafHeadPath().resolve(currentBranch), otherCommitID.getValue());
 
